@@ -9,6 +9,17 @@ export type GarmentId = (typeof GARMENT_IDS)[number];
 export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date"] as const;
 export type OccasionId = (typeof OCCASION_IDS)[number];
 
+export interface GarmentCredit {
+  /** Photographer or rights holder, as the source names them. */
+  author: string;
+  /** Where the photo comes from, e.g. "Unsplash". */
+  source: string;
+  /** Page of the original photo (https). */
+  url?: string;
+  /** Licence name, e.g. "Unsplash License". */
+  license?: string;
+}
+
 export interface Garment {
   id: GarmentId;
   name: string;
@@ -18,25 +29,33 @@ export interface Garment {
   styles: string[];
   cut: string;
   /**
-   * Bundled garment photo, e.g. require("../assets/garments/G01.png").
-   * TODO(team): add 6 LICENSED product photos as assets/garments/G01.png ... G06.png
-   * (plain background, garment only, at least 512x512, JPEG/PNG/WebP), then
-   * replace `null` below with the require(...). To send one to Decart it must be
-   * converted to base64 or an https URL first (see toDecartImage in lib/decart.ts):
-   * the SDK rejects file:// URIs.
+   * Bundled garment photo: require("../assets/garments/G0X.jpg") (4:5 portrait,
+   * plain background, garment only). To send one to Decart it is converted to base64
+   * first (lib/tryOnSession.ts); the SDK rejects file:// URIs.
    */
   image: number | null;
-  /** Planned asset path, documented so the team knows what file to add. */
+  /** Asset path of `image`, relative to mobile/. */
   imagePath: string;
+  /**
+   * true while the photo is a stand-in sample (Unsplash) rather than a licensed
+   * product photo. The UI shows a "Sample" tag on it (DESIGN.md Chips).
+   */
+  sample: boolean;
+  /** Provenance of the photo; null until the asset owner fills it in. */
+  credit: GarmentCredit | null;
 }
 
+// Photos: assets/garments/G01.jpg ... G06.jpg, 1000x1250 (4:5). Unsplash samples until
+// licensed photos arrive (user decision 2026-11-09); provenance in assets/garments/CREDITS.md.
+const unsplash = (author: string, url: string): GarmentCredit => ({ author, source: "Unsplash", url, license: "Unsplash License" });
+
 export const CATALOG: readonly Garment[] = [
-  { id: "G01", name: "Navy Blazer", type: "outerwear", color: "navy", formality: 4, styles: ["formal", "smart"], cut: "tailored, structured", image: null, imagePath: "assets/garments/G01.png" },
-  { id: "G02", name: "White Oxford Shirt", type: "shirt", color: "white", formality: 4, styles: ["formal", "minimal"], cut: "crisp, classic", image: null, imagePath: "assets/garments/G02.png" },
-  { id: "G03", name: "Cream Cardigan", type: "knitwear", color: "cream", formality: 2, styles: ["casual", "soft"], cut: "knit, relaxed", image: null, imagePath: "assets/garments/G03.png" },
-  { id: "G04", name: "Denim Jacket", type: "outerwear", color: "blue denim", formality: 1, styles: ["casual", "street"], cut: "boxy, rugged", image: null, imagePath: "assets/garments/G04.png" },
-  { id: "G05", name: "Black Bomber Jacket", type: "outerwear", color: "black", formality: 2, styles: ["street", "minimal"], cut: "sporty, cropped", image: null, imagePath: "assets/garments/G05.png" },
-  { id: "G06", name: "Beige Overshirt", type: "overshirt", color: "beige", formality: 3, styles: ["casual", "smart"], cut: "relaxed, layering", image: null, imagePath: "assets/garments/G06.png" },
+  { id: "G01", name: "Navy Blazer", type: "outerwear", color: "navy", formality: 4, styles: ["formal", "smart"], cut: "tailored, structured", image: require("../assets/garments/G01.jpg"), imagePath: "assets/garments/G01.jpg", sample: true, credit: unsplash("Robert Richman", "https://unsplash.com/photos/two-jackets-hanging-on-a-clothes-line-cYRsB4liZPs") },
+  { id: "G02", name: "White Oxford Shirt", type: "shirt", color: "white", formality: 4, styles: ["formal", "minimal"], cut: "crisp, classic", image: require("../assets/garments/G02.jpg"), imagePath: "assets/garments/G02.jpg", sample: true, credit: unsplash("Nimble Made", "https://unsplash.com/photos/white-button-up-shirt-on-clothes-hanger-hMMXhKSZk7k") },
+  { id: "G03", name: "Cream Cardigan", type: "knitwear", color: "cream", formality: 2, styles: ["casual", "soft"], cut: "knit, relaxed", image: require("../assets/garments/G03.jpg"), imagePath: "assets/garments/G03.jpg", sample: true, credit: unsplash("Yuliia Pakhomova", "https://unsplash.com/photos/a-cream-colored-fuzzy-sweater-hanging-on-a-hanger-nU5cyclcWuA") },
+  { id: "G04", name: "Denim Jacket", type: "outerwear", color: "blue denim", formality: 1, styles: ["casual", "street"], cut: "boxy, rugged", image: require("../assets/garments/G04.jpg"), imagePath: "assets/garments/G04.jpg", sample: true, credit: unsplash("Caio Coelho", "https://unsplash.com/photos/blue-denim-button-up-jacket-QRN47la37gw") },
+  { id: "G05", name: "Black Bomber Jacket", type: "outerwear", color: "black", formality: 2, styles: ["street", "minimal"], cut: "sporty, cropped", image: require("../assets/garments/G05.jpg"), imagePath: "assets/garments/G05.jpg", sample: true, credit: unsplash("nens love", "https://unsplash.com/photos/a-black-jacket-hanging-on-a-wall-next-to-a-white-chair-3S1feeK3ZJA") },
+  { id: "G06", name: "Beige Overshirt", type: "overshirt", color: "beige", formality: 3, styles: ["casual", "smart"], cut: "relaxed, layering", image: require("../assets/garments/G06.jpg"), imagePath: "assets/garments/G06.jpg", sample: true, credit: unsplash("philippe wehrli", "https://unsplash.com/photos/a-pair-of-jeans-a-jacket-and-a-pair-of-sneakers-are-laid-out-j2Abvzsq8z4") },
 ];
 
 export interface Occasion {
