@@ -192,7 +192,7 @@ CATALOG: [catalog ở mục 3, gửi dạng một dòng JSON]
 [
   {"id":"G01","name":"Navy Blazer","type":"outerwear","color":"navy","formality":4,"styles":["formal","smart"],"cut":"tailored, structured"},
   {"id":"G02","name":"White Oxford Shirt","type":"shirt","color":"white","formality":4,"styles":["formal","minimal"],"cut":"crisp, classic"},
-  {"id":"G03","name":"Cream Cardigan","type":"knitwear","color":"cream","formality":2,"styles":["casual","soft"],"cut":"knit, relaxed"},
+  {"id":"G03","name":"Cream Knit Sweater","type":"knitwear","color":"cream","formality":2,"styles":["casual","soft"],"cut":"knit, relaxed"},
   {"id":"G04","name":"Denim Jacket","type":"outerwear","color":"blue denim","formality":1,"styles":["casual","street"],"cut":"boxy, rugged"},
   {"id":"G05","name":"Black Bomber Jacket","type":"outerwear","color":"black","formality":2,"styles":["street","minimal"],"cut":"sporty, cropped"},
   {"id":"G06","name":"Beige Overshirt","type":"overshirt","color":"beige","formality":3,"styles":["casual","smart"],"cut":"relaxed, layering"}
