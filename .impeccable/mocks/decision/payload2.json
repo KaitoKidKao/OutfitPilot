@@ -1,0 +1,49 @@
+{
+  "title": "OutfitPilot — ván mới: cấu trúc + màu hiện đại",
+  "question": "Theo yêu cầu của bạn, mỗi card giờ đi kèm một bảng màu mới, hiện đại và dễ đọc hơn (tương phản AA). Có thể khóa một card, hoặc dùng steer để ghép cấu trúc này với màu của card khác.",
+  "options": [
+    {
+      "id": "fitting-dock",
+      "kind": "assigned",
+      "label": "Fitting Dock · Fresh White",
+      "kicker": "THE ROLL",
+      "lineage": "Quầy thử đồ có móc treo cố định, chuyển thành dock dưới cùng",
+      "thesis": "Một dock cố định ở cạnh dưới giữ hai móc Look A/B; màn hình nào cũng thao tác bằng ngón cái trên dock đó.",
+      "palette": ["#FFFFFF", "#F4F6F5", "#0F1713", "#C8F169", "#5B6660", "#E3E7E5"],
+      "materials": ["nền trắng sạch", "chữ đen xanh rất đậm", "điểm nhấn lime dịu"],
+      "viewport": "Home nền trắng, headline đậm, thẻ hướng dẫn 3 bước gọn; dock đen dưới cùng có 2 ô móc A/B và nút + Add lime ở giữa.",
+      "risk": "Trắng + đen + lime là phong cách app hiện đại phổ biến; phải giữ ảnh sản phẩm làm nhân vật chính để không thành app tài chính.",
+      "html": ".impeccable/mocks/decision/fitting-dock.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "hanger-rail",
+      "kind": "dealt",
+      "label": "Hanger Rail · Studio Dark",
+      "lineage": "Thanh treo đồ trong phòng thử, ánh đèn studio tối",
+      "thesis": "Home là một thanh treo ngang các món đã thêm; kéo một món vào ô A hoặc B, nền tối để ảnh và camera nổi bật.",
+      "palette": ["#0E1311", "#171E1B", "#212A26", "#F2F5F3", "#D8EFBD", "#9AA59F"],
+      "materials": ["nền than chì", "thẻ nổi xám ấm", "mint giữ lại từ V4"],
+      "viewport": "Nền tối, rail ảnh sản phẩm cuộn ngang ở trên, hai ô A/B lớn ở giữa, nút Set up camera mint neo dưới.",
+      "risk": "Giao diện tối đẹp với camera nhưng các màn nhập liệu và so sánh giá dài sẽ kém thoáng hơn nền sáng.",
+      "html": ".impeccable/mocks/decision/hanger-rail.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "pair-ticket",
+      "kind": "dealt",
+      "label": "Pair Ticket · Mint & Sky",
+      "lineage": "Phiếu thử đồ ghi cặp món, đi theo bạn suốt luồng",
+      "thesis": "Cặp A/B là một phiếu nhỏ đi theo mọi màn hình; Look A luôn là mint, Look B luôn là xanh trời, nên nhìn màu là biết đang thử món nào.",
+      "palette": ["#F3F5F2", "#FFFFFF", "#121A16", "#2F6B4F", "#DDF3C4", "#DCE9FF"],
+      "materials": ["nền xám xanh nhạt", "thẻ trắng bo vừa", "mã màu A mint / B xanh trời"],
+      "viewport": "Phiếu cặp A/B nằm trên cùng, bên dưới là chi tiết món đang chọn với ảnh lớn, tên shop, giá bạn nhập; CTA xanh lục đậm.",
+      "risk": "Hai màu mã hóa A/B phải dùng nhất quán ở mọi màn, nếu không sẽ thành trang trí.",
+      "html": ".impeccable/mocks/decision/pair-ticket.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false }
+}

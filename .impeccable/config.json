@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-09T06:43:26.690Z",
+        "reason": "brief-pinned: DESIGN.md section 3 specifies Inter / system sans; Operate surface"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/fitting-dock.html"
+        ],
+        "createdAt": "2026-11-09T06:43:26.794Z",
+        "reason": "spent decision-round sketch fixture, not shipped UI"
+      }
+    ]
+  }
+}

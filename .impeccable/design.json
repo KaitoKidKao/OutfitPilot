@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-09T00:00:00Z",
+  "title": "Design System: OutfitPilot (React Native / Expo Edition)",
+  "platform": "adaptive",
+  "framework": "react-native-expo",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Paper White", "canonical": "#FFFFFF", "tonalRamp": ["#1F2422", "#3A403D", "#5A605D", "#7D8380", "#A3A8A6", "#C9CDCB", "#EDEFEE", "#FFFFFF"] },
+      "surface": { "role": "neutral", "displayName": "Cool Surface", "canonical": "#F4F6F5", "tonalRamp": ["#1D2421", "#38403C", "#58615C", "#7A847F", "#A0A9A4", "#C7CFCB", "#EAEEEC", "#F4F6F5"] },
+      "surface-deep": { "role": "neutral", "displayName": "Deep Surface", "canonical": "#EAEEEC", "tonalRamp": ["#1D2421", "#38403C", "#58615C", "#7A847F", "#A0A9A4", "#CFD6D2", "#EAEEEC", "#F4F6F5"] },
+      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#E3E7E5", "tonalRamp": ["#1D2421", "#38403C", "#58615C", "#7A847F", "#A0A9A4", "#CFD6D2", "#E3E7E5", "#F4F6F5"] },
+      "ink": { "role": "neutral", "displayName": "Dock Ink", "canonical": "#0F1713", "tonalRamp": ["#0B100E", "#0F1713", "#1E2924", "#2E3A34", "#5B6660", "#A9B3AE", "#E3E7E5", "#F4F6F5"] },
+      "ink-well": { "role": "neutral", "displayName": "Hook Well", "canonical": "#1E2924", "tonalRamp": ["#0B100E", "#0F1713", "#1E2924", "#2E3A34", "#5B6660", "#A9B3AE", "#E3E7E5", "#F4F6F5"] },
+      "ink-line": { "role": "neutral", "displayName": "Hook Hover", "canonical": "#2E3A34", "tonalRamp": ["#0B100E", "#0F1713", "#1E2924", "#2E3A34", "#5B6660", "#A9B3AE", "#E3E7E5", "#F4F6F5"] },
+      "muted": { "role": "neutral", "displayName": "Muted Sage Grey", "canonical": "#5B6660", "tonalRamp": ["#0F1713", "#1E2924", "#2E3A34", "#5B6660", "#7F8A84", "#A9B3AE", "#CFD6D2", "#F4F6F5"] },
+      "muted-dark": { "role": "neutral", "displayName": "Muted On Dark", "canonical": "#A9B3AE", "tonalRamp": ["#0F1713", "#1E2924", "#2E3A34", "#5B6660", "#7F8A84", "#A9B3AE", "#CFD6D2", "#F4F6F5"] },
+      "lime": { "role": "primary", "displayName": "Fitting Lime", "canonical": "#C8F169", "tonalRamp": ["#22300A", "#3F5A12", "#5C821C", "#86B42F", "#B6E34F", "#C8F169", "#DDF6A3", "#EEF9DA"] },
+      "lime-press": { "role": "primary", "displayName": "Lime Press", "canonical": "#B6E34F", "tonalRamp": ["#22300A", "#3F5A12", "#5C821C", "#86B42F", "#B6E34F", "#C8F169", "#DDF6A3", "#EEF9DA"] },
+      "lime-soft": { "role": "primary", "displayName": "Lime Soft", "canonical": "#EEF9DA", "tonalRamp": ["#22300A", "#3F5A12", "#5C821C", "#86B42F", "#B6E34F", "#C8F169", "#DDF6A3", "#EEF9DA"] },
+      "lime-ink": { "role": "primary", "displayName": "Lime Ink", "canonical": "#3F5A12", "tonalRamp": ["#22300A", "#3F5A12", "#5C821C", "#86B42F", "#B6E34F", "#C8F169", "#DDF6A3", "#EEF9DA"] },
+      "studio": { "role": "neutral", "displayName": "Studio Black", "canonical": "#0B100E", "tonalRamp": ["#0B100E", "#0F1713", "#1C2A23", "#2E3A34", "#5B6660", "#A9B3AE", "#E3E7E5", "#F4F6F5"] },
+      "danger": { "role": "semantic", "displayName": "Danger Red", "canonical": "#B42318", "tonalRamp": ["#3D0C08", "#6E160F", "#912016", "#B42318", "#D9554A", "#EE9A93", "#F8CFCB", "#FDECEA"] },
+      "danger-soft": { "role": "semantic", "displayName": "Danger Soft", "canonical": "#FDECEA", "tonalRamp": ["#3D0C08", "#6E160F", "#912016", "#B42318", "#D9554A", "#EE9A93", "#F8CFCB", "#FDECEA"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Headline màn Choose Occasion (Inter 800, 36–40pt, tracking -0.04em)." },
+      "headline": { "displayName": "Headline", "purpose": "Tiêu đề màn AI Picks và Final Look (28pt, 800)." },
+      "title": { "displayName": "Title", "purpose": "Tên sản phẩm trong look đang chọn; 20pt cho tiêu đề nhóm; TopBar 17pt/600." },
+      "section": { "displayName": "Section", "purpose": "Tiêu đề phần như 'Your Recommendations' hoặc 'Style Details'." },
+      "body": { "displayName": "Body", "purpose": "Đoạn lý do phục trang (reason), tối đa 25 từ, 15pt/400." },
+      "body-sm": { "displayName": "Body small", "purpose": "Dòng phụ tiếng Việt, gợi ý phối đồ (pairWith), 13pt/400." },
+      "label": { "displayName": "Label", "purpose": "Nhãn nút, chip hoàn cảnh, nhãn tabular facts (13pt/600)." },
+      "studio-numeral": { "displayName": "Studio numeral", "purpose": "Chữ A/B và đếm ngược trong Live Fitting Room, đọc từ 1.5–2m (112–132pt)." }
+    },
+    "shadows": [
+      { 
+        "name": "dock", 
+        "ios": { "shadowColor": "#0F1713", "shadowOffset": { "width": 0, "height": 12 }, "shadowOpacity": 0.35, "shadowRadius": 16 },
+        "android": { "elevation": 12 },
+        "purpose": "Thân dock, toast, thẻ look nổi trên video Studio." 
+      },
+      { 
+        "name": "lift", 
+        "ios": { "shadowColor": "#0F1713", "shadowOffset": { "width": 0, "height": 6 }, "shadowOpacity": 0.18, "shadowRadius": 9 },
+        "android": { "elevation": 4 },
+        "purpose": "Thẻ hoàn cảnh đang chọn; thẻ Look A/B nổi bật." 
+      }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "Easing.bezier(0.16, 1, 0.3, 1)", "purpose": "Đường cong cho mọi chuyển động Reanimated." },
+      { "name": "press", "value": "withSpring(0.96)", "purpose": "Hiệu ứng co nhẹ khi nhấn nút giữa dock hoặc thẻ." },
+      { "name": "hang", "value": "520ms; withSequence translateY(-14) rotate(-7deg) -> rotate(3deg) -> 0", "purpose": "Thumbnail đung đưa vào móc dock khi món đổi." },
+      { "name": "rise", "value": "360ms; withTiming translateY(8 -> 0), opacity(0 -> 1)", "purpose": "Nội dung mới, toast xuất hiện." },
+      { "name": "reduced-motion", "value": "useReducedMotion() check", "purpose": "Tôn trọng AccessibilityInfo.isReduceMotionEnabled trên iOS và Android." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Fitting Dock",
+      "kind": "nav",
+      "refersTo": "dock",
+      "description": "Dock đen bo tròn 30px cố định đáy màn hình, chứa Hook Look A, nút giữa hành động tiếp theo, Hook Look B.",
+      "reactNative": "FittingDock Component",
+      "styles": {
+        "dockContainer": {
+          "position": "absolute",
+          "bottom": 16,
+          "left": 16,
+          "right": 16,
+          "flexDirection": "row",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": 10,
+          "borderRadius": 30,
+          "backgroundColor": "#0F1713"
+        },
+        "hook": {
+          "flex": 1,
+          "height": 76,
+          "borderRadius": 22,
+          "backgroundColor": "#1E2924",
+          "flexDirection": "row",
+          "alignItems": "center",
+          "paddingHorizontal": 10
+        },
+        "hookLit": {
+          "backgroundColor": "#C8F169"
+        },
+        "centerButton": {
+          "width": 64,
+          "height": 64,
+          "borderRadius": 22,
+          "backgroundColor": "#C8F169",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "marginHorizontal": 8
+        }
+      }
+    },
+    {
+      "name": "Next Action Button",
+      "kind": "button",
+      "refersTo": "button-next",
+      "description": "Nút lime hành động chính (Style Me, Set up camera, Start Fitting).",
+      "reactNative": "Pressable Component",
+      "styles": {
+        "button": {
+          "height": 52,
+          "paddingHorizontal": 20,
+          "borderRadius": 16,
+          "backgroundColor": "#C8F169",
+          "flexDirection": "row",
+          "alignItems": "center",
+          "justifyContent": "center"
+        },
+        "text": {
+          "fontFamily": "Inter-SemiBold",
+          "fontSize": 15,
+          "color": "#0F1713"
+        }
+      }
+    },
+    {
+      "name": "Occasion Card",
+      "kind": "card",
+      "refersTo": "card-occasion",
+      "description": "Thẻ bấm chọn hoàn cảnh (Job Interview, Campus Day, Coffee Date) bo 20px.",
+      "reactNative": "Pressable Card",
+      "styles": {
+        "card": {
+          "padding": 18,
+          "borderRadius": 20,
+          "backgroundColor": "#FFFFFF",
+          "borderWidth": 1,
+          "borderColor": "#E3E7E5",
+          "marginBottom": 12
+        },
+        "cardSelected": {
+          "borderColor": "#0F1713",
+          "backgroundColor": "#FFFFFF"
+        }
+      }
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Thông báo ngắn nổi ở đỉnh màn hình dưới safe-area.",
+      "reactNative": "Toast View",
+      "styles": {
+        "toastContainer": {
+          "paddingVertical": 10,
+          "paddingHorizontal": 18,
+          "borderRadius": 9999,
+          "backgroundColor": "#0F1713"
+        },
+        "toastText": {
+          "fontFamily": "Inter-Medium",
+          "fontSize": 14,
+          "color": "#FFFFFF"
+        }
+      }
+    }
+  ],
+  "narrative": {
+    "northStar": "The Fitting Dock · Mobile App (React Native + Expo)",
+    "overview": "OutfitPilot là ứng dụng phòng thử đồ thời trang trực tiếp trên di động (iOS + Android), tập trung vào hành trình 5 màn hình tinh gọn cho Hackathon:\n1. Choose Occasion (Chọn dịp trang phục)\n2. AI Picks (Gợi ý Look A & B từ LLM Stylist)\n3. Camera Setup (Căn góc 1.5m, cấp quyền camera, bảo mật riêng tư)\n4. Live Fitting Room (Decart Lucy VTON 3.6 WebRTC realtime video)\n5. Final Look (So sánh A/B và chốt outfit ưng ý lưu vào máy).\n\nThiết kế xoay quanh Fitting Dock ở đáy màn hình, màu sắc Fresh White (nền trắng Paper, chữ xanh-đen Ink, điểm nhấn xanh chanh Lime độc tôn cho hành động tiếp theo).",
+    "keyCharacteristics": [
+      "Fitting Dock đen bo 30px cố định đáy màn hình, chứa Hook Look A, nút giữa và Hook Look B.",
+      "Bảng màu Fresh White tối giản, không gradient rực rỡ, chữ Inter với tabular numbers.",
+      "Hành trình 5 màn hình tuyến tính không rào cản đăng nhập, không database server.",
+      "Phòng thử đồ Live Fitting Room toàn màn hình với Decart Lucy VTON WebRTC và đếm ngược tối đa 120s.",
+      "Tối ưu accessibility (VoiceOver, TalkBack, touch targets >= 44x44pt)."
+    ],
+    "rules": [
+      { "name": "The Lime Means Next Rule", "body": "Lime chỉ dành cho việc cần làm tiếp theo và look đang được chọn/giữ. Mỗi màn hình có đúng một hành động lime chính; không dùng lime làm màu trang trí hay gradient.", "section": "colors" },
+      { "name": "The Ink Dock Rule", "body": "Dock luôn là khối `ink` đặc (#0F1713), lòng móc dùng `ink-well` (#1E2924). Không đổi dock sang màu sáng hoặc trong suốt.", "section": "colors" },
+      { "name": "The Dark Room Exception", "body": "Chỉ Live Fitting Room dùng nền tối (`studio`: #0B100E) cho video. Ở đó các nút phụ là pill trắng, focus ring chuyển sang lime.", "section": "colors" },
+      { "name": "The Tabular Facts Rule", "body": "Giá, số đếm, số giây và số thứ tự bước luôn dùng chữ số tabular (`fontVariant: ['tabular-nums']`).", "section": "typography" },
+      { "name": "The Dashed Means Empty Rule", "body": "Nét đứt chỉ có nghĩa 'chỗ này đang trống, chạm để thêm'. Không dùng nét đứt để trang trí.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do giữ Fitting Dock ở đáy mọi màn hình, móc A bên trái, B bên phải, hành động chính ở giữa.",
+      "Do dùng đúng một hành động lime chính mỗi màn hình.",
+      "Do đặt ảnh sản phẩm tỉ lệ 4:5 làm nhân vật chính.",
+      "Do dùng StyleSheet và các nguyên lý giao diện chuẩn của React Native.",
+      "Do tôn trọng vùng an toàn safe-area trên và dưới bằng react-native-safe-area-context."
+    ],
+    "donts": [
+      "Don't dùng lime làm màu nền section hay trang trí.",
+      "Don't làm dock sáng màu hoặc trong suốt.",
+      "Don't dùng nền tối ngoài Live Fitting Room.",
+      "Don't tự ý thêm hiệu ứng đổ bóng cho các thẻ nằm phẳng trên nền trắng."
+    ]
+  }
+}

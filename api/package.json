@@ -1,0 +1,30 @@
+{
+  "name": "outfitpilot-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OutfitPilot backend: Hono API for Vercel (/api/health, /api/style, /api/realtime-token)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/local.ts",
+    "dev:vercel": "npx vercel@65.12.1 dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy": "npx vercel@65.12.1 --prod"
+  },
+  "dependencies": {
+    "hono": "4.13.17",
+    "openai": "7.53.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@hono/node-server": "2.1.6",
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  }
+}

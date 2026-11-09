@@ -1,0 +1,49 @@
+{
+  "title": "OutfitPilot — chọn cấu trúc app",
+  "question": "Bộ nhận diện V4 giữ nguyên. Ba cấu trúc dưới đây khác nhau ở cách luồng Import → Select → Set up → Try → Decide được tổ chức. Khóa một để mình build đủ 6 màn hình.",
+  "options": [
+    {
+      "id": "fitting-edit",
+      "kind": "assigned",
+      "label": "The Fitting Edit — chữ A/B làm mục lục",
+      "kicker": "THE ROLL",
+      "lineage": "Trang bìa và trang đôi tạp chí thời trang, chuyển thành app",
+      "thesis": "Hai chữ A và B khổ lớn là mục lục của cả app: thẻ ảnh ở Home, nút chuyển trong Studio, tiêu đề cột ở Decision.",
+      "palette": ["#162820", "#D8EFBD", "#F8F8F3", "#FFFFFF", "#E9EBE4", "#6F856E"],
+      "materials": ["ảnh sản phẩm cắt toàn khung", "hairline #E9EBE4", "Inter kích thước lớn"],
+      "viewport": "Home: headline lớn phía trên, hai ảnh Look A/B đứng cạnh nhau có chữ A/B 96px, nút Add a product mint và My looks neo cuối màn hình; điều hướng tuyến tính với nhãn bước 02/05.",
+      "risk": "Không có tab bar: Saved Looks chỉ vào được từ Home và cuối luồng, ít quen hơn với người hay nhảy giữa các mục.",
+      "html": ".impeccable/mocks/decision/fitting-edit.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "five-step-route",
+      "kind": "dealt",
+      "label": "Five-Step Route — thanh hành trình cố định",
+      "lineage": "Wizard checkout di động, bỏ phần giỏ hàng",
+      "thesis": "Thanh hành trình 5 chặng luôn nằm trên đầu, mỗi màn hình đúng một CTA neo dưới; tab bar Home / Looks / Saved.",
+      "palette": ["#162820", "#D8EFBD", "#F8F8F3", "#FFFFFF", "#E9EBE4", "#6F856E"],
+      "materials": ["thẻ trắng viền mảnh", "chip cặp A+B", "thanh tiến trình mint"],
+      "viewport": "Thanh 5 chặng phía trên kèm chip thumbnail A+B, vùng nội dung là hai ô sản phẩm, CTA tối màu toàn chiều rộng phía trên tab bar.",
+      "risk": "Quen thuộc và dễ dùng nhất, nhưng cũng là bố cục mà phần lớn app cùng loại đều dùng.",
+      "html": ".impeccable/mocks/decision/five-step-route.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "mirror-first",
+      "kind": "dealt",
+      "label": "The Mirror — camera là màn hình chính",
+      "lineage": "Gương phòng thử đồ: mọi thứ khác chỉ là tấm rèm kéo lên",
+      "thesis": "App mở thẳng vào gương (camera preview); Import, Decision và Saved là các sheet kéo lên trên gương với nhiều nấc.",
+      "palette": ["#162820", "#192E25", "#D8EFBD", "#F8F8F3", "#FFFFFF", "#6F856E"],
+      "materials": ["khung video toàn màn hình", "bottom sheet nền kem", "nhãn trạng thái AI OFF"],
+      "viewport": "Khung gương tối chiếm toàn màn hình có khung người hướng dẫn, nhãn Camera preview · AI OFF ở trên, sheet nửa màn hình với hai ô Look A/B và nút Start fitting.",
+      "risk": "Phải xử lý tốt trạng thái chưa cấp quyền camera ngay ở màn hình đầu; người mới có thể thấy quá đột ngột.",
+      "html": ".impeccable/mocks/decision/mirror-first.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false }
+}
