@@ -2,8 +2,9 @@
 // Thiết kế 100% Mobile Native theo ngôn ngữ "Fitting Dock · Fresh White" (DESIGN.md)
 // - Native Bottom Sheet (vuốt xuống để đóng, có drag handle trên Android/iOS)
 // - Segmented Control phẳng tối giản (Tất cả / Đã có / Wishlist)
-// - Ảnh trang phục Hero 4:5 bo góc chuẩn OutfitPilot (không đóng khung viền web)
-// - Chạm mở Action Sheet trượt đáy để treo nhanh lên Móc A / Móc B hoặc xem phối đồ
+// - Thanh chọn phân loại (Category) cố định chiều cao, không bị đè hay cắt nửa
+// - Thẻ sản phẩm Hero Photo 4:5 bo góc chuẩn OutfitPilot (không đóng khung viền web)
+// - Chạm mở Action Sheet trượt đáy chuẩn mobile (nút màu sắc rực rỡ, không bị mất nền)
 // - Thêm món mới từ Camera hoặc Thư viện ảnh với form mobile thoáng sạch
 
 import * as ImagePicker from "expo-image-picker";
@@ -17,7 +18,7 @@ import {
   Trash2,
   X,
 } from "lucide-react-native";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Image,
@@ -33,6 +34,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Chip, IconButton, Touchable } from "@/components/ui";
 import { GarmentImage } from "@/components/ui/GarmentImage";
+import type { GarmentId } from "@/lib/catalog";
 import {
   ClosetCategory,
   ClosetItem,
@@ -159,6 +161,8 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
         <View style={styles.headerActions}>
           <Touchable
             onPress={() => setAddSheetOpen(true)}
+            bg={colors.lime}
+            pressedBg={colors.limePress}
             style={styles.addBtn}
             accessibilityLabel={tr(locale, "Add piece", "Thêm món mới")}
           >
@@ -175,14 +179,16 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
       <View style={styles.segmented}>
         <Touchable
           onPress={() => setStatusFilter("all")}
+          bg={statusFilter === "all" ? colors.paper : "transparent"}
           style={[styles.segmentBtn, statusFilter === "all" && styles.segmentBtnActive]}
         >
           <AppText variant="caption" weight={statusFilter === "all" ? 800 : 500} tone={statusFilter === "all" ? "ink" : "muted"}>
-            {tr(locale, "All", "Tất cả")} ({items.length})
+            {tr(locale, "All", "Tất cả")}
           </AppText>
         </Touchable>
         <Touchable
           onPress={() => setStatusFilter("owned")}
+          bg={statusFilter === "owned" ? colors.paper : "transparent"}
           style={[styles.segmentBtn, statusFilter === "owned" && styles.segmentBtnActive]}
         >
           <AppText variant="caption" weight={statusFilter === "owned" ? 800 : 500} tone={statusFilter === "owned" ? "ink" : "muted"}>
@@ -191,6 +197,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
         </Touchable>
         <Touchable
           onPress={() => setStatusFilter("wishlist")}
+          bg={statusFilter === "wishlist" ? colors.paper : "transparent"}
           style={[styles.segmentBtn, statusFilter === "wishlist" && styles.segmentBtnActive]}
         >
           <AppText variant="caption" weight={statusFilter === "wishlist" ? 800 : 500} tone={statusFilter === "wishlist" ? "ink" : "muted"}>
@@ -199,34 +206,46 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
         </Touchable>
       </View>
 
-      {/* Clean Category Chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
-        <Chip
-          label={tr(locale, "All categories", "Tất cả loại")}
-          selected={categoryFilter === "all"}
-          onPress={() => setCategoryFilter("all")}
-        />
-        <Chip
-          label={tr(locale, "Outerwear", "Áo khoác")}
-          selected={categoryFilter === "outerwear"}
-          onPress={() => setCategoryFilter("outerwear")}
-        />
-        <Chip
-          label={tr(locale, "Tops & Shirts", "Sơ mi & Áo thun")}
-          selected={categoryFilter === "top"}
-          onPress={() => setCategoryFilter("top")}
-        />
-        <Chip
-          label={tr(locale, "Knitwear", "Áo len")}
-          selected={categoryFilter === "knitwear"}
-          onPress={() => setCategoryFilter("knitwear")}
-        />
-        <Chip
-          label={tr(locale, "Pants", "Quần (10 mẫu)")}
-          selected={categoryFilter === "pants"}
-          onPress={() => setCategoryFilter("pants")}
-        />
-      </ScrollView>
+      {/* Clean Category Chips with dedicated container */}
+      <View style={styles.categoryContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          contentContainerStyle={styles.categoryRow}
+        >
+          <Chip
+            label={tr(locale, "All categories", "Tất cả loại")}
+            selected={categoryFilter === "all"}
+            onPress={() => setCategoryFilter("all")}
+            style={styles.categoryChip}
+          />
+          <Chip
+            label={tr(locale, "Outerwear", "Áo khoác")}
+            selected={categoryFilter === "outerwear"}
+            onPress={() => setCategoryFilter("outerwear")}
+            style={styles.categoryChip}
+          />
+          <Chip
+            label={tr(locale, "Tops & Shirts", "Sơ mi & Áo thun")}
+            selected={categoryFilter === "top"}
+            onPress={() => setCategoryFilter("top")}
+            style={styles.categoryChip}
+          />
+          <Chip
+            label={tr(locale, "Knitwear", "Áo len")}
+            selected={categoryFilter === "knitwear"}
+            onPress={() => setCategoryFilter("knitwear")}
+            style={styles.categoryChip}
+          />
+          <Chip
+            label={tr(locale, "Pants", "Quần (10 mẫu)")}
+            selected={categoryFilter === "pants"}
+            onPress={() => setCategoryFilter("pants")}
+            style={styles.categoryChip}
+          />
+        </ScrollView>
+      </View>
 
       {/* Hero Photo Grid */}
       <ScrollView
@@ -247,7 +266,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
               accessibilityLabel={`${item.nameVi || item.name}. Tap to hang or view advice.`}
             >
               <View style={styles.cardPhotoWrapper}>
-                <GarmentImage garmentId={item.id} radius={radii.card} aspectRatio={4 / 5} />
+                <GarmentImage garmentId={item.id} radius={radii.card} aspectRatio={4 / 5} showSampleTag={false} />
 
                 {/* Status Badges */}
                 <View style={styles.cardBadges}>
@@ -257,11 +276,11 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                         {tr(locale, "Wishlist", "Ngắm mua")}
                       </AppText>
                     </View>
-                  ) : null}
+                  ) : <View />}
 
                   {(isHookA || isHookB) && (
                     <View style={[styles.badgeHook, isHookA ? styles.badgeHookA : styles.badgeHookB]}>
-                      <AppText variant="caption" tone="paper" weight={800}>
+                      <AppText variant="caption" tone={isHookA ? "ink" : "paper"} weight={800}>
                         {isHookA ? "LOOK A" : "LOOK B"}
                       </AppText>
                     </View>
@@ -308,7 +327,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
         </Modal>
       )}
 
-      {/* Item Action Sheet (Slide up from bottom) */}
+      {/* Item Action Sheet (Slide up from bottom - Strictly Constrained Mobile Format) */}
       {activeItem && (
         <Modal visible transparent animationType="slide" onRequestClose={() => setActiveItem(null)}>
           <View style={styles.actionSheetBackdrop}>
@@ -319,9 +338,10 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             <View style={[styles.actionSheet, { paddingBottom: insets.bottom + 20 }]}>
               <View style={styles.handle} />
 
+              {/* Product Header */}
               <View style={styles.actionHead}>
                 <View style={styles.actionHeadThumb}>
-                  <GarmentImage garmentId={activeItem.id} width={70} radius={radii.md} aspectRatio={4 / 5} />
+                  <GarmentImage garmentId={activeItem.id} width={76} radius={radii.md} aspectRatio={4 / 5} showSampleTag={false} />
                 </View>
                 <View style={styles.actionHeadMeta}>
                   <AppText variant="title" numberOfLines={2}>
@@ -333,15 +353,22 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                       : tr(locale, "In your wishlist", "Đang trong danh sách ngắm mua")}
                     {activeItem.price ? ` · ${activeItem.price}` : ""}
                   </AppText>
+                  {activeItem.shop ? (
+                    <AppText variant="caption" tone="muted">
+                      {activeItem.shop}
+                    </AppText>
+                  ) : null}
                 </View>
                 <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setActiveItem(null)} variant="quiet" />
               </View>
 
-              {/* Primary Actions: Hang on Hook A / Hook B */}
+              {/* Primary Actions: Hang on Hook A / Hook B with vibrant solid backgrounds */}
               <View style={styles.hangActionsRow}>
                 <Touchable
                   onPress={() => handleHangOnHook("a", activeItem)}
-                  style={[styles.hangActionBtn, styles.hangActionBtnA]}
+                  bg={colors.lime}
+                  pressedBg={colors.limePress}
+                  style={styles.hangActionBtnA}
                 >
                   <AppText variant="label" weight={800} tone="ink">
                     {tr(locale, "⚡ Hang on Look A", "⚡ Treo vào Look A")}
@@ -353,7 +380,9 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
 
                 <Touchable
                   onPress={() => handleHangOnHook("b", activeItem)}
-                  style={[styles.hangActionBtn, styles.hangActionBtnB]}
+                  bg={colors.ink}
+                  pressedBg={colors.inkWell}
+                  style={styles.hangActionBtnB}
                 >
                   <AppText variant="label" weight={800} tone="paper">
                     {tr(locale, "⚡ Hang on Look B", "⚡ Treo vào Look B")}
@@ -379,7 +408,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                 </View>
               ) : null}
 
-              {/* Matching Pants from Closet */}
+              {/* Matching Pants from Closet with Visible Garment Photos */}
               {matchingPants.length > 0 ? (
                 <View style={styles.matchingBox}>
                   <AppText variant="caption" weight={700} tone="ink">
@@ -388,9 +417,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchingScroll}>
                     {matchingPants.map((p) => (
                       <View key={p.id} style={styles.matchingPill}>
-                        {p.image ? (
-                          <Image source={typeof p.image === "number" ? p.image : { uri: p.image }} style={styles.matchingThumb} />
-                        ) : null}
+                        <GarmentImage garmentId={p.id as GarmentId} width={38} aspectRatio={4 / 5} radius={6} showSampleTag={false} />
                         <View style={styles.matchingPillText}>
                           <AppText variant="caption" weight={700} numberOfLines={1}>
                             {locale === "vi" ? p.nameVi : p.name}
@@ -413,6 +440,8 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                     updateItem(activeItem.id, { status: next });
                     setActiveItem({ ...activeItem, status: next });
                   }}
+                  bg={colors.surface}
+                  pressedBg={colors.surfaceDeep}
                   style={styles.switchStatusBtn}
                 >
                   <Tag size={14} color={colors.ink} />
@@ -442,6 +471,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                         ]
                       );
                     }}
+                    bg={colors.dangerSoft}
                     style={styles.deleteActionBtn}
                   >
                     <Trash2 size={16} color={colors.danger} />
@@ -476,7 +506,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                 {newImageUri ? (
                   <View style={styles.newPhotoPreview}>
                     <Image source={{ uri: newImageUri }} style={styles.previewImage} />
-                    <Touchable onPress={() => setNewImageUri(null)} style={styles.changePhotoBtn}>
+                    <Touchable onPress={() => setNewImageUri(null)} bg={colors.surfaceDeep} style={styles.changePhotoBtn}>
                       <AppText variant="caption" weight={700}>
                         {tr(locale, "Change photo", "Chọn lại ảnh")}
                       </AppText>
@@ -484,7 +514,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                   </View>
                 ) : (
                   <View style={styles.photoPickRow}>
-                    <Touchable onPress={() => void pickImage(true)} style={styles.photoPickBtn}>
+                    <Touchable onPress={() => void pickImage(true)} bg={colors.surface} style={styles.photoPickBtn}>
                       <Camera size={24} color={colors.ink} strokeWidth={2} />
                       <AppText variant="label" weight={700}>
                         {tr(locale, "Take Photo", "Chụp ảnh")}
@@ -494,7 +524,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                       </AppText>
                     </Touchable>
 
-                    <Touchable onPress={() => void pickImage(false)} style={styles.photoPickBtn}>
+                    <Touchable onPress={() => void pickImage(false)} bg={colors.surface} style={styles.photoPickBtn}>
                       <ImageIcon size={24} color={colors.ink} strokeWidth={2} />
                       <AppText variant="label" weight={700}>
                         {tr(locale, "Photo Library", "Thư viện ảnh")}
@@ -535,6 +565,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                         }
                         selected={newCategory === cat}
                         onPress={() => setNewCategory(cat)}
+                        style={styles.formChip}
                       />
                     ))}
                   </View>
@@ -545,14 +576,16 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                     <AppText variant="label">{tr(locale, "Status", "Trạng thái")}</AppText>
                     <View style={styles.statusChipRow}>
                       <Chip
-                        label={tr(locale, "Wishlist", "Đang ngắm mua")}
+                        label={tr(locale, "Wishlist", "Đang ngắm")}
                         selected={newStatus === "wishlist"}
                         onPress={() => setNewStatus("wishlist")}
+                        style={styles.formChip}
                       />
                       <Chip
-                        label={tr(locale, "In Closet", "Đã có trong tủ")}
+                        label={tr(locale, "In Closet", "Đã có")}
                         selected={newStatus === "owned"}
                         onPress={() => setNewStatus("owned")}
+                        style={styles.formChip}
                       />
                     </View>
                   </View>
@@ -592,7 +625,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                 </View>
 
                 {/* Save Button */}
-                <Touchable onPress={handleSaveNewItem} style={styles.saveBtn}>
+                <Touchable onPress={handleSaveNewItem} bg={colors.lime} pressedBg={colors.limePress} style={styles.saveBtn}>
                   <Check size={18} color={colors.ink} strokeWidth={2.5} />
                   <AppText variant="label" weight={800} tone="ink">
                     {tr(locale, "Save to Closet", "Lưu vào Tủ đồ")}
@@ -621,7 +654,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.gutter,
   },
   sheetFloating: {
-    maxHeight: "90%",
+    maxHeight: "92%",
     borderTopLeftRadius: radii.dock,
     borderTopRightRadius: radii.dock,
     paddingTop: 10,
@@ -655,7 +688,6 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.lime,
     paddingHorizontal: 12,
     height: 36,
     borderRadius: radii.full,
@@ -676,12 +708,29 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   segmentBtnActive: {
-    backgroundColor: colors.paper,
     ...shadows.lift,
   },
+  categoryContainer: {
+    height: 44,
+    marginBottom: 14,
+  },
+  categoryScroll: {
+    flexGrow: 0,
+    height: 44,
+  },
   categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    paddingBottom: 14,
+    paddingRight: spacing.gutter,
+  },
+  categoryChip: {
+    height: 40,
+    minHeight: 40,
+  },
+  formChip: {
+    height: 38,
+    minHeight: 38,
   },
   gridScroll: {
     flexGrow: 1,
@@ -712,6 +761,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    zIndex: 10,
   },
   badgeWishlist: {
     backgroundColor: colors.lime,
@@ -744,7 +794,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radii.dock,
     borderTopRightRadius: radii.dock,
     paddingHorizontal: spacing.gutter,
-    paddingTop: 10,
+    paddingTop: 12,
+    width: "100%",
+    maxWidth: 440,
+    alignSelf: "center",
     gap: 14,
     ...shadows.dock,
   },
@@ -756,6 +809,7 @@ const styles = StyleSheet.create({
   actionHeadThumb: {
     borderRadius: radii.md,
     overflow: "hidden",
+    backgroundColor: colors.surface,
   },
   actionHeadMeta: {
     flex: 1,
@@ -765,7 +819,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
-  hangActionBtn: {
+  hangActionBtnA: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 12,
@@ -774,11 +828,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 2,
   },
-  hangActionBtnA: {
-    backgroundColor: colors.lime,
-  },
   hangActionBtnB: {
-    backgroundColor: colors.ink,
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: radii.card,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
   },
   adviceBox: {
     flexDirection: "row",
@@ -812,12 +869,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
   },
-  matchingThumb: {
-    width: 32,
-    height: 40,
-    borderRadius: 6,
-    backgroundColor: colors.surfaceDeep,
-  },
   matchingPillText: {
     maxWidth: 120,
     justifyContent: "center",
@@ -838,13 +889,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: radii.full,
-    backgroundColor: colors.surface,
   },
   deleteActionBtn: {
     width: 38,
     height: 38,
     borderRadius: radii.full,
-    backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -853,7 +902,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radii.dock,
     borderTopRightRadius: radii.dock,
     paddingHorizontal: spacing.gutter,
-    paddingTop: 10,
+    paddingTop: 12,
+    width: "100%",
+    maxWidth: 440,
+    alignSelf: "center",
     maxHeight: "90%",
     ...shadows.dock,
   },
@@ -874,7 +926,6 @@ const styles = StyleSheet.create({
   photoPickBtn: {
     flex: 1,
     aspectRatio: 1.15,
-    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderStyle: "dashed",
     borderColor: colors.line,
@@ -897,7 +948,6 @@ const styles = StyleSheet.create({
   changePhotoBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: colors.surfaceDeep,
     borderRadius: radii.full,
   },
   fieldGroup: {
@@ -932,7 +982,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.lime,
     height: 52,
     borderRadius: radii.lg,
     gap: 8,
