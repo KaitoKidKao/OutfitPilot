@@ -39,6 +39,7 @@ import type { GarmentId } from "@/lib/catalog";
 import {
   ClosetCategory,
   ClosetItem,
+  GenderFilter,
   OwnershipStatus,
   useCloset,
 } from "@/lib/closet";
@@ -63,6 +64,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
 
   const hasBothHooks = hookIds[0] !== null && hookIds[1] !== null;
 
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
   const [statusFilter, setStatusFilter] = useState<OwnershipStatus>("all");
   const [categoryFilter, setCategoryFilter] = useState<ClosetCategory>("all");
   const [activeItem, setActiveItem] = useState<ClosetItem | null>(null);
@@ -79,8 +81,15 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
   const [newFitAdvice, setNewFitAdvice] = useState("");
 
   const filteredItems = items.filter((it) => {
+    if (genderFilter !== "all") {
+      const itGender = it.gender ?? (it.id.startsWith("W") ? "women" : "men");
+      if (itGender !== genderFilter && itGender !== "unisex") return false;
+    }
     if (statusFilter !== "all" && it.status !== statusFilter) return false;
-    if (categoryFilter !== "all" && it.category !== categoryFilter) return false;
+    if (categoryFilter !== "all") {
+      if (categoryFilter === "dress" && (it.category === "dress" || it.category === "skirt")) return true;
+      if (it.category !== categoryFilter) return false;
+    }
     return true;
   });
 
@@ -179,6 +188,37 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
         </View>
       </View>
 
+      {/* Gender Switcher (Bộ sưu tập Nam & Nữ) */}
+      <View style={styles.genderRow}>
+        <Touchable
+          onPress={() => setGenderFilter("all")}
+          bg={genderFilter === "all" ? colors.ink : colors.surface}
+          style={[styles.genderChip, genderFilter === "all" && styles.genderChipActive]}
+        >
+          <AppText variant="caption" weight={700} tone={genderFilter === "all" ? "paper" : "ink"}>
+            {tr(locale, "All", "Tất cả")} ({items.length})
+          </AppText>
+        </Touchable>
+        <Touchable
+          onPress={() => setGenderFilter("women")}
+          bg={genderFilter === "women" ? colors.ink : colors.surface}
+          style={[styles.genderChip, genderFilter === "women" && styles.genderChipActive]}
+        >
+          <AppText variant="caption" weight={700} tone={genderFilter === "women" ? "paper" : "ink"}>
+            👗 {tr(locale, "Women", "Đồ Nữ")}
+          </AppText>
+        </Touchable>
+        <Touchable
+          onPress={() => setGenderFilter("men")}
+          bg={genderFilter === "men" ? colors.ink : colors.surface}
+          style={[styles.genderChip, genderFilter === "men" && styles.genderChipActive]}
+        >
+          <AppText variant="caption" weight={700} tone={genderFilter === "men" ? "paper" : "ink"}>
+            👔 {tr(locale, "Men", "Đồ Nam")}
+          </AppText>
+        </Touchable>
+      </View>
+
       {/* Native Segmented Control */}
       <View style={styles.segmented}>
         <Touchable
@@ -187,7 +227,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
           style={[styles.segmentBtn, statusFilter === "all" && styles.segmentBtnActive]}
         >
           <AppText variant="caption" weight={statusFilter === "all" ? 800 : 500} tone={statusFilter === "all" ? "ink" : "muted"}>
-            {tr(locale, "All", "Tất cả")}
+            {tr(locale, "All status", "Tất cả")}
           </AppText>
         </Touchable>
         <Touchable
@@ -225,13 +265,19 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             style={styles.categoryChip}
           />
           <Chip
+            label={tr(locale, "Dresses & Skirts", "Đầm & Váy")}
+            selected={categoryFilter === "dress"}
+            onPress={() => setCategoryFilter("dress")}
+            style={styles.categoryChip}
+          />
+          <Chip
             label={tr(locale, "Outerwear", "Áo khoác")}
             selected={categoryFilter === "outerwear"}
             onPress={() => setCategoryFilter("outerwear")}
             style={styles.categoryChip}
           />
           <Chip
-            label={tr(locale, "Tops & Shirts", "Sơ mi & Áo thun")}
+            label={tr(locale, "Tops & Shirts", "Áo kiểu & Thun")}
             selected={categoryFilter === "top"}
             onPress={() => setCategoryFilter("top")}
             style={styles.categoryChip}
@@ -243,7 +289,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             style={styles.categoryChip}
           />
           <Chip
-            label={tr(locale, "Pants", "Quần (10 mẫu)")}
+            label={tr(locale, "Pants", "Quần")}
             selected={categoryFilter === "pants"}
             onPress={() => setCategoryFilter("pants")}
             style={styles.categoryChip}
@@ -717,6 +763,23 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radii.full,
     gap: 4,
+  },
+  genderRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  genderChip: {
+    flex: 1,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  genderChipActive: {
+    borderColor: colors.ink,
   },
   segmented: {
     flexDirection: "row",
