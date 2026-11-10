@@ -89,13 +89,22 @@ export class ApiError extends Error {
 // that exact form (no destructuring, no bracket access).
 const RAW_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
+const OCTET = "(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
+/** http://<localhost | 127.0.0.1 | 10/8 | 172.16/12 | 192.168/16>[:port][/path] */
+const LAN_HTTP_URL = new RegExp(
+  `^http://(?:localhost|127\\.0\\.0\\.1|10\\.${OCTET}\\.${OCTET}\\.${OCTET}|172\\.(?:1[6-9]|2\\d|3[01])\\.${OCTET}\\.${OCTET}|192\\.168\\.${OCTET}\\.${OCTET})(?::\\d{1,5})?(?:/[^\\s]*)?$`,
+);
+
 function normalizeBaseUrl(raw: string | undefined): string | null {
   if (!raw) return null;
   const trimmed = raw.trim().replace(/\/+$/, "");
   if (!/^https?:\/\/[^<>\s]+$/.test(trimmed)) return null; // also rejects the "<LAN-IP>" placeholder
   // /api/realtime-token returns a bearer token for a billed session: plain http (LAN API)
   // is accepted only in development builds or LAN IPs during testing, never in a public release bundle.
-  if (!__DEV__ && !trimmed.startsWith("https://") && !/(localhost|127\.0\.0\.1|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(trimmed)) return null;
+  // The host must BE a private address: anchored on the whole authority, so a public host
+  // such as http://45.192.168.1.9 or http://192.168.1.1.evil.com is rejected.
+  // TODO(after-demo): drop this exception once every build points at the https API.
+  if (!__DEV__ && !trimmed.startsWith("https://") && !LAN_HTTP_URL.test(trimmed)) return null;
   return trimmed;
 }
 
