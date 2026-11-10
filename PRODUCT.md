@@ -37,12 +37,11 @@ adaptive
 ## Capabilities and Constraints
 
 - **Luồng tính năng chính:**
-  1. **Home:** Giới thiệu hành trình 3 bước, lối vào thêm sản phẩm và xem đồ đã lưu.
-  2. **Product Import (My Looks):** Nhập/upload ảnh trang phục, thiết lập Look A/B, lưu URL nguồn.
-  3. **Camera Setup:** Hướng dẫn căn chỉnh góc máy, xin quyền camera minh bạch.
-  4. **Fitting Studio:** Khung hình camera lớn, chuyển đổi A/B, Auto Compare, đếm ngược chuyển mẫu.
-  5. **Shopping Decision Card:** Bảng so sánh 2 cột Look A/B (ảnh, giá, thông tin nguồn, ghi chú phong cách).
-  6. **Saved Looks:** Danh sách ngắn các mẫu đã thử và link mở cửa hàng gốc.
+  1. **Choose Occasion:** Chọn dịp trang phục (Job Interview, Campus Day, Coffee Date) và phong cách.
+  2. **AI Picks:** Hiển thị 2 gợi ý trang phục Look A & B từ LLM Stylist kèm lý do phục trang và gợi ý phối đồ.
+  3. **Camera Setup:** Hướng dẫn căn góc máy 1.5m, xin quyền camera minh bạch và bảo mật dữ liệu.
+  4. **Live Fitting Room:** Thử đồ camera toàn màn hình thời gian thực qua Decart Lucy VTON 3.6, chuyển đổi Look A/B, đếm ngược tối đa 120 giây.
+  5. **Final Look:** So sánh Look A/B và chốt outfit ưng ý, lưu vào bộ nhớ máy (Saved Sheet).
 - **Ràng buộc:**
   - Không tự giả lập kết quả AI chạy thật khi chưa kết nối dịch vụ (hiển thị rõ "Camera preview" hoặc "AI OFF / preview only").
   - Vùng chạm tối thiểu 44 × 44 px, tôn trọng safe-area (notch, home indicator).
@@ -66,7 +65,7 @@ adaptive
 ## Product Principles
 
 1. **Phòng thử đồ là trung tâm (Fitting First):** Video camera và trải nghiệm ướm thử trang phục chiếm vị trí ưu tiên cao nhất.
-2. **Một hành động chính mỗi màn hình:** Hành trình tuyến tính rõ ràng: *Import → Select → Set Up → Try → Decide*.
+2. **Một hành động chính mỗi màn hình:** Hành trình tuyến tính rõ ràng: *Occasion → AI Picks → Camera Setup → Live Fitting → Final Look*.
 3. **Trung thực & Minh bạch:** Phân biệt rõ giữa dữ liệu thực và gợi ý chủ quan; không hứa hẹn sai về khả năng tự động lấy dữ liệu từ mọi URL.
 4. **Hands-free & Tối ưu một tay:** Điều khiển đặt ở cạnh dưới dễ thao tác khi đứng xa hoặc dùng một tay.
 

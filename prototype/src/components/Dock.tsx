@@ -90,7 +90,7 @@ function CenterButton({ label, icon, showLabel, href, onClick, disabled, tone = 
 }
 
 function Hook({ slot, mode, compact }: { slot: Slot; mode: HookMode; compact?: boolean }) {
-  const { look } = useStore();
+  const { look, tr } = useStore();
   const p = look(slot);
   const letter = slot.toUpperCase();
   const lit = (mode.kind === "switch" && mode.active === slot) || (mode.kind === "keep" && Boolean(p));
@@ -106,7 +106,9 @@ function Hook({ slot, mode, compact }: { slot: Slot; mode: HookMode; compact?: b
       <>
         <HookThumb product={p} lit={lit} />
         <span className="min-w-0 leading-tight">
-          <span className="block whitespace-nowrap text-[15px] font-bold">{p ? `Keep ${letter}` : `${letter} empty`}</span>
+          <span className="block whitespace-nowrap text-[15px] font-bold">
+            {p ? tr(`Keep ${letter}`, `Giữ ${letter}`) : tr(`${letter} empty`, `${letter} trống`)}
+          </span>
           {p && <span className="mt-0.5 line-clamp-2 text-[12px] font-medium leading-[1.2] text-ink/70">{p.name}</span>}
         </span>
       </>
@@ -121,7 +123,7 @@ function Hook({ slot, mode, compact }: { slot: Slot; mode: HookMode; compact?: b
         <span className="min-w-0 leading-tight">
           <span className="block whitespace-nowrap text-[13px] font-bold">Look {letter}</span>
           <span className={clsx("mt-0.5 line-clamp-2 text-[12px] leading-[1.2]", lit ? "text-ink/70" : "text-muted-dark")}>
-            {p ? p.name : "Empty · add"}
+            {p ? p.name : tr("Empty · add", "Trống · thêm")}
           </span>
         </span>
       </>

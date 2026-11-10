@@ -49,6 +49,7 @@ cp .env.example .env.local   # PowerShell: Copy-Item .env.example .env.local
 | `OPENAI_API_KEY` | Cho Stylist AI | Thiếu thì `/api/style` trả gợi ý mặc định (`source: "fallback"`) |
 | `OPENAI_MODEL` | Cho Stylist AI | **Không có giá trị mặc định.** Chọn model hỗ trợ Structured Outputs (`json_schema`). Thiếu thì dùng fallback |
 | `OPENAI_TEMPERATURE` | Không | Mặc định `0.3`. Đặt `off` nếu model báo lỗi không nhận `temperature` |
+| `OPENAI_REASONING_EFFORT` | Không | Gửi thành `reasoning.effort` cho model reasoning. Với `gpt-5.6-luna` đặt `none` (model nhận `none`, `low`, `medium`, `high`; không nhận `minimal`). Bỏ trống với model không phải reasoning như `gpt-4o-mini` |
 | `CORS_ORIGINS` | Không | Danh sách origin, cách nhau bởi dấu phẩy, chỉ cần cho Expo web (ví dụ `http://localhost:8081`). Để trống là **chặn**: không gửi header CORS nào, nên trang web của bên thứ ba không đọc được phản hồi (kể cả token). App native không gửi CORS nên không bị ảnh hưởng |
 | `TOKEN_GLOBAL_PER_MIN` | Không | Trần số token Decart mỗi phút cho **tất cả** client cộng lại, tính trên từng instance. Mặc định `20` |
 
@@ -157,6 +158,6 @@ Trên PowerShell 5.1 nên dùng `curl.exe` (không phải alias `curl`) và đ�
 
 ## Việc cần xác minh với key thật (TODO)
 
-- `OPENAI_MODEL` đã chọn có nhận `temperature` không (nếu không: `OPENAI_TEMPERATURE=off`). Model reasoning có thể dùng hết 300 token rồi trả "incomplete", khi đó server sẽ dùng fallback.
+- Đã kiểm ngày 10/11/2026: `gpt-5.6-luna` từ chối `temperature` (400), nên dùng `OPENAI_TEMPERATURE=off` và `OPENAI_REASONING_EFFORT=none` để không hết 300 token cho phần suy luận rồi trả "incomplete" (khi đó server dùng fallback).
 - Mã HTTP và nội dung lỗi chính xác của `/v1/client/tokens` (SDK không ghi lại). Server hiện chỉ dựa vào mã trạng thái.
 - Token giới hạn ở `lucy-vton-3.6` có nhận alias `lucy-vton-latest` không: chưa rõ, nên app phải dùng đúng `lucy-vton-3.6`.

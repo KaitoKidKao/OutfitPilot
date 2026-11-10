@@ -115,4 +115,13 @@ describe("readOpenAIConfig", () => {
   it("OPENAI_TEMPERATURE=off omits temperature", () => {
     expect(readOpenAIConfig({ OPENAI_API_KEY: "k", OPENAI_MODEL: "m", OPENAI_TEMPERATURE: "off" })?.temperature).toBeUndefined();
   });
+
+  it("OPENAI_REASONING_EFFORT: valid values pass through, anything else is omitted", () => {
+    const base = { OPENAI_API_KEY: "k", OPENAI_MODEL: "gpt-5.6-luna" };
+    expect(readOpenAIConfig(base)).not.toHaveProperty("reasoningEffort");
+    expect(readOpenAIConfig({ ...base, OPENAI_REASONING_EFFORT: " None " })?.reasoningEffort).toBe("none");
+    expect(readOpenAIConfig({ ...base, OPENAI_REASONING_EFFORT: "low" })?.reasoningEffort).toBe("low");
+    expect(readOpenAIConfig({ ...base, OPENAI_REASONING_EFFORT: "turbo" })).not.toHaveProperty("reasoningEffort");
+    expect(readOpenAIConfig({ ...base, OPENAI_REASONING_EFFORT: "" })).not.toHaveProperty("reasoningEffort");
+  });
 });

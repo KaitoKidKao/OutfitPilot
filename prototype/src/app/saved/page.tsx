@@ -8,23 +8,25 @@ import { hostOf } from "@/lib/image";
 import { useStore } from "@/lib/store";
 
 export default function SavedPage() {
-  const { saved, byId, unsave, notify } = useStore();
+  const { saved, byId, unsave, notify, tr } = useStore();
   const items = saved.map((s) => ({ s, p: byId(s.productId) })).filter((x) => x.p);
 
   return (
     <Screen>
       <TopBar back="/" />
       <div className="px-5">
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.03em]">Kept for later</h1>
-        <p className="mt-1 text-[14px] text-muted">Pieces you chose, with the way back to the shop. · Những món bạn đã chọn.</p>
+        <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.03em]">{tr("Kept for later", "Đã lưu để xem sau")}</h1>
+        <p className="mt-1 text-[14px] text-muted">{tr("Pieces you chose, with the way back to the shop.", "Những món bạn đã chọn kèm đường dẫn về shop.")}</p>
       </div>
 
       {items.length === 0 ? (
         <div className="mx-5 mt-6 rounded-[22px] border-[1.5px] border-dashed border-line px-6 py-10 text-center">
-          <p className="text-[16px] font-bold">No saved looks yet</p>
-          <p className="mx-auto mt-1 max-w-[28ch] text-[14px] text-muted">Try two pieces in the studio and keep the one you like.</p>
+          <p className="text-[16px] font-bold">{tr("No saved looks yet", "Chưa có look nào được lưu")}</p>
+          <p className="mx-auto mt-1 max-w-[28ch] text-[14px] text-muted">
+            {tr("Try two pieces in the studio and keep the one you like.", "Thử hai món trong phòng thử và giữ lại món bạn ưng ý.")}
+          </p>
           <Link href="/looks?new=1" className="mt-4 inline-flex h-12 items-center gap-2 rounded-[14px] bg-lime px-5 text-[15px] font-semibold">
-            <Plus className="h-5 w-5" strokeWidth={2.25} /> Add a product
+            <Plus className="h-5 w-5" strokeWidth={2.25} /> {tr("Add a product", "Thêm sản phẩm")}
           </Link>
         </div>
       ) : (

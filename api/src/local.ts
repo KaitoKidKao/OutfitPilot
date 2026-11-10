@@ -16,7 +16,14 @@ try {
 // Same routes as src/index.ts, but rate limiting keys on the TCP socket
 // address: off Vercel, x-real-ip / x-forwarded-for come from the client and
 // anyone on the LAN could spoof them to dodge the limit.
-const app = createApp({ clientIp: (c) => getConnInfo(c).remote.address ?? "unknown" }, new Hono());
+const baseApp = new Hono();
+baseApp.use("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  console.log(`[${c.req.method}] ${c.req.url} -> ${c.res.status} (${ms}ms) origin=${c.req.header("origin") ?? "-"}`);
+});
+const app = createApp({ clientIp: (c) => getConnInfo(c).remote.address ?? "unknown" }, baseApp);
 const port = Number(process.env.PORT ?? 8787);
 
 serve({ fetch: app.fetch, port, hostname: "0.0.0.0" }, (info) => {

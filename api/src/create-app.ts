@@ -103,10 +103,11 @@ export function createApp(deps: AppDeps = {}, app: Hono = new Hono()): Hono {
   app.use("/api/*", async (c, next) => {
     const origins = getEnv().CORS_ORIGINS?.split(",").map((s) => s.trim()).filter(Boolean);
     if (!origins || origins.length === 0) return next();
+    const allowAny = origins.includes("*");
     return cors({
-      origin: origins,
+      origin: allowAny ? (origin) => origin || "*" : origins,
       allowMethods: ["GET", "POST", "OPTIONS"],
-      allowHeaders: ["Content-Type"],
+      allowHeaders: ["Content-Type", "Accept"],
       maxAge: 600,
     })(c, next);
   });

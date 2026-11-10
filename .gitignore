@@ -20,9 +20,12 @@ mobile/android/
 mobile/ios/
 
 # Local tool state
-.claude/settings.local.json
-.impeccable/config.local.json
-.impeccable/review/
+.claude/
+.impeccable/
+.agent/
+.agents/
+.codex/
+.gemini/
 .playwright-mcp/
 sh.exe.stackdump
 .DS_Store

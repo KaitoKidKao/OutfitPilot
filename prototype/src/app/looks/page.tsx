@@ -22,7 +22,7 @@ function Looks() {
   const params = useSearchParams();
   const router = useRouter();
   const store = useStore();
-  const { products, slots, look, assign, notify } = store;
+  const { products, slots, look, assign, notify, tr } = store;
 
   const initialSlot: Slot = params.get("slot") === "b" ? "b" : params.get("slot") === "a" ? "a" : !slots.a ? "a" : !slots.b ? "b" : "a";
   const [slot, setSlot] = useState<Slot>(initialSlot);
@@ -108,12 +108,14 @@ function Looks() {
           />
         ) : (
           <div className="rounded-[24px] border-[1.5px] border-dashed border-line px-5 py-8 text-center">
-            <p className="text-[17px] font-bold">Look {L} is empty</p>
+            <p className="text-[17px] font-bold">{tr(`Look ${L} is empty`, `Look ${L} đang trống`)}</p>
             <p className="mx-auto mt-1 max-w-[30ch] text-[14px] text-muted">
-              Upload a photo below or pick one of your pieces. · Thêm ảnh hoặc chọn món có sẵn.
+              {tr("Upload a photo below or pick one of your pieces.", "Tải ảnh lên ở dưới hoặc chọn một món có sẵn.")}
             </p>
             {slot === "b" && slots.a && (
-              <p className="mx-auto mt-3 max-w-[32ch] text-[13px] text-muted">One piece is fine too: you can try Look A on its own.</p>
+              <p className="mx-auto mt-3 max-w-[32ch] text-[13px] text-muted">
+                {tr("One piece is fine too: you can try Look A on its own.", "Chỉ một món cũng được: bạn có thể thử riêng Look A.")}
+              </p>
             )}
           </div>
         )}
@@ -283,6 +285,7 @@ function ProductForm({
   onCancel: () => void;
 }) {
   const id = useId();
+  const { tr } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState(initial?.image ?? "");
   const [name, setName] = useState(initial?.name ?? "");
@@ -300,7 +303,10 @@ function ProductForm({
       setErrors((e) => ({ ...e, image: undefined }));
       if (!name) setName(f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ").slice(0, 40));
     } catch {
-      setErrors((e) => ({ ...e, image: "We couldn't open that file. Try a JPG or PNG photo. · Không mở được tệp này." }));
+      setErrors((e) => ({
+        ...e,
+        image: tr("We couldn't open that file. Try a JPG or PNG photo.", "Không mở được tệp này. Hãy thử ảnh JPG hoặc PNG."),
+      }));
     } finally {
       setBusy(false);
     }
@@ -309,7 +315,7 @@ function ProductForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const urlErr = validateUrl(url);
-    const imgErr = image ? undefined : "Add a photo of the item first. · Cần ảnh sản phẩm trước.";
+    const imgErr = image ? undefined : tr("Add a photo of the item first.", "Cần thêm ảnh sản phẩm trước.");
     setErrors({ image: imgErr, url: urlErr });
     if (imgErr || urlErr) return;
     onSubmit({
@@ -355,8 +361,8 @@ function ProductForm({
             <span className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-lime">
               {busy ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-ink border-t-transparent" /> : <ImagePlus className="h-6 w-6" strokeWidth={1.75} />}
             </span>
-            <span className="text-[15px] font-semibold">Upload a photo</span>
-            <span className="text-[13px] text-muted">Screenshot or product image · Ảnh chụp màn hình từ shop</span>
+            <span className="text-[15px] font-semibold">{tr("Upload a photo", "Tải ảnh lên")}</span>
+            <span className="text-[13px] text-muted">{tr("Screenshot or product image", "Ảnh chụp màn hình từ shop")}</span>
           </label>
         )}
         {errors.image && (

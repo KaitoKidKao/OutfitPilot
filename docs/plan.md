@@ -26,22 +26,20 @@ Mục tiêu trước mắt: có bản demo chạy thật tại Codex Community H
 
 ## Hiện trạng
 
-Giao diện 6 màn hình đã chạy trên localhost, AI vẫn OFF và chưa deploy (tình trạng 09/11/2026). Giao diện này viết bằng Next.js nên chỉ còn là bản mẫu tham chiếu (thư mục prototype/). App thật dựng lại bằng React Native + Expo: 5 màn, nối Decart, thêm AI Stylist, test trên iPhone lẫn Android.
+Cập nhật tối 09/11/2026: Đã chuyển đổi hoàn toàn sang kiến trúc Mobile App (React Native + Expo) và Backend riêng (Hono). Bản Next.js cũ đã được dọn sạch vào thư mục `prototype/`. Cả Backend (72/72 tests) và Frontend (5 màn hình, typecheck sạch, expo-doctor 20/20) đã sẵn sàng; đang chuẩn bị test Cổng 1 trên thiết bị thật.
 
 | Hạng mục | Trạng thái | Ghi chú | Cho ngày 14/11 |
 | --- | --- | --- | --- |
-| Thiết kế hướng Fitting Dock · Fresh White | Xong | DESIGN.md và .impeccable/design.json đã cập nhật | Giữ làm tài liệu thiết kế |
-| 6 màn hình Next.js 15 + Tailwind | Xong | Review độc lập 2 vòng, lỗi chính đã sửa | Chỉ làm bản mẫu tham chiếu (prototype/); dựng lại 5 màn bằng React Native |
-| Camera thật (getUserMedia) | Xong | Chưa thử trên điện thoại thật | Làm lại bằng WebRTC của LiveKit trong app Expo (dev build) |
-| Auto Compare, đếm ngược, chuyển A/B | Xong | Kiểm tra qua code, chưa xem trực tiếp | Look A/B do Decart set() xử lý; giữ ý tưởng giao diện |
-| Lưu dữ liệu | Xong | localStorage, ảnh nén còn 720 px | AsyncStorage; chỉ lưu outfit ID và lý do |
-| AI try-on | Chưa làm | Studio hiện nhãn AI OFF | Làm trong sprint, ưu tiên số 1 |
-| AI Stylist (chọn hoàn cảnh, 2 gợi ý) | Chưa làm | Chưa có trong 6 màn hiện tại | Làm trong sprint |
-| App Expo (dev build iOS + Android) | Chưa làm | Cần Expo, EAS Build, tài khoản Apple Developer cho iPhone | Làm đầu tiên, ngày 09/11 |
-| Deploy, CI/CD, git | Chưa làm | Thư mục chưa là git repo | Git; API riêng deploy lên Vercel; bỏ CI/CD |
-| Ảnh mẫu Unsplash | Thiếu tên tác giả | Cần bổ sung trước khi công khai | Thay bằng 6 ảnh áo được cấp phép (G01–G06) |
-| PRODUCT.md, DESIGN.md | Đã cập nhật | Nền tảng mobile, bảng màu Fresh White | Giữ làm tài liệu sản phẩm |
-| File lạ trong src/ | Cần xử lý | screens/, navigation/, data/, types/ do phiên khác tạo | Chuyển cùng bản mẫu vào prototype/ |
+| Thiết kế hướng Fitting Dock · Fresh White | Xong | DESIGN.md và .impeccable/design.json đã cập nhật | Giữ làm tài liệu thiết kế chuẩn |
+| 6 màn hình Next.js (bản mẫu) | Xong | Đã chuyển toàn bộ `src/` và `.next/` vào `prototype/` | Lưu làm tham chiếu giao diện |
+| Backend API (Hono 4.13) | Xong | `/api/health`, `/api/style`, `/api/realtime-token`, 72/72 test pass | Chuẩn bị deploy lên Vercel |
+| AI Stylist (LLM + Fallback) | Xong | Đã kiểm tra logic, hỗ trợ structured JSON schema và rule fallback | Hoạt động tốt trên cả 3 hoàn cảnh |
+| Token Decart Lucy VTON | Xong | Server cấp token ngắn hạn 120s `ek_...`, giấu API key dài hạn | Đã kiểm tra qua API, cấp token hợp lệ |
+| App Mobile (React Native + Expo SDK 58) | Xong | 5 màn hình sản phẩm + màn test Cổng 1 (`dev/tryon.tsx`) | Dùng bản Expo development build |
+| Ảnh catalog G01–G06 | Xong | Đã đủ 6 ảnh trong `mobile/assets/garments/`, có `CREDITS.md` | G03 đã đổi tên thành Cream Knit Sweater |
+| Git & Quản lý mã nguồn | Xong | Đã tạo repo, nhánh `feat/mobile-screens`, commit sạch sẽ | Chuẩn bị kết nối GitHub remote |
+| Tài liệu PRODUCT.md, DESIGN.md | Xong | Đã đồng bộ 100% với luồng 5 màn hình và React Native | Nguồn sự thật duy nhất của dự án |
+| Thử nghiệm Cổng 1 trên máy thật | Đang làm | Chờ build APK / cài đặt trên thiết bị thật để test camera & Decart | Ưu tiên số 1 hiện tại |
 
 ## Lộ trình đến ngày thi
 
@@ -192,7 +190,7 @@ CATALOG: [catalog ở mục 3, gửi dạng một dòng JSON]
 [
   {"id":"G01","name":"Navy Blazer","type":"outerwear","color":"navy","formality":4,"styles":["formal","smart"],"cut":"tailored, structured"},
   {"id":"G02","name":"White Oxford Shirt","type":"shirt","color":"white","formality":4,"styles":["formal","minimal"],"cut":"crisp, classic"},
-  {"id":"G03","name":"Cream Cardigan","type":"knitwear","color":"cream","formality":2,"styles":["casual","soft"],"cut":"knit, relaxed"},
+  {"id":"G03","name":"Cream Knit Sweater","type":"knitwear","color":"cream","formality":2,"styles":["casual","soft"],"cut":"knit, relaxed"},
   {"id":"G04","name":"Denim Jacket","type":"outerwear","color":"blue denim","formality":1,"styles":["casual","street"],"cut":"boxy, rugged"},
   {"id":"G05","name":"Black Bomber Jacket","type":"outerwear","color":"black","formality":2,"styles":["street","minimal"],"cut":"sporty, cropped"},
   {"id":"G06","name":"Beige Overshirt","type":"overshirt","color":"beige","formality":3,"styles":["casual","smart"],"cut":"relaxed, layering"}
