@@ -26,49 +26,35 @@ Mục tiêu trước mắt: có bản demo chạy thật tại Codex Community H
 
 ## Hiện trạng
 
-Cập nhật tối 09/11/2026: Đã chuyển đổi hoàn toàn sang kiến trúc Mobile App (React Native + Expo) và Backend riêng (Hono). Bản Next.js cũ đã được dọn sạch vào thư mục `prototype/`. Cả Backend (72/72 tests) và Frontend (5 màn hình, typecheck sạch, expo-doctor 20/20) đã sẵn sàng; đang chuẩn bị test Cổng 1 trên thiết bị thật.
+Cập nhật tối 10/11/2026: Đã hoàn thiện toàn bộ 5 màn hình mobile, Fitting Dock đối xứng gương, giao diện chọn Dịp 2x2 compact + ô nhập Dịp khác tự do, Tủ đồ cá nhân 20 món (G01-G10, P01-P10), và Backend API Hono đã deploy chính thức lên Vercel production (`https://outfitpilot-api.vercel.app`, 73/73 tests pass). Người dùng vừa bổ sung bộ data Nữ HD (19 món W01-W10) và phát hiện tiềm năng đột phá: Thử Trọn Bộ Set Shopee (Full-Set Try-On cả Áo + Mũ + Túi) chuẩn Anywear.
 
 | Hạng mục | Trạng thái | Ghi chú | Cho ngày 14/11 |
 | --- | --- | --- | --- |
-| Thiết kế hướng Fitting Dock · Fresh White | Xong | DESIGN.md và .impeccable/design.json đã cập nhật | Giữ làm tài liệu thiết kế chuẩn |
-| 6 màn hình Next.js (bản mẫu) | Xong | Đã chuyển toàn bộ `src/` và `.next/` vào `prototype/` | Lưu làm tham chiếu giao diện |
-| Backend API (Hono 4.13) | Xong | `/api/health`, `/api/style`, `/api/realtime-token`, 72/72 test pass | Chuẩn bị deploy lên Vercel |
-| AI Stylist (LLM + Fallback) | Xong | Đã kiểm tra logic, hỗ trợ structured JSON schema và rule fallback | Hoạt động tốt trên cả 3 hoàn cảnh |
-| Token Decart Lucy VTON | Xong | Server cấp token ngắn hạn 120s `ek_...`, giấu API key dài hạn | Đã kiểm tra qua API, cấp token hợp lệ |
-| App Mobile (React Native + Expo SDK 58) | Xong | 5 màn hình sản phẩm + màn test Cổng 1 (`dev/tryon.tsx`) | Dùng bản Expo development build |
-| Ảnh catalog G01–G06 | Xong | Đã đủ 6 ảnh trong `mobile/assets/garments/`, có `CREDITS.md` | G03 đã đổi tên thành Cream Knit Sweater |
-| Git & Quản lý mã nguồn | Xong | Đã tạo repo, nhánh `feat/mobile-screens`, commit sạch sẽ | Chuẩn bị kết nối GitHub remote |
-| Tài liệu PRODUCT.md, DESIGN.md | Xong | Đã đồng bộ 100% với luồng 5 màn hình và React Native | Nguồn sự thật duy nhất của dự án |
-| Thử nghiệm Cổng 1 trên máy thật | Đang làm | Chờ build APK / cài đặt trên thiết bị thật để test camera & Decart | Ưu tiên số 1 hiện tại |
+| Thiết kế hướng Fitting Dock · Fresh White | Xong | Dock đối xứng gương, 2x2 occasion, 34pt style pills | Chuẩn mobile native |
+| Backend API Vercel (Hono 4.13) | Xong | `/api/health`, `/api/style`, `/api/realtime-token`, 73/73 test pass | Đã deploy production |
+| AI Stylist (LLM + Fallback) | Xong | Hỗ trợ cả 3 dịp chuẩn và `customOccasion` tự do | OpenAI GPT-4o-luna kết nối thật |
+| Tủ đồ cá nhân (ClosetSheet) | Xong | 20 món mẫu (G01-G10, P01-P10), thêm/bớt món, ghim Look A/B | Hỗ trợ thử đồ trực tiếp |
+| Bộ data Nữ HD (W01–W10) | Đang tích hợp | 19 món HD trắng nền: đầm dạ hội, áo blazer lửng, váy ngắn | Mở rộng tập người dùng nữ |
+| Thử Cả Set Shopee (Full-Set VTON) | Chuẩn bị làm | Thử nguyên set Áo + Mũ + Túi từ ảnh chụp màn hình shop | Tính năng sát thủ cho demo |
+| Thử nghiệm Cổng 1 trên máy thật | Đang làm | Test camera WebRTC Decart trên điện thoại thật | Ưu tiên số 1 ngày 11/11 |
 
-## Lộ trình đến ngày thi
-
-Năm ngày xây trước, một buổi 5 giờ để hoàn thiện và nộp, ba cổng. Cổng 1 là điểm rẽ: nếu video AI thật chưa chạy trên cả iPhone lẫn Android thì dừng mọi việc khác để sửa nó.
-
-**5 ngày xây trước, 5 giờ hoàn thiện, 3 cổng kiểm tra**
+## Lộ trình 3 ngày đếm ngược đến Ngày thi (11/11 – 14/11)
 
 ```mermaid
 flowchart TD
-    B0["<b>09/11 · Bước 0 · Chốt đầu vào cho AI</b><br/>Prompt, schema, catalog 6 món cho Stylist (đã viết ở mục Prompt)<br/>Chốt LLM, số người; key Decart, credits; tạo app Expo, dev build trên 2 máy"]
-    B1["<b>09–11/11 · Bước 1 · Nối Decart vào Studio</b><br/>Route /api/realtime-token, set() đổi prompt và ảnh trong màn Studio<br/>Dev build trên iPhone và Android; đo độ trễ Wi-Fi và 4G"]
-    G1{{"Cổng 1 · Video AI thật chạy trên cả iPhone và Android"}}
-    B2["<b>11–12/11 · Bước 2 · Nối AI Stylist và 5 màn hình</b><br/>Route /api/style, Choose Occasion, AI Picks, 6 ảnh áo được cấp phép<br/>Kiểm tra JSON, thử lại 1 lần, gợi ý mặc định khi lỗi"]
-    G2{{"Cổng 2 · 3 hoàn cảnh đều trả 2 gợi ý hợp lệ"}}
-    B3["<b>13/11 · Bước 3 · Diễn tập trên hai điện thoại</b><br/>Chạy hết hành trình 3 lần liên tiếp trên iPhone và Android<br/>Chuẩn bị hotspot, sạc, bản ghi demo dự phòng, kịch bản pitch"]
-    B4["<b>T7 14/11 · Bước 4 · Hoàn thiện và nộp 11:00–16:00</b><br/>Sửa lỗi, giao diện mobile, test lại; 12:15 rà lại video AI thật<br/>15:30 freeze, chỉ sửa lỗi chặn; nộp trước 16:00"]
-    G3{{"Cổng 3 · Nộp đúng hạn, demo trọn vẹn 3 lần liên tiếp"}}
-    B5["<b>Từ 15/11 · Sau hackathon · quyết định đi tiếp</b><br/>Nếu kết quả tốt: dọn nền, tích hợp thật, beta, ra mắt (khoảng 8 tuần)<br/>Chi tiết ở mục Sau hackathon; tùy kết quả và nguồn lực"]
-    B0 --> B1 --> G1 --> B2 --> G2 --> B3 --> B4 --> G3 --> B5
+    D1["<b>11/11 · Thứ Tư: Data Nữ, Cổng 1 & Thử Cả Set Shopee</b><br/>- Tích hợp 19 món Nữ HD (W01-W10) vào Tủ đồ & Catalog<br/>- Vượt Cổng 1: Test camera Decart thật trên điện thoại<br/>- Endpoint /api/analyze-garment (GPT-4o Vision) quét ảnh Shopee"]
+    D2["<b>12/11 · Thứ Năm: Gia cố Studio & Build APK</b><br/>- Gia cố Studio (Timeout watchdog 15s, đếm ngược 5s, Peek Original)<br/>- Đóng gói file APK Preview độc lập qua EAS Build<br/>- Chốt 3 cặp demo chủ lực (Nam, Nữ, Set Shopee)"]
+    D3["<b>13/11 · Thứ Sáu: Diễn tập & Backup Video</b><br/>- Diễn tập trọn vẹn 3 lần liên tiếp trên mạng 4G Hotspot<br/>- Quay video demo backup chất lượng cao dự phòng<br/>- Hoàn thiện Slide Pitch Deck 5 phút; Code freeze 21:00"]
+    D4["<b>14/11 · Thứ Bảy: Ngày thi Hackathon (11:00–16:00)</b><br/>- 11:00–12:00: Setup thiết bị & test kết nối hội trường<br/>- 13:00–15:30: Tổng duyệt kịch bản & nộp bài<br/>- 15:30–16:00: Pitch 5 phút & Demo trực tiếp"]
+    D1 --> D2 --> D3 --> D4
 ```
 
-| Thời gian | Bước | Việc chính | Cổng sau bước |
+| Thời gian | Bước | Việc chính | Tiêu chí đạt |
 | --- | --- | --- | --- |
-| 09/11 | 0 · Chốt đầu vào cho AI | Prompt, schema, catalog 6 món; chốt LLM và số người; tạo key Decart, nạp credits; tạo app Expo và dev build trên 2 máy | |
-| 09–11/11 | 1 · Nối Decart vào Studio | /api/realtime-token, set() đổi prompt và ảnh; dev build trên iPhone/Android, đo độ trễ Wi-Fi và 4G | Cổng 1 · Video AI thật chạy trên cả iPhone và Android |
-| 11–12/11 | 2 · Nối AI Stylist và 5 màn hình | /api/style, Choose Occasion, AI Picks, 6 ảnh áo được cấp phép; kiểm tra JSON, thử lại 1 lần, gợi ý mặc định | Cổng 2 · 3 hoàn cảnh đều trả 2 gợi ý hợp lệ |
-| 13/11 | 3 · Diễn tập trên hai điện thoại | Chạy hết hành trình 3 lần liên tiếp; hotspot, sạc, bản ghi dự phòng, kịch bản pitch | |
-| T7 14/11 | 4 · Hoàn thiện và nộp 11:00–16:00 | Sửa lỗi, giao diện mobile, test lại; 12:15 rà video AI; 15:30 freeze; nộp trước 16:00 | Cổng 3 · Nộp đúng hạn, demo trọn vẹn 3 lần liên tiếp |
-| Từ 15/11 | Sau hackathon | Nếu kết quả tốt: dọn nền, tích hợp thật, beta, ra mắt (khoảng 8 tuần) | |
+| **11/11 (T4)** | 1 · Data Nữ, Cổng 1 & Set Shopee | Tích hợp data Nữ W01-W10; test Cổng 1 trên máy thật; làm tính năng Thử Trọn Bộ Set Shopee (Full-Set VTON: Áo + Mũ + Túi) | Cổng 1 chạy mượt; ảnh Shopee thử được cả set |
+| **12/11 (T5)** | 2 · Gia cố Studio & Build APK | Timeout watchdog 15s, đếm ngược 5s rảnh tay, Peek Original; build APK Preview qua EAS trỏ API Vercel | Có APK độc lập cài máy; rảnh tay 1.5m không chạm |
+| **13/11 (T6)** | 3 · Diễn tập & Backup | Test 3 lượt liên tục trên 4G hotspot; quay video backup; slide pitch 5 phút; code freeze lúc 21:00 | Sẵn sàng 100% tài liệu và kịch bản demo |
+| **14/11 (T7)** | 4 · Ngày thi 11:00–16:00 | Setup thiết bị, kiểm tra Pre-stage health check, tổng duyệt và demo trực tiếp | Nộp đúng hạn, pitch & demo xuất sắc |
 
 Nếu đội có 3–4 người, bước 1 và bước 2 chạy song song: một người thử Decart, một người lo ảnh áo, wireframe và prompt.
 
