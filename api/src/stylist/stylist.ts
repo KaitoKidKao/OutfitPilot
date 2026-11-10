@@ -52,7 +52,7 @@ export async function recommend(
   const fallback = (why: string): StyleResponse => {
     log("stylist_fallback", { why });
     return {
-      recommendations: fallbackRecommendations(input.occasionId, input.style, input.locale),
+      recommendations: fallbackRecommendations(input.occasionId, input.style, input.locale, input.customOccasion),
       source: "fallback",
     };
   };

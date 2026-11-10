@@ -7,7 +7,7 @@ import type { OccasionId } from "../catalog.js";
 import type { Locale, Recommendation } from "../contract.js";
 
 type StyleMap = Record<string, [Recommendation, Recommendation]>;
-type OccasionMap = Record<OccasionId, StyleMap>;
+type OccasionMap = Partial<Record<OccasionId, StyleMap>>;
 
 export const PREGENERATED_PICKS: Record<Locale, OccasionMap> = {
   vi: {

@@ -132,6 +132,13 @@ describe("POST /api/style without an LLM -> fallback", () => {
     expect(en.recommendations[0].reason).toMatch(/job interview/);
     expect(vi_.recommendations[0].reason).toMatch(/phỏng vấn/);
   });
+
+  it("other + customOccasion: uses customOccasion in fallback reason", async () => {
+    const res = await postJson(makeApp(), "/api/style", { occasionId: "other", style: "none", locale: "vi", customOccasion: "Rooftop Bar" });
+    const json = (await res.json()) as StyleResponse;
+    expect(json.source).toBe("fallback");
+    expect(json.recommendations[0].reason).toContain("Rooftop Bar");
+  });
 });
 
 describe("POST /api/style with a (mocked) LLM", () => {

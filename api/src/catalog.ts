@@ -25,7 +25,7 @@ export const CATALOG: readonly Garment[] = [
   { id: "G06", name: "Beige Overshirt", type: "overshirt", color: "beige", formality: 3, styles: ["casual", "smart"], cut: "relaxed, layering" },
 ];
 
-export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date"] as const;
+export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date", "other"] as const;
 export type OccasionId = (typeof OCCASION_IDS)[number];
 
 export interface Occasion {
@@ -36,7 +36,7 @@ export interface Occasion {
 }
 
 // Labels: "Job Interview" is given in the plan's example message; the other two
-// match DESIGN.md ("Campus Day", "Coffee Date").
+// match DESIGN.md ("Campus Day", "Coffee Date"). "other" represents custom occasions.
 export const OCCASIONS: Readonly<Record<OccasionId, Occasion>> = {
   job_interview: {
     id: "job_interview",
@@ -54,6 +54,12 @@ export const OCCASIONS: Readonly<Record<OccasionId, Occasion>> = {
     id: "coffee_date",
     label: "Coffee Date",
     dressCode: "Smart casual. Relaxed but put together, soft and approachable colors.",
+    targetFormality: 3,
+  },
+  other: {
+    id: "other",
+    label: "Custom Occasion",
+    dressCode: "Matches the user-specified custom occasion vibe and dress code.",
     targetFormality: 3,
   },
 };

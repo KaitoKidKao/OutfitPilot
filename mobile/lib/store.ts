@@ -223,26 +223,34 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, picksStatus: "loading", picksError: null, picksErrorCode: null, picksErrorStatus: 0 }));
     try {
       const customText = s.customOccasion?.trim() || undefined;
-      const apiOccasionId =
-        s.occasionId === "other"
-          ? (customText && /tiệc|cưới|lễ|họp|formal|suit|blazer|party/i.test(customText) ? "job_interview" : "coffee_date")
-          : s.occasionId;
       let res: StyleResponse;
       try {
         res = await postStyle({
-          occasionId: apiOccasionId,
+          occasionId: s.occasionId,
           style: s.style,
           locale: s.locale,
           customOccasion: customText,
         });
       } catch (err) {
-        // Graceful fallback: if server rejects unrecognized customOccasion, retry cleanly without it
-        if (customText && err instanceof ApiError && err.status === 400) {
-          res = await postStyle({
-            occasionId: apiOccasionId,
-            style: s.style,
-            locale: s.locale,
-          });
+        // Compatibility fallback if calling an older server deployment that doesn't yet recognize "other" or "customOccasion":
+        if (err instanceof ApiError && err.status === 400) {
+          const fallbackOccasion = customText && /tiệc|cưới|lễ|họp|formal|suit|blazer|party|bar|night|lounge/i.test(customText)
+            ? "job_interview"
+            : (customText && /beach|biển|campus|street|trip|casual|gym|dạo/i.test(customText) ? "campus_day" : "coffee_date");
+          try {
+            res = await postStyle({
+              occasionId: fallbackOccasion,
+              style: s.style,
+              locale: s.locale,
+              customOccasion: customText,
+            });
+          } catch {
+            res = await postStyle({
+              occasionId: fallbackOccasion,
+              style: s.style,
+              locale: s.locale,
+            });
+          }
         } else {
           throw err;
         }

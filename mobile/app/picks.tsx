@@ -35,7 +35,7 @@ export default function AiPicks() {
   const toast = useToast();
   const locale = useLocale();
   const reduced = useReducedMotion();
-  const { occasionId, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
+  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
 
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const cardY = useRef<Record<Slot, number | null>>({ a: null, b: null });
@@ -127,7 +127,10 @@ export default function AiPicks() {
   const loading = !!occasionId && !picks && (picksStatus === "loading" || picksStatus === "idle");
   const failed = !!occasionId && !picks && picksStatus === "error";
   const styleOption = style !== "none" ? STYLE_OPTIONS.find((s) => s.value === style) : undefined;
-  const headline = occasionId ? PICKS_HEADLINE[occasionId] : null;
+  const headline =
+    occasionId === "other" && customOccasion?.trim()
+      ? { en: `Two looks for ${customOccasion.trim()}`, vi: `Hai lựa chọn cho ${customOccasion.trim()}` }
+      : (occasionId ? PICKS_HEADLINE[occasionId] : null);
 
   // One lime action per screen: the dock centre when picks exist (or are on their
   // way); otherwise it goes quiet and the recovery button in the content is lime.
