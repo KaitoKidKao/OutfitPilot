@@ -27,6 +27,7 @@ export interface StyleRequest {
   /** A catalog style tag (see STYLE_VALUES in lib/catalog.ts) or "none". */
   style: string;
   locale: Locale;
+  customOccasion?: string;
 }
 
 export interface Recommendation {

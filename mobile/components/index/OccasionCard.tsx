@@ -1,17 +1,12 @@
-// Occasion card for screen 1 (DESIGN.md §6.1): a large tappable card, radius 20,
-// one per occasion. Radio semantics (single choice inside an OccasionGroup).
-//
-// Selected state, three cues so it never depends on colour alone:
-//   - the icon well lights lime (the same "lit" language as a dock hook),
-//   - the 1 pt hairline turns ink,
-//   - a check mark replaces the empty ring on the right.
-// Flat on white: no shadow (DESIGN.md Float-Only Shadow Rule).
+// Compact, Stylized Occasion Card for Screen 1 (DESIGN.md §6.1 & Impeccable Refinement)
+// 2x2 grid layout: compact height, animated lime icon well, tactile radio feedback.
 import { Check } from "lucide-react-native";
 import { useEffect, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { AppText, Touchable } from "@/components/ui";
+import { useLocale } from "@/lib/locale";
 import type { OccasionOption } from "@/lib/occasions";
 import { colors, motion, radii } from "@/lib/theme";
 
@@ -23,10 +18,11 @@ export interface OccasionCardProps {
   testID?: string;
 }
 
-const WELL = 48;
-const RING = 24;
+const WELL = 36;
+const RING = 20;
 
 export function OccasionCard({ option, selected, onPress, disabled = false, testID }: OccasionCardProps) {
+  const locale = useLocale();
   const reduced = useReducedMotion();
   const lit = useSharedValue(selected ? 1 : 0);
   const Icon = option.icon;
@@ -41,41 +37,50 @@ export function OccasionCard({ option, selected, onPress, disabled = false, test
     backgroundColor: interpolateColor(lit.get(), [0, 1], [colors.surface, colors.lime]),
   }));
 
+  const label = locale === "vi" ? option.labelVi : option.label;
+  const descriptor = locale === "vi" ? option.descriptorVi : option.descriptor;
+
   return (
     <Touchable
       testID={testID}
       accessibilityRole="radio"
-      accessibilityLabel={`${option.label}, ${option.labelVi}. ${option.descriptor}`}
+      accessibilityLabel={`${label}. ${descriptor}`}
       accessibilityState={{ selected, checked: selected, disabled }}
-      // react-native-web 0.21 ignores accessibilityState; the ARIA prop works on all three platforms.
       aria-checked={selected}
       disabled={disabled}
       onPress={onPress}
       bg={colors.paper}
       pressedBg={colors.surface}
-      style={[styles.card, { borderColor: selected ? colors.ink : colors.line }]}
+      style={[
+        styles.card,
+        {
+          borderColor: selected ? colors.ink : colors.line,
+          borderWidth: selected ? 1.5 : 1,
+        },
+      ]}
     >
-      <Animated.View style={[styles.well, wellStyle]}>
-        <Icon size={22} color={colors.ink} strokeWidth={1.75} />
-      </Animated.View>
+      <View style={styles.topRow}>
+        <Animated.View style={[styles.well, wellStyle]}>
+          <Icon size={18} color={colors.ink} strokeWidth={2} />
+        </Animated.View>
 
-      <View style={styles.text}>
-        <AppText variant="section" helper={option.labelVi}>
-          {option.label}
-        </AppText>
-        <AppText variant="bodySm" helper={option.descriptorVi} style={styles.descriptor}>
-          {option.descriptor}
-        </AppText>
+        <View style={[styles.ring, selected ? styles.ringOn : styles.ringOff]}>
+          {selected ? <Check size={12} color={colors.paper} strokeWidth={2.5} /> : null}
+        </View>
       </View>
 
-      <View style={[styles.ring, selected ? styles.ringOn : styles.ringOff]}>
-        {selected ? <Check size={14} color={colors.paper} strokeWidth={2.25} /> : null}
+      <View style={styles.textBlock}>
+        <AppText variant="label" weight={800} numberOfLines={1}>
+          {label}
+        </AppText>
+        <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.descriptor}>
+          {descriptor}
+        </AppText>
       </View>
     </Touchable>
   );
 }
 
-/** Radiogroup wrapper for the occasion cards. */
 export function OccasionGroup({ accessibilityLabel, children }: { accessibilityLabel: string; children: ReactNode }) {
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel} style={styles.group}>
@@ -85,22 +90,52 @@ export function OccasionGroup({ accessibilityLabel, children }: { accessibilityL
 }
 
 const styles = StyleSheet.create({
-  group: { gap: 10 },
-  card: {
+  group: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    paddingVertical: 14,
-    paddingLeft: 16,
-    paddingRight: 14,
-    borderRadius: radii.xxl,
-    borderWidth: 1,
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 8,
   },
-  well: { width: WELL, height: WELL, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-  text: { flex: 1, minWidth: 0, gap: 6, paddingTop: 2 },
-  descriptor: { color: colors.ink },
-  ring: { width: RING, height: RING, borderRadius: RING / 2, alignItems: "center", justifyContent: "center", marginTop: 2 },
-  // Solid ring (dashed means "empty, tap to add" in this system, not "unselected").
-  ringOff: { borderWidth: 1.5, borderColor: colors.line },
-  ringOn: { backgroundColor: colors.ink },
+  card: {
+    width: "48.5%",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: radii.xl,
+    gap: 8,
+    minHeight: 74,
+    justifyContent: "space-between",
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  well: {
+    width: WELL,
+    height: WELL,
+    borderRadius: radii.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  textBlock: {
+    gap: 2,
+  },
+  descriptor: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  ring: {
+    width: RING,
+    height: RING,
+    borderRadius: RING / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringOff: {
+    borderWidth: 1.5,
+    borderColor: colors.line,
+  },
+  ringOn: {
+    backgroundColor: colors.ink,
+  },
 });

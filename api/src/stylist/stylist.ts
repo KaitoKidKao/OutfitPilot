@@ -19,6 +19,7 @@ export interface StylistInput {
   occasionId: OccasionId;
   style: string;
   locale: Locale;
+  customOccasion?: string;
 }
 
 export type StylistLogger = (event: string, detail?: Record<string, unknown>) => void;
@@ -40,7 +41,8 @@ export async function recommend(
   log: StylistLogger = () => {},
   options: RecommendOptions = {},
 ): Promise<StyleResponse> {
-  const stagePicks = getPregeneratedPicks(input.occasionId, input.style, input.locale);
+  const hasCustomOccasion = !!input.customOccasion && input.customOccasion.trim().length > 0;
+  const stagePicks = !hasCustomOccasion ? getPregeneratedPicks(input.occasionId, input.style, input.locale) : null;
 
   if (options.useStageCache && stagePicks) {
     log("stylist_stage_cache_hit", { occasion: input.occasionId, style: input.style });

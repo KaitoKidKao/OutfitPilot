@@ -50,11 +50,14 @@ export interface AppState {
   savedLoaded: boolean;
   /** Explicit override for hooks from Closet or user choice */
   customHooks: [GarmentId | null, GarmentId | null] | null;
+  /** Free-form custom occasion text when occasionId is "other" */
+  customOccasion: string | null;
 }
 
 export interface AppActions {
   /** Changing the occasion drops picks made for the old one. */
   setOccasion: (id: OccasionId) => void;
+  setCustomOccasion: (custom: string | null) => void;
   /** Changing the style drops picks made for the old one. */
   setStyle: (style: StyleChoice) => void;
   setLocale: (locale: Locale) => void;
@@ -120,6 +123,7 @@ function initialState(): AppState {
     saved: seed?.saved ?? [],
     savedLoaded: false,
     customHooks: null,
+    customOccasion: null,
   };
 }
 
@@ -178,7 +182,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   };
 
   const setOccasion = useCallback((id: OccasionId) => {
-    setState((s) => (s.occasionId === id ? s : { ...resetPicks(s), occasionId: id }));
+    setState((s) => (s.occasionId === id ? { ...s, occasionId: null } : { ...resetPicks(s), occasionId: id }));
+  }, []);
+
+  const setCustomOccasion = useCallback((custom: string | null) => {
+    setState((s) => ({ ...s, customOccasion: custom }));
   }, []);
 
   const setStyle = useCallback((style: StyleChoice) => {
@@ -193,13 +201,22 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const fetchPicks = useCallback(async (options?: { force?: boolean }): Promise<StyleResponse | null> => {
     const s = stateRef.current;
     if (!s.occasionId) return null;
-    const key = `${s.occasionId}|${s.style}|${s.locale}`;
+    const key = `${s.occasionId}|${s.style}|${s.locale}|${s.customOccasion ?? ""}`;
     if (!options?.force && s.picks && picksKeyRef.current === key) return s.picks;
 
     const req = ++requestRef.current;
     setState((prev) => ({ ...prev, picksStatus: "loading", picksError: null, picksErrorCode: null, picksErrorStatus: 0 }));
     try {
-      const res = await postStyle({ occasionId: s.occasionId, style: s.style, locale: s.locale });
+      const apiOccasionId =
+        s.occasionId === "other"
+          ? (s.customOccasion && /tiệc|cưới|lễ|họp|formal|suit|blazer|party/i.test(s.customOccasion) ? "job_interview" : "coffee_date")
+          : s.occasionId;
+      const res = await postStyle({
+        occasionId: apiOccasionId,
+        style: s.style,
+        locale: s.locale,
+        customOccasion: s.customOccasion ?? undefined,
+      });
       if (req !== requestRef.current) return null;
       picksKeyRef.current = key;
       setState((prev) => ({ ...prev, picks: res, picksStatus: "ready", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a" }));
@@ -273,7 +290,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const clear = useCallback(() => {
-    setState((s) => ({ ...resetPicks(s), occasionId: null, style: "none", consentGiven: false }));
+    setState((s) => ({ ...resetPicks(s), occasionId: null, style: "none", consentGiven: false, customOccasion: null }));
   }, []);
 
   const store = useMemo<AppStore>(() => {
@@ -307,6 +324,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       ...state,
       locale: activeLocale,
       setOccasion,
+      setCustomOccasion,
       setStyle,
       setLocale,
       fetchPicks,

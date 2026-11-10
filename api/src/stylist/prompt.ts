@@ -32,24 +32,28 @@ export interface PromptInput {
   /** Already validated: a catalog style tag or "none". */
   style: string;
   locale: Locale;
+  customOccasion?: string;
 }
 
 /**
- * Builds the per-call user message exactly as the plan shows:
+ * Builds the per-call user message:
  *   LOCALE: vi
  *   STYLE_PREFERENCE: minimal
  *   OCCASION: {"id":...,"label":...,"dressCode":...,"targetFormality":4}
  *   CATALOG: [one-line JSON]
- * Only validated, server-owned values go in here; no free user text.
  */
-export function buildUserMessage({ occasionId, style, locale }: PromptInput): string {
+export function buildUserMessage({ occasionId, style, locale, customOccasion }: PromptInput): string {
   const occasion = OCCASIONS[occasionId];
-  return [
+  const lines = [
     `LOCALE: ${locale}`,
     `STYLE_PREFERENCE: ${style}`,
-    `OCCASION: ${JSON.stringify(occasion)}`,
-    `CATALOG: ${JSON.stringify(CATALOG)}`,
-  ].join("\n");
+  ];
+  if (customOccasion && customOccasion.trim()) {
+    lines.push(`CUSTOM_OCCASION: ${customOccasion.trim()}`);
+  }
+  lines.push(`OCCASION: ${JSON.stringify(occasion)}`);
+  lines.push(`CATALOG: ${JSON.stringify(CATALOG)}`);
+  return lines.join("\n");
 }
 
 /** Retry message from the plan, sent after an invalid first reply. */

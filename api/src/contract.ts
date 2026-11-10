@@ -35,6 +35,7 @@ export const styleRequestSchema = z
     occasionId: z.enum(OCCASION_IDS),
     style: styleValueSchema,
     locale: z.enum(LOCALES),
+    customOccasion: z.string().max(120).optional(),
   })
   .strict();
 

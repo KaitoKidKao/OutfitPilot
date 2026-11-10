@@ -9,7 +9,7 @@ export const GARMENT_IDS = [
 ] as const;
 export type GarmentId = (typeof GARMENT_IDS)[number] | string;
 
-export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date"] as const;
+export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date", "other"] as const;
 export type OccasionId = (typeof OCCASION_IDS)[number];
 
 export interface GarmentCredit {
@@ -101,6 +101,12 @@ export const OCCASIONS: Readonly<Record<OccasionId, Occasion>> = {
     id: "coffee_date",
     label: "Coffee Date",
     dressCode: "Smart casual. Relaxed but put together, soft and approachable colors.",
+    targetFormality: 3,
+  },
+  other: {
+    id: "other",
+    label: "Custom Occasion",
+    dressCode: "User-defined custom occasion. Versatile, elegant, and stylish.",
     targetFormality: 3,
   },
 };
