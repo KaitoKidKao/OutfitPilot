@@ -189,7 +189,8 @@ function describeSessionEnd(ended: SessionEnded): string {
     case "insufficient_credits":
       return "Tài khoản Decart AI đã hết lượt thử đồ · Decart account is out of credits.";
     case "session_limit":
-      return "Đã đạt giới hạn thời gian phiên thử đồ · Session time limit was reached.";
+      // SDK 0.2.14: the API key's CONCURRENT-session limit (close 1013), not the 120 s cap.
+      return "Đang có phiên AI khác mở, hãy đợi vài giây rồi thử lại · Another AI session is still open. Wait a few seconds and try again.";
     default:
       return `Phiên thử kết thúc · Session ended (${ended.reason}).`;
   }
@@ -325,9 +326,10 @@ export class TryOnSession {
 
       const CONNECT_TIMEOUT_MS = 18_000;
       this.pendingConnects++;
-      let realtime: RealTimeClient;
-      try {
-        const connectPromise = decart.realtime.connect<MediaStream>(localStream, {
+      // Promise.resolve().then: a synchronous throw from connect() becomes a rejection,
+      // so the pendingConnects bookkeeping below always runs.
+      const connectPromise = Promise.resolve().then(() =>
+        decart.realtime.connect<MediaStream>(localStream, {
           model,
           // Native camera capture uses VP8. `mirror` is browser-only and throws on
           // React Native, so the preview is mirrored in RTCView instead.
@@ -343,16 +345,45 @@ export class TryOnSession {
           onCapacityWait: ({ retryAfterMs }) => {
             if (gen === this.generation) this.patch({ notice: `Hệ thống bận, thử lại sau ${Math.ceil(retryAfterMs / 1000)}s · AI busy, retrying in ${Math.ceil(retryAfterMs / 1000)}s` });
           },
+        }),
+      );
+      // pendingConnects follows the REAL connect(), not the timeout race: start() stays
+      // blocked until it settles, so a retry can never open a second paid session.
+      void connectPromise
+        .then(
+          () => undefined,
+          () => undefined,
+        )
+        .finally(() => {
+          this.pendingConnects--;
+          this.patch({});
         });
+
+      let timedOut = false;
+      let connectTimer: ReturnType<typeof setTimeout> | undefined;
+      let realtime: RealTimeClient;
+      try {
         realtime = await Promise.race([
           connectPromise,
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Quá thời gian kết nối AI (18s) · AI connection timed out")), CONNECT_TIMEOUT_MS)
-          ),
+          new Promise<never>((_, reject) => {
+            connectTimer = setTimeout(() => {
+              timedOut = true;
+              reject(new Error("Quá thời gian kết nối AI (18s) · AI connection timed out"));
+            }, CONNECT_TIMEOUT_MS);
+          }),
         ]);
+      } catch (e) {
+        if (timedOut) {
+          // The real connect() may still succeed after the deadline: close that session
+          // the moment it arrives so it is never left running (and billed) unseen.
+          void connectPromise.then(
+            (late) => late.disconnect(),
+            () => undefined,
+          );
+        }
+        throw e;
       } finally {
-        this.pendingConnects--;
-        this.patch({});
+        clearTimeout(connectTimer);
       }
 
       if (gen !== this.generation) {
