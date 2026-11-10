@@ -6,7 +6,8 @@
 // hook (a tap on the hook does the same, plus scrolls here). The active card carries a 2 pt ink
 // ring and a lime slot badge; the other card's badge is ink (DESIGN.md Chips).
 import type { LayoutChangeEvent } from "react-native";
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 
 import { AppText, GarmentImage, Touchable } from "@/components/ui";
 import type { Recommendation } from "@/lib/api";
@@ -96,7 +97,7 @@ export function LookCard({ slot, pick, active, onPress, onLayout, testID }: Look
                 {matchingPants.slice(0, 2).map((p) => (
                   <View key={p.id} style={styles.pantsPill}>
                     {p.image ? (
-                      <Image source={typeof p.image === "number" ? p.image : { uri: p.image }} style={styles.pantsThumb} />
+                      <Image source={p.image} contentFit="cover" style={styles.pantsThumb} />
                     ) : null}
                     <View style={styles.pantsMeta}>
                       <AppText variant="caption" weight={700} numberOfLines={1}>
@@ -167,6 +168,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 44,
     borderRadius: 6,
+    overflow: "hidden",
     backgroundColor: colors.surfaceDeep,
   },
   pantsMeta: {
