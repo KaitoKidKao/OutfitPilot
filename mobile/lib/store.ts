@@ -207,16 +207,31 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     const req = ++requestRef.current;
     setState((prev) => ({ ...prev, picksStatus: "loading", picksError: null, picksErrorCode: null, picksErrorStatus: 0 }));
     try {
+      const customText = s.customOccasion?.trim() || undefined;
       const apiOccasionId =
         s.occasionId === "other"
-          ? (s.customOccasion && /tiệc|cưới|lễ|họp|formal|suit|blazer|party/i.test(s.customOccasion) ? "job_interview" : "coffee_date")
+          ? (customText && /tiệc|cưới|lễ|họp|formal|suit|blazer|party/i.test(customText) ? "job_interview" : "coffee_date")
           : s.occasionId;
-      const res = await postStyle({
-        occasionId: apiOccasionId,
-        style: s.style,
-        locale: s.locale,
-        customOccasion: s.customOccasion ?? undefined,
-      });
+      let res: StyleResponse;
+      try {
+        res = await postStyle({
+          occasionId: apiOccasionId,
+          style: s.style,
+          locale: s.locale,
+          customOccasion: customText,
+        });
+      } catch (err) {
+        // Graceful fallback: if server rejects unrecognized customOccasion, retry cleanly without it
+        if (customText && err instanceof ApiError && err.status === 400) {
+          res = await postStyle({
+            occasionId: apiOccasionId,
+            style: s.style,
+            locale: s.locale,
+          });
+        } else {
+          throw err;
+        }
+      }
       if (req !== requestRef.current) return null;
       picksKeyRef.current = key;
       setState((prev) => ({ ...prev, picks: res, picksStatus: "ready", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a" }));
