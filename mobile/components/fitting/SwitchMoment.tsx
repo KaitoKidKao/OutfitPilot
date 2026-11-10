@@ -1,16 +1,16 @@
-// The one authored motion moment of the studio: when the look changes, a full-screen
-// lime panel wipes in from the left carrying the new letter, holds, and wipes out to
-// the right (DESIGN.md Motion: `wipe` 480 ms, ease-out). The letter stays put while
-// the lime edge travels (an inner counter-translate), so it reads as a cut, not a slide.
-// Reduced motion: the panel appears and disappears instantly, no travel.
-// Purely visual: no touches, hidden from screen readers (the screen announces the change).
+// Compact top banner switch moment: when the look changes, a sleek lime strip
+// drops down from below the top bar, holds, and slides away.
+// Crucially, this leaves the entire body/torso video stream visible so judges and shoppers
+// see the clothing morph live on their body instead of hiding behind a full-screen wipe.
+// Reduced motion: appears and disappears cleanly without travel.
 import { useEffect, useState } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withTiming } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui";
 import type { DockSlot } from "@/components/FittingDock";
-import { colors, motion } from "@/lib/theme";
+import { colors, radii, shadowDock } from "@/lib/theme";
 
 export interface SwitchCue {
   /** Increments on every switch so the same slot can replay. */
@@ -19,14 +19,16 @@ export interface SwitchCue {
   garmentName: string | null;
 }
 
-/** How long the lime card holds the new letter between the two wipes. */
-const HOLD_MS = 420;
-const REDUCED_HOLD_MS = 650;
+/** How long the lime banner holds on screen. */
+const HOLD_MS = 1200;
+const SLIDE_DURATION = 280;
 
 export function SwitchMoment({ cue }: { cue: SwitchCue | null }) {
+  const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
-  const { width } = useWindowDimensions();
-  const x = useSharedValue(-width);
+  const translateY = useSharedValue(-100);
+  const opacity = useSharedValue(0);
+
   // The last cue id that finished playing; a cue is on screen until its id lands here.
   const [doneId, setDoneId] = useState(0);
   const shown = cue && cue.id !== doneId ? cue : null;
@@ -36,51 +38,101 @@ export function SwitchMoment({ cue }: { cue: SwitchCue | null }) {
     if (cueId === 0) return;
     let timer: ReturnType<typeof setTimeout>;
     if (reduced) {
-      x.set(0);
-      timer = setTimeout(() => setDoneId(cueId), REDUCED_HOLD_MS);
+      translateY.set(0);
+      opacity.set(1);
+      timer = setTimeout(() => {
+        opacity.set(0);
+        setDoneId(cueId);
+      }, HOLD_MS);
     } else {
-      const wipe = motion.duration.wipe;
-      x.set(-width);
-      x.set(
+      translateY.set(-100);
+      opacity.set(0);
+      translateY.set(
         withSequence(
-          withTiming(0, { duration: wipe, easing: motion.easing }),
-          withDelay(HOLD_MS, withTiming(width, { duration: wipe, easing: motion.easing })),
+          withTiming(0, { duration: SLIDE_DURATION }),
+          withDelay(HOLD_MS, withTiming(-100, { duration: SLIDE_DURATION })),
         ),
       );
-      timer = setTimeout(() => setDoneId(cueId), wipe * 2 + HOLD_MS + 40);
+      opacity.set(
+        withSequence(
+          withTiming(1, { duration: SLIDE_DURATION }),
+          withDelay(HOLD_MS, withTiming(0, { duration: SLIDE_DURATION })),
+        ),
+      );
+      timer = setTimeout(() => setDoneId(cueId), SLIDE_DURATION * 2 + HOLD_MS + 50);
     }
     return () => clearTimeout(timer);
-    // Replays only when a new cue id arrives (width / reduced are read at that moment).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cueId]);
+  }, [cueId, reduced, translateY, opacity]);
 
-  const outer = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }] }));
-  const inner = useAnimatedStyle(() => ({ transform: [{ translateX: -x.get() }] }));
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.get() }],
+    opacity: opacity.get(),
+  }));
 
   if (!shown) return null;
   const letter = shown.slot.toUpperCase();
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Animated.View style={[styles.panel, outer]}>
-        <Animated.View style={[styles.content, inner]}>
-          <AppText variant="studioNumeral" tone="ink" style={styles.letter}>
+    <View
+      pointerEvents="none"
+      style={[styles.container, { top: insets.top + 56 }]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Animated.View style={[styles.banner, animatedStyle]}>
+        <View style={styles.badge}>
+          <AppText variant="studioNumeral" tone="lime" style={styles.badgeText}>
             {letter}
           </AppText>
-          <AppText variant="title" tone="ink" align="center" numberOfLines={2} maxFontSizeMultiplier={1.3} accessibilityRole="text">
+        </View>
+        <View style={styles.textCol}>
+          <AppText variant="bodyStrong" tone="ink" numberOfLines={1}>
             {shown.garmentName ?? `Look ${letter}`}
           </AppText>
-          <AppText variant="label" tone="limeInk" align="center" maxFontSizeMultiplier={1.3}>
-            {`Now showing Look ${letter} · Đang hiển thị Look ${letter}`}
+          <AppText variant="caption" tone="limeInk" numberOfLines={1}>
+            {`Đang hiển thị Look ${letter} · Now showing Look ${letter}`}
           </AppText>
-        </Animated.View>
+        </View>
       </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: { ...StyleSheet.absoluteFill, backgroundColor: colors.lime, overflow: "hidden" },
-  content: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 8 },
-  letter: { fontSize: 132, lineHeight: 132 },
+  container: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 999,
+    alignItems: "center",
+  },
+  banner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.lime,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radii.xl,
+    gap: 12,
+    maxWidth: 380,
+    width: "100%",
+    ...shadowDock,
+  },
+  badge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    fontSize: 22,
+    lineHeight: 24,
+    fontWeight: "800",
+  },
+  textCol: {
+    flex: 1,
+    gap: 2,
+  },
 });

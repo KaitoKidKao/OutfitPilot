@@ -1,0 +1,102 @@
+[
+  {
+    "id": "G01",
+    "name": "Navy Blazer",
+    "image": "garments/G01_navy_blazer.png",
+    "tags": [
+      "formal",
+      "smart casual"
+    ],
+    "sourceQuality": "full-resolution original image"
+  },
+  {
+    "id": "G02",
+    "name": "White Oxford Shirt",
+    "image": "garments/G02_white_oxford.png",
+    "tags": [
+      "formal",
+      "work"
+    ],
+    "sourceQuality": "full-resolution original image"
+  },
+  {
+    "id": "G03",
+    "name": "Brown Cardigan",
+    "image": "garments/G03_brown_cardigan.png",
+    "tags": [
+      "layering",
+      "casual"
+    ],
+    "sourceQuality": "cropped from a generated 10-item contact sheet; lower effective resolution"
+  },
+  {
+    "id": "G04",
+    "name": "Blue Denim Jacket",
+    "image": "garments/G04_denim_jacket.png",
+    "tags": [
+      "casual",
+      "everyday"
+    ],
+    "sourceQuality": "cropped from a generated 10-item contact sheet; lower effective resolution"
+  },
+  {
+    "id": "G05",
+    "name": "Black Bomber",
+    "image": "garments/G05_black_bomber.png",
+    "tags": [
+      "streetwear",
+      "casual"
+    ],
+    "sourceQuality": "full-resolution original image"
+  },
+  {
+    "id": "G06",
+    "name": "Olive Field Jacket",
+    "image": "garments/G06_olive_field_jacket.png",
+    "tags": [
+      "outdoor",
+      "casual"
+    ],
+    "sourceQuality": "full-resolution original image"
+  },
+  {
+    "id": "G07",
+    "name": "Gray Hoodie",
+    "image": "garments/G07_gray_hoodie.png",
+    "tags": [
+      "casual",
+      "everyday"
+    ],
+    "sourceQuality": "full-resolution original image"
+  },
+  {
+    "id": "G08",
+    "name": "Cream Knit Sweater",
+    "image": "garments/G08_cream_sweater.png",
+    "tags": [
+      "warm",
+      "casual"
+    ],
+    "sourceQuality": "full-resolution original image"
+  },
+  {
+    "id": "G09",
+    "name": "Navy Polo Shirt",
+    "image": "garments/G09_navy_polo.png",
+    "tags": [
+      "smart casual",
+      "everyday"
+    ],
+    "sourceQuality": "cropped from a generated 10-item contact sheet; lower effective resolution"
+  },
+  {
+    "id": "G10",
+    "name": "Beige Trench Coat",
+    "image": "garments/G10_beige_trench.png",
+    "tags": [
+      "formal",
+      "smart casual"
+    ],
+    "sourceQuality": "cropped from a generated 10-item contact sheet; lower effective resolution"
+  }
+]

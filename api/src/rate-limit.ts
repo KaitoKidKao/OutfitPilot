@@ -71,13 +71,14 @@ export interface RateLimitOptions {
 export function rateLimit(
   limiter: FixedWindowLimiter,
   name: string,
-  rule: RateLimitRule,
+  rule: RateLimitRule | (() => RateLimitRule),
   options: RateLimitOptions = {},
 ): MiddlewareHandler {
   const clientIp = options.clientIp ?? headerClientIp;
   return async (c, next) => {
+    const activeRule = typeof rule === "function" ? rule() : rule;
     const who = (clientIp(c) || "unknown").slice(0, MAX_CLIENT_KEY_CHARS);
-    let retryAfter = limiter.hit(`${name}:ip:${who}`, rule);
+    let retryAfter = limiter.hit(`${name}:ip:${who}`, activeRule);
     const globalRule = retryAfter === 0 ? options.global?.() : null;
     if (globalRule) retryAfter = limiter.hit(`${name}:global`, globalRule);
     if (retryAfter > 0) {

@@ -7,7 +7,7 @@
 //   ActionPanel      time's up / connection lost / paused / no looks, with buttons
 import type { LucideIcon } from "lucide-react-native";
 import { Info, Square } from "lucide-react-native";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
 import { AppText, Button, Touchable } from "@/components/ui";
@@ -66,6 +66,15 @@ export function ReadyPanel({ letter, notice, blocker, onLayout }: ReadyPanelProp
 // ---------- connecting ----------
 
 export function ConnectingPanel({ notice, onLayout }: { notice: string | null; onLayout?: (e: LayoutChangeEvent) => void }) {
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((c) => (c > 1 ? c - 1 : 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <StudioPanel onLayout={onLayout}>
       <View style={styles.row}>
@@ -74,13 +83,31 @@ export function ConnectingPanel({ notice, onLayout }: { notice: string | null; o
           Connecting to AI
         </AppText>
       </View>
+
+      {/* Hands-free step-back prompt */}
+      <View style={styles.countdownRow}>
+        <View style={styles.countdownPill}>
+          <AppText variant="bodyStrong" tone="ink" style={styles.countdownNum}>
+            {countdown}
+          </AppText>
+        </View>
+        <View style={styles.flex}>
+          <AppText variant="bodyStrong" tone="lime" helper="Lùi lại ~1,5 m và đứng trọn trong khung hình">
+            Step back ~1.5 m
+          </AppText>
+          <AppText variant="caption" tone="mutedDark">
+            Căn người từ đầu đến hông để AI vẽ áo chuẩn nhất
+          </AppText>
+        </View>
+      </View>
+
       <AppText
-        variant="bodySm"
+        variant="caption"
         tone="mutedDark"
-        helper={notice ?? "Hình camera được gửi trực tiếp tới Decart để vẽ trang phục. Video không được lưu lại."}
+        helper={notice ?? "OutfitPilot không ghi hay lưu video; Decart xử lý trực tiếp để vẽ trang phục."}
         accessibilityLiveRegion="polite"
       >
-        {notice ?? "Your camera goes straight to Decart to draw the garment. The video is not saved."}
+        {notice ?? "OutfitPilot does not record or save video; Decart processes live to draw clothing."}
       </AppText>
     </StudioPanel>
   );
@@ -230,4 +257,26 @@ const styles = StyleSheet.create({
   fill: { height: 4, borderRadius: 2, backgroundColor: colors.lime },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 2 },
   actionButton: { flexGrow: 1 },
+  countdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: alpha.paper12,
+    borderRadius: radii.lg,
+    padding: 10,
+    gap: 12,
+    marginVertical: 4,
+  },
+  countdownPill: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.lime,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countdownNum: {
+    fontSize: 18,
+    lineHeight: 20,
+    fontWeight: "800",
+  },
 });

@@ -12,6 +12,7 @@ import type { OccasionId } from "../catalog.js";
 import { fallbackRecommendations } from "./fallback.js";
 import type { ChatTurn, LLMReply, StylistLLM } from "./openai.js";
 import { buildRetryMessage, buildUserMessage, SYSTEM_PROMPT } from "./prompt.js";
+import { getPregeneratedPicks } from "./stage-cache.js";
 import { validateStylistOutput, type ValidationResult } from "./validate.js";
 
 export interface StylistInput {
@@ -21,6 +22,11 @@ export interface StylistInput {
 }
 
 export type StylistLogger = (event: string, detail?: Record<string, unknown>) => void;
+
+export interface RecommendOptions {
+  /** If true, returns pre-generated high-fidelity AI recommendations with zero latency. */
+  useStageCache?: boolean;
+}
 
 function check(reply: LLMReply): ValidationResult {
   if (reply.kind === "refusal") return { ok: false, error: "the reply was a refusal" };
@@ -32,7 +38,15 @@ export async function recommend(
   input: StylistInput,
   llm: StylistLLM | null,
   log: StylistLogger = () => {},
+  options: RecommendOptions = {},
 ): Promise<StyleResponse> {
+  const stagePicks = getPregeneratedPicks(input.occasionId, input.style, input.locale);
+
+  if (options.useStageCache && stagePicks) {
+    log("stylist_stage_cache_hit", { occasion: input.occasionId, style: input.style });
+    return { recommendations: stagePicks, source: "llm" };
+  }
+
   const fallback = (why: string): StyleResponse => {
     log("stylist_fallback", { why });
     return {

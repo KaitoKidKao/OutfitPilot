@@ -18,6 +18,7 @@ import { PendingNote, PicksErrorPanel } from "@/components/index/DockNotes";
 import { OccasionCard, OccasionGroup } from "@/components/index/OccasionCard";
 import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
+import { PreStageModal } from "@/components/PreStageModal";
 import { SavedSheet } from "@/components/SavedSheet";
 import { AppText, BrandMark, Chip, ChipGroup, Screen, TopBar, Touchable, useDockClearance, useToast } from "@/components/ui";
 import { getOccasionOption, OCCASION_OPTIONS, STYLE_OPTIONS } from "@/lib/occasions";
@@ -37,6 +38,7 @@ export default function ChooseOccasion() {
     useAppStore();
 
   const [savedOpen, setSavedOpen] = useState(false);
+  const [healthCheckOpen, setHealthCheckOpen] = useState(false);
   const [errorDismissed, setErrorDismissed] = useState(false);
   const [pendingVisible, setPendingVisible] = useState(false);
   const [aboveHeight, setAboveHeight] = useState(0);
@@ -143,7 +145,7 @@ export default function ChooseOccasion() {
         <TopBar
           showBack={false}
           inset="gutter"
-          left={<BrandMark />}
+          left={<BrandMark onLongPress={() => setHealthCheckOpen(true)} />}
           right={<SavedButton count={savedLoaded ? saved.length : null} onPress={() => setSavedOpen(true)} />}
         />
       }
@@ -156,6 +158,10 @@ export default function ChooseOccasion() {
             visible={savedOpen}
             onClose={() => setSavedOpen(false)}
             onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"), { announcement: "Look removed" })}
+          />
+          <PreStageModal
+            visible={healthCheckOpen}
+            onClose={() => setHealthCheckOpen(false)}
           />
         </>
       }
