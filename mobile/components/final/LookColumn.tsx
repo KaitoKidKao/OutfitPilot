@@ -6,15 +6,17 @@
 // layout "column" = the default two-up comparison. layout "row" is used when the text
 // is scaled up (font scale >= 1.35) or the screen is very narrow: photo left, text right,
 // so long reasons never squeeze into a 150 pt column.
-import { Check } from "lucide-react-native";
+import { Check, ShieldCheck, Tag } from "lucide-react-native";
 import { useEffect, type ReactNode } from "react";
-import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 
 import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment } from "@/lib/catalog";
+import { getInitialClosetItem, getInitialMatchingPants } from "@/lib/closet";
+import { tr, useLocale } from "@/lib/locale";
 import { SOURCE_LABEL } from "@/lib/occasions";
 import { reasonWithoutName } from "@/lib/reasonText";
 import type { Slot } from "@/lib/store";
@@ -33,7 +35,10 @@ const BADGE = 32;
 const ROW_PHOTO_WIDTH = 128;
 
 export function LookColumn({ slot, pick, source, saved, layout = "column" }: LookColumnProps) {
+  const locale = useLocale();
   const garment = getGarment(pick.garmentId);
+  const closetItem = getInitialClosetItem(pick.garmentId);
+  const matchingPants = getInitialMatchingPants(pick.garmentId);
   const letter = slot.toUpperCase();
   const label = SOURCE_LABEL[source];
   const row = layout === "row";
@@ -70,6 +75,29 @@ export function LookColumn({ slot, pick, source, saved, layout = "column" }: Loo
           </AppText>
           {pick.pairWith}
         </AppText>
+
+        {closetItem?.fitAdvice ? (
+          <View style={styles.fitAdviceBox}>
+            <ShieldCheck size={12} color={colors.limeInk} strokeWidth={2.2} />
+            <AppText variant="caption" tone="muted" style={styles.fitAdviceText}>
+              {closetItem.fitAdvice}
+            </AppText>
+          </View>
+        ) : null}
+
+        {closetItem?.price ? (
+          <View style={styles.priceRow}>
+            <Tag size={12} color={colors.muted} />
+            <AppText variant="caption" weight={700} tone="ink">
+              {closetItem.price}
+            </AppText>
+            {closetItem.shop ? (
+              <AppText variant="caption" tone="muted">
+                · {closetItem.shop}
+              </AppText>
+            ) : null}
+          </View>
+        ) : null}
 
         <AppText
           variant="caption"
@@ -152,6 +180,26 @@ const styles = StyleSheet.create({
   },
   saved: { flexDirection: "row", alignItems: "center", gap: 4 },
   savedText: { flexShrink: 1 },
+  fitAdviceBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    backgroundColor: colors.surface,
+    padding: 8,
+    borderRadius: radii.sm,
+    marginTop: 2,
+  },
+  fitAdviceText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
   skelPhoto: { width: "100%", aspectRatio: 4 / 5, borderRadius: radii.xxl, backgroundColor: colors.surface },
   skelLine: { height: 12, borderRadius: 6, backgroundColor: colors.surface },
 });

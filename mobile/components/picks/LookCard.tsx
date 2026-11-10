@@ -6,11 +6,13 @@
 // hook (a tap on the hook does the same, plus scrolls here). The active card carries a 2 pt ink
 // ring and a lime slot badge; the other card's badge is ink (DESIGN.md Chips).
 import type { LayoutChangeEvent } from "react-native";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 import { AppText, GarmentImage, Touchable } from "@/components/ui";
 import type { Recommendation } from "@/lib/api";
 import { getGarment } from "@/lib/catalog";
+import { getInitialMatchingPants } from "@/lib/closet";
+import { tr, useLocale } from "@/lib/locale";
 import { reasonWithoutName } from "@/lib/reasonText";
 import type { Slot } from "@/lib/store";
 import { colors, radii, spacing } from "@/lib/theme";
@@ -30,10 +32,12 @@ const RING = 2;
 const RING_GAP = 2;
 
 export function LookCard({ slot, pick, active, onPress, onLayout, testID }: LookCardProps) {
+  const locale = useLocale();
   const garment = getGarment(pick.garmentId);
   const role = SLOT_ROLE[slot];
   const name = slotName(slot);
   const reason = reasonWithoutName(pick.reason, garment.name);
+  const matchingPants = getInitialMatchingPants(pick.garmentId);
 
   return (
     <Touchable
@@ -82,6 +86,33 @@ export function LookCard({ slot, pick, active, onPress, onLayout, testID }: Look
           <AppText variant="bodySm" tone="muted">
             {pick.pairWith}
           </AppText>
+
+          {matchingPants.length > 0 ? (
+            <View style={styles.pantsBox}>
+              <AppText variant="caption" weight={700} tone="ink">
+                {tr(locale, "Compatible in your closet:", "Quần phối hợp sẵn trong tủ đồ:")}
+              </AppText>
+              <View style={styles.pantsRow}>
+                {matchingPants.slice(0, 2).map((p) => (
+                  <View key={p.id} style={styles.pantsPill}>
+                    {p.image ? (
+                      <Image source={typeof p.image === "number" ? p.image : { uri: p.image }} style={styles.pantsThumb} />
+                    ) : null}
+                    <View style={styles.pantsMeta}>
+                      <AppText variant="caption" weight={700} numberOfLines={1}>
+                        {locale === "vi" ? p.nameVi : p.name}
+                      </AppText>
+                      <AppText variant="caption" tone="muted" numberOfLines={1}>
+                        {p.status === "owned"
+                          ? tr(locale, "In your closet", "Đã có trong tủ")
+                          : tr(locale, "Wishlist", "Đang thích")}
+                      </AppText>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </View>
       </View>
     </Touchable>
@@ -105,9 +136,41 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: RING + RING_GAP, paddingTop: 14, paddingBottom: 10, gap: spacing.gap },
   nameBlock: { gap: 2 },
   pair: {
-    gap: 2,
+    gap: 6,
     paddingTop: spacing.gap,
     borderTopWidth: 1,
     borderTopColor: colors.line,
+  },
+  pantsBox: {
+    marginTop: 6,
+    padding: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    gap: 8,
+  },
+  pantsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  pantsPill: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.paper,
+    padding: 6,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  pantsThumb: {
+    width: 36,
+    height: 44,
+    borderRadius: 6,
+    backgroundColor: colors.surfaceDeep,
+  },
+  pantsMeta: {
+    flex: 1,
+    justifyContent: "center",
   },
 });

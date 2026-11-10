@@ -35,16 +35,21 @@ function mimeFor(path: string): string {
   return "image/jpeg";
 }
 
-/** Reads a bundled catalog photo as base64 (the SDK rejects file:// URIs). Cached per garment. */
+/** Reads a bundled catalog photo or user file as base64 (the SDK rejects file:// URIs). Cached per garment. */
 function garmentBase64(id: GarmentId): Promise<string> {
   const cached = base64Cache.get(id);
   if (cached) return cached;
   const job = (async () => {
     const garment = getGarment(id);
-    if (garment.image === null) throw new Error(`${garment.name} has no bundled photo yet.`);
-    const asset = await Asset.fromModule(garment.image).downloadAsync();
-    const uri = asset.localUri ?? asset.uri;
-    if (!uri) throw new Error(`Could not load the photo of ${garment.name}.`);
+    if (!garment.image) throw new Error(`${garment.name} has no photo yet.`);
+    if (typeof garment.image === "number") {
+      const asset = await Asset.fromModule(garment.image).downloadAsync();
+      const uri = asset.localUri ?? asset.uri;
+      if (!uri) throw new Error(`Could not load the photo of ${garment.name}.`);
+      return new File(uri).base64();
+    }
+    const uri = typeof garment.image === "string" ? garment.image : (garment.image as { uri: string }).uri;
+    if (!uri) throw new Error(`Could not load photo for ${garment.name}.`);
     return new File(uri).base64();
   })();
   base64Cache.set(id, job);

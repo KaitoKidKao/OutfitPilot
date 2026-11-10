@@ -48,6 +48,8 @@ export interface AppState {
   saved: SavedLook[];
   /** false until AsyncStorage has been read once. */
   savedLoaded: boolean;
+  /** Explicit override for hooks from Closet or user choice */
+  customHooks: [GarmentId | null, GarmentId | null] | null;
 }
 
 export interface AppActions {
@@ -63,6 +65,7 @@ export interface AppActions {
    */
   fetchPicks: (options?: { force?: boolean }) => Promise<StyleResponse | null>;
   setActiveLook: (slot: Slot) => void;
+  assignHook: (slot: Slot, id: GarmentId | null) => void;
   giveConsent: () => void;
   revokeConsent: () => void;
   /** Saves the pick in `slot` (dedupes the same garment + occasion). Returns the saved entry. */
@@ -116,6 +119,7 @@ function initialState(): AppState {
     consentGiven: seed?.consentGiven ?? false,
     saved: seed?.saved ?? [],
     savedLoaded: false,
+    customHooks: null,
   };
 }
 
@@ -213,22 +217,34 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => (s.activeLook === slot ? s : { ...s, activeLook: slot }));
   }, []);
 
+  const assignHook = useCallback((slot: Slot, id: GarmentId | null) => {
+    setState((prev) => {
+      const curA = prev.customHooks ? prev.customHooks[0] : (prev.picks?.recommendations[0]?.garmentId ?? null);
+      const curB = prev.customHooks ? prev.customHooks[1] : (prev.picks?.recommendations[1]?.garmentId ?? null);
+      const nextHooks: [GarmentId | null, GarmentId | null] = slot === "a" ? [id, curB] : [curA, id];
+      return { ...prev, customHooks: nextHooks };
+    });
+  }, []);
+
   const giveConsent = useCallback(() => setState((s) => ({ ...s, consentGiven: true })), []);
   const revokeConsent = useCallback(() => setState((s) => ({ ...s, consentGiven: false })), []);
 
   const keepLook = useCallback(
     (slot: Slot): SavedLook | null => {
       const s = stateRef.current;
-      const rec = s.picks?.recommendations[slot === "a" ? 0 : 1];
-      if (!s.picks || !rec || !s.occasionId) return null;
+      const hookId = s.customHooks ? s.customHooks[slot === "a" ? 0 : 1] : (s.picks?.recommendations[slot === "a" ? 0 : 1]?.garmentId ?? null);
+      if (!hookId) return null;
+      const occasionId = s.occasionId ?? "job_interview";
+      const rec = s.picks?.recommendations.find((r) => r.garmentId === hookId);
+      const garment = getGarment(hookId);
       const savedAt = new Date().toISOString();
       const look: SavedLook = {
-        id: `${rec.garmentId}-${s.occasionId}-${Date.parse(savedAt)}`,
-        garmentId: rec.garmentId,
-        occasionId: s.occasionId,
-        reason: rec.reason,
-        pairWith: rec.pairWith,
-        source: s.picks.source,
+        id: `${hookId}-${occasionId}-${Date.parse(savedAt)}`,
+        garmentId: hookId,
+        occasionId,
+        reason: rec?.reason ?? garment.fitAdvice ?? `Món đồ từ Tủ Đồ (${garment.name})`,
+        pairWith: rec?.pairWith ?? "Quần phù hợp từ tủ đồ",
+        source: rec ? s.picks?.source ?? "llm" : "llm",
         savedAt,
       };
       const next = [look, ...s.saved.filter((l) => !(l.garmentId === look.garmentId && l.occasionId === look.occasionId))].slice(0, MAX_SAVED);
@@ -261,11 +277,32 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const store = useMemo<AppStore>(() => {
-    const pickFor = (slot: Slot) => state.picks?.recommendations[slot === "a" ? 0 : 1] ?? null;
-    const garmentFor = (slot: Slot) => {
-      const rec = pickFor(slot);
-      return rec ? getGarment(rec.garmentId) : null;
+    const hookA = state.customHooks ? state.customHooks[0] : (state.picks?.recommendations[0]?.garmentId ?? null);
+    const hookB = state.customHooks ? state.customHooks[1] : (state.picks?.recommendations[1]?.garmentId ?? null);
+
+    const pickFor = (slot: Slot) => {
+      const hookId = slot === "a" ? hookA : hookB;
+      if (!hookId) return null;
+      const rec = state.picks?.recommendations.find((r) => r.garmentId === hookId);
+      if (rec) return rec;
+      try {
+        const g = getGarment(hookId);
+        return { garmentId: hookId, reason: g.fitAdvice ?? g.name, pairWith: "Quần phối hợp từ tủ đồ" };
+      } catch {
+        return null;
+      }
     };
+
+    const garmentFor = (slot: Slot) => {
+      const hookId = slot === "a" ? hookA : hookB;
+      if (!hookId) return null;
+      try {
+        return getGarment(hookId);
+      } catch {
+        return null;
+      }
+    };
+
     return {
       ...state,
       locale: activeLocale,
@@ -274,6 +311,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       setLocale,
       fetchPicks,
       setActiveLook,
+      assignHook,
       giveConsent,
       revokeConsent,
       keepLook,
@@ -282,9 +320,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       clearSaved,
       pickFor,
       garmentFor,
-      hookIds: [state.picks?.recommendations[0].garmentId ?? null, state.picks?.recommendations[1].garmentId ?? null],
+      hookIds: [hookA, hookB],
     };
-  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved]);
+  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

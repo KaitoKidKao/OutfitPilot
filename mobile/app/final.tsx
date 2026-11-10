@@ -5,24 +5,25 @@
 // Keeping saves to the device (store.keepLook -> AsyncStorage), toasts, then opens the
 // Saved looks sheet. Secondary: "Saved N" (top bar, same as Choose Occasion) and "Start over" (end of page).
 import { useFocusEffect, useRouter } from "expo-router";
-import { Repeat, RotateCcw, Shirt } from "lucide-react-native";
+import { Layers, Repeat, RotateCcw, Shirt } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 
+import { ClosetSheet } from "@/components/closet/ClosetSheet";
 import { FinalEmpty, FinalError, FinalLoading } from "@/components/final/FinalStates";
 import { FitNote } from "@/components/final/FitNote";
 import { LookColumn } from "@/components/final/LookColumn";
 import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
-import { AppText, Button, Screen, TopBar, useToast } from "@/components/ui";
+import { AppText, Button, Screen, TopBar, Touchable, useToast } from "@/components/ui";
 import type { StyleResponse } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption } from "@/lib/occasions";
 import { readPreviewSeed } from "@/lib/previewSeed";
 import { useAppStore, type Slot } from "@/lib/store";
-import { colors, spacing } from "@/lib/theme";
+import { colors, radii, spacing } from "@/lib/theme";
 
 /** Let the "Saved" toast register before the sheet slides over it. */
 const SHEET_DELAY_MS = 650;
@@ -44,6 +45,7 @@ export default function FinalLook() {
 
   // Web preview only (/final?seed=final&sheet=saved); readPreviewSeed() is null elsewhere.
   const [sheetOpen, setSheetOpen] = useState(() => readPreviewSeed()?.openSavedSheet ?? false);
+  const [closetOpen, setClosetOpen] = useState(false);
   const [keeping, setKeeping] = useState<Slot | null>(null);
   // "Start over" clears the store while this screen animates away; keep showing the
   // pair the user was looking at instead of flashing the empty state.
@@ -142,13 +144,32 @@ export default function FinalLook() {
       header={
         <TopBar
           // Same entry point and count format as Choose Occasion ("Saved N").
-          right={<SavedButton count={savedLoaded ? savedCount : null} onPress={() => setSheetOpen(true)} />}
+          right={
+            <View style={styles.topRight}>
+              <Touchable
+                accessibilityRole="button"
+                accessibilityLabel="Mở tủ đồ cá nhân"
+                onPress={() => setClosetOpen(true)}
+                bg={colors.surface}
+                pressedBg={colors.surfaceDeep}
+                style={styles.closetBtn}
+                testID="open-closet-final-btn"
+              >
+                <Layers size={14} color={colors.ink} strokeWidth={2} />
+                <AppText variant="caption" weight={700}>
+                  {tr(locale, "Closet", "Tủ đồ")}
+                </AppText>
+              </Touchable>
+              <SavedButton count={savedLoaded ? savedCount : null} onPress={() => setSheetOpen(true)} />
+            </View>
+          }
         />
       }
       overlay={
         <>
           <FittingDock mode="keep" hooks={hooks} onKeep={handleKeep} hooksDisabled={!!keeping} center={center} />
           <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"))} />
+          <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
         </>
       }
     >
@@ -209,6 +230,21 @@ export default function FinalLook() {
 }
 
 const styles = StyleSheet.create({
+  topRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  closetBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 38,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   page: { gap: spacing.section, paddingTop: 8 },
   top: { gap: spacing.stack },
   intro: { gap: 10 },

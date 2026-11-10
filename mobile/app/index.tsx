@@ -10,10 +10,11 @@
 // Changing the occasion or style while a request runs supersedes it (the store
 // drops the stale response) instead of locking the screen.
 import { useFocusEffect, useRouter } from "expo-router";
-import { RotateCcw, Sparkles, Wrench } from "lucide-react-native";
+import { Layers, RotateCcw, Sparkles, Wrench } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
+import { ClosetSheet } from "@/components/closet/ClosetSheet";
 import { PendingNote, PicksErrorPanel } from "@/components/index/DockNotes";
 import { OccasionCard, OccasionGroup } from "@/components/index/OccasionCard";
 import { SavedButton } from "@/components/index/SavedButton";
@@ -38,6 +39,7 @@ export default function ChooseOccasion() {
     useAppStore();
 
   const [savedOpen, setSavedOpen] = useState(false);
+  const [closetOpen, setClosetOpen] = useState(false);
   const [healthCheckOpen, setHealthCheckOpen] = useState(false);
   const [errorDismissed, setErrorDismissed] = useState(false);
   const [pendingVisible, setPendingVisible] = useState(false);
@@ -146,7 +148,25 @@ export default function ChooseOccasion() {
           showBack={false}
           inset="gutter"
           left={<BrandMark onLongPress={() => setHealthCheckOpen(true)} />}
-          right={<SavedButton count={savedLoaded ? saved.length : null} onPress={() => setSavedOpen(true)} />}
+          right={
+            <View style={styles.topRight}>
+              <Touchable
+                accessibilityRole="button"
+                accessibilityLabel="Mở tủ đồ cá nhân"
+                onPress={() => setClosetOpen(true)}
+                bg={colors.surface}
+                pressedBg={colors.surfaceDeep}
+                style={styles.closetBtn}
+                testID="open-closet-btn"
+              >
+                <Layers size={14} color={colors.ink} strokeWidth={2} />
+                <AppText variant="caption" weight={700}>
+                  {tr(locale, "Closet", "Tủ đồ")}
+                </AppText>
+              </Touchable>
+              <SavedButton count={savedLoaded ? saved.length : null} onPress={() => setSavedOpen(true)} />
+            </View>
+          }
         />
       }
       // Keep the last row reachable above a panel sitting on the dock.
@@ -158,6 +178,10 @@ export default function ChooseOccasion() {
             visible={savedOpen}
             onClose={() => setSavedOpen(false)}
             onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"), { announcement: "Look removed" })}
+          />
+          <ClosetSheet
+            visible={closetOpen}
+            onClose={() => setClosetOpen(false)}
           />
           <PreStageModal
             visible={healthCheckOpen}
@@ -214,6 +238,21 @@ export default function ChooseOccasion() {
 }
 
 const styles = StyleSheet.create({
+  topRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  closetBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 38,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   intro: { paddingTop: 8, paddingBottom: 20, gap: 10 },
   headline: { gap: 6 },
   lede: { maxWidth: 340 },
