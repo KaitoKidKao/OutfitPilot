@@ -11,7 +11,8 @@
 // Reasoning models may also spend the 300-token budget on reasoning and come
 // back "incomplete"; the stylist then falls back to the rule-based picks.
 
-import OpenAI from "openai";
+// Named import: Vercel's builder resolves the CJS typings, where the default import is the module.
+import { OpenAI } from "openai";
 import { GARMENT_IDS } from "../catalog.js";
 
 export interface ChatTurn {
