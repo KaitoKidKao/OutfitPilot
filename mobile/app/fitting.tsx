@@ -339,8 +339,18 @@ export default function LiveFittingRoom() {
           />
         );
       case "ready":
-      default:
-        return <ReadyPanel onLayout={onPanelLayout} letter={letter} notice={tryOn.isSupported ? tryOn.notice : null} blocker={startReason} />;
+      default: {
+        const isDress = activeId ? getGarment(activeId).type === "dress" : false;
+        return (
+          <ReadyPanel
+            onLayout={onPanelLayout}
+            letter={letter}
+            isDress={isDress}
+            notice={tryOn.isSupported ? tryOn.notice : null}
+            blocker={startReason}
+          />
+        );
+      }
     }
   })();
 

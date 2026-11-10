@@ -38,6 +38,7 @@ function NoteLine({ text, icon: Icon = Info }: { text: string; icon?: LucideIcon
 
 export interface ReadyPanelProps {
   letter: string;
+  isDress?: boolean;
   /** Last informational notice from the wrapper (flip, background, user stop). */
   notice: string | null;
   /** Why Start is disabled (shown only when it is a real, fixable reason). */
@@ -45,18 +46,22 @@ export interface ReadyPanelProps {
   onLayout?: (e: LayoutChangeEvent) => void;
 }
 
-export function ReadyPanel({ letter, notice, blocker, onLayout }: ReadyPanelProps) {
+export function ReadyPanel({ letter, isDress = false, notice, blocker, onLayout }: ReadyPanelProps) {
   return (
     <StudioPanel onLayout={onLayout}>
-      <AppText variant="section" tone="paper" helper="Lùi lại khoảng 1,5 m, đứng gọn trong khung">
-        Step back about 1.5 m
+      <AppText
+        variant="section"
+        tone="paper"
+        helper={isDress ? "Lùi lại 1,8–2 m để thấy toàn bộ đầm trên người" : "Lùi lại khoảng 1,5 m, đứng gọn trong khung"}
+      >
+        {isDress ? "Step back 1.8–2 m for full dress view" : "Step back about 1.5 m"}
       </AppText>
       <AppText
         variant="bodySm"
         tone="mutedDark"
-        helper={`Bấm Bật AI để thử trực tiếp Look ${letter}. Phiên thử tự dừng sau 2 phút. Chạm vào móc bên dưới để đổi look trước khi bật.`}
+        helper={`Bấm Bật AI để thử trực tiếp Look ${letter}${isDress ? " (Đầm liền toàn thân)" : ""}. Phiên thử tự dừng sau 2 phút. Chạm vào móc bên dưới để đổi look trước khi bật.`}
       >
-        {`Start AI puts Look ${letter} on you live. It is a paid session and stops by itself after 2 minutes. Tap a hook to choose which look goes first.`}
+        {`Start AI puts Look ${letter}${isDress ? " (full-body dress)" : ""} on you live. It is a paid session and stops by itself after 2 minutes. Tap a hook to choose which look goes first.`}
       </AppText>
       {blocker ? <NoteLine text={blocker} /> : notice ? <NoteLine text={notice} /> : null}
     </StudioPanel>
