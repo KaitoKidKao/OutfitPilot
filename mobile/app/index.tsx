@@ -297,11 +297,18 @@ export default function ChooseOccasion() {
 
       <View style={styles.styleSection}>
         <View style={styles.styleHeaderRow}>
-          <AppText variant="label" weight={700} helper="Phong cách">
-            Style vibe
-          </AppText>
-          <AppText variant="caption" tone="muted" helper="(Tuỳ chọn)">
-            (Optional)
+          <View style={styles.styleTitleGroup}>
+            <AppText variant="label" weight={700} helper="Phong cách">
+              Style vibe
+            </AppText>
+            <AppText variant="caption" tone="muted" helper="(Tuỳ chọn)">
+              (Optional)
+            </AppText>
+          </View>
+          <AppText variant="caption" tone={style === "none" ? "muted" : "ink"} weight={style === "none" ? 500 : 700}>
+            {style === "none"
+              ? (locale === "vi" ? "Mọi phong cách" : "All vibes")
+              : (locale === "vi" ? STYLE_OPTIONS.find((s) => s.value === style)?.labelVi : STYLE_OPTIONS.find((s) => s.value === style)?.label)}
           </AppText>
         </View>
         <View style={styles.styleRow} accessibilityRole="radiogroup" accessibilityLabel="Style vibe">
@@ -324,6 +331,8 @@ export default function ChooseOccasion() {
                   variant="caption"
                   weight={isSelected ? 700 : 500}
                   tone={isSelected ? "paper" : "ink"}
+                  numberOfLines={1}
+                  align="center"
                 >
                   {label}
                 </AppText>
@@ -421,16 +430,21 @@ const styles = StyleSheet.create({
   styleHeaderRow: {
     flexDirection: "row",
     alignItems: "baseline",
+    justifyContent: "space-between",
+  },
+  styleTitleGroup: {
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: 6,
   },
   styleRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
   },
   compactStyleChip: {
-    height: 34,
-    paddingHorizontal: 14,
+    flex: 1,
+    height: 38,
+    paddingHorizontal: 4,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,

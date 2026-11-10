@@ -74,7 +74,7 @@ export interface StyleOption {
 }
 
 export const STYLE_OPTIONS: readonly StyleOption[] = [
-  { value: "none", label: "None", labelVi: "Không chọn" },
+  { value: "none", label: "None", labelVi: "Tất cả" },
   { value: "minimal", label: "Minimal", labelVi: "Tối giản" },
   { value: "casual", label: "Casual", labelVi: "Thoải mái" },
   { value: "smart", label: "Smart", labelVi: "Lịch sự" },
