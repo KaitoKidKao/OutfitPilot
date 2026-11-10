@@ -117,6 +117,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
   const [newPrice, setNewPrice] = useState("");
   const [newShop, setNewShop] = useState("");
   const [newFitAdvice, setNewFitAdvice] = useState("");
+  const [newTryOnMode, setNewTryOnMode] = useState<"outfit" | "single">("outfit");
 
   const filteredItems = items.filter((it) => {
     if (genderFilter !== "all") {
@@ -147,6 +148,25 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     }
   };
 
+  const handleQuickFillShopee = () => {
+    try {
+      const asset = Image.resolveAssetSource(require("../../assets/garments/shopee_sample.jpg"));
+      if (asset?.uri) {
+        setNewImageUri(asset.uri);
+      }
+      setNewName("Set Áo Nỉ Cún & Mũ Nơ");
+      setNewCategory("top");
+      setNewColor("trắng");
+      setNewStatus("wishlist");
+      setNewPrice("285.000₫");
+      setNewShop("Shopee Mall · Tihi Official");
+      setNewFitAdvice("Form oversize Ulzzang Hàn Quốc. VTON thử trọn bộ gồm áo nỉ cún, mũ nơ và túi chéo.");
+      setNewTryOnMode("outfit");
+    } catch (e) {
+      console.warn("Could not load sample asset", e);
+    }
+  };
+
   const handleSaveNewItem = () => {
     if (!newImageUri || !newName.trim()) {
       Alert.alert(
@@ -155,19 +175,28 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
       );
       return;
     }
+    const customPrompt =
+      newTryOnMode === "outfit"
+        ? `The complete outfit from the reference image, including all garments and accessories (such as cap and bag), worn by the person in the video.`
+        : `A ${newColor.trim() || "stylish"} ${newName.trim()} worn on the upper body by the person in the video.`;
+
     addItem({
       name: newName.trim(),
       nameVi: newName.trim(),
       category: newCategory,
       color: newColor.trim() || "đen",
-      styles: ["casual"],
+      styles: ["casual", "street"],
       formality: newCategory === "outerwear" ? 3 : 2,
       status: newStatus,
       price: newPrice.trim() || undefined,
       shop: newShop.trim() || undefined,
       image: { uri: newImageUri },
-      fitAdvice: newFitAdvice.trim() || tr(locale, "Check size before purchase.", "Kiểm tra kích thước chuẩn trước khi đặt mua."),
-      matchingPantsIds: ["P02", "P03", "P05", "P08"],
+      fitAdvice:
+        newFitAdvice.trim() ||
+        tr(locale, "Check size before purchase.", "Kiểm tra kích thước chuẩn trước khi đặt mua."),
+      matchingPantsIds: ["P01", "P02", "P03", "P05"],
+      tryOnMode: newTryOnMode,
+      customPrompt,
     });
 
     // Reset & close
@@ -176,7 +205,56 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     setNewPrice("");
     setNewShop("");
     setNewFitAdvice("");
+    setNewTryOnMode("outfit");
     setAddSheetOpen(false);
+  };
+
+  const handleSaveAndHangB = () => {
+    if (!newImageUri || !newName.trim()) {
+      Alert.alert(
+        tr(locale, "Missing information", "Thiếu thông tin"),
+        tr(locale, "Please select a photo and enter the item name.", "Vui lòng chọn ảnh và nhập tên món đồ.")
+      );
+      return;
+    }
+    const customPrompt =
+      newTryOnMode === "outfit"
+        ? `The complete outfit from the reference image, including all garments and accessories (such as cap and bag), worn by the person in the video.`
+        : `A ${newColor.trim() || "stylish"} ${newName.trim()} worn on the upper body by the person in the video.`;
+
+    const created = addItem({
+      name: newName.trim(),
+      nameVi: newName.trim(),
+      category: newCategory,
+      color: newColor.trim() || "đen",
+      styles: ["casual", "street"],
+      formality: newCategory === "outerwear" ? 3 : 2,
+      status: newStatus,
+      price: newPrice.trim() || undefined,
+      shop: newShop.trim() || undefined,
+      image: { uri: newImageUri },
+      fitAdvice:
+        newFitAdvice.trim() ||
+        tr(locale, "Check size before purchase.", "Kiểm tra kích thước chuẩn trước khi đặt mua."),
+      matchingPantsIds: ["P01", "P02", "P03", "P05"],
+      tryOnMode: newTryOnMode,
+      customPrompt,
+    });
+
+    // Reset & close
+    setNewImageUri(null);
+    setNewName("");
+    setNewPrice("");
+    setNewShop("");
+    setNewFitAdvice("");
+    setNewTryOnMode("outfit");
+    setAddSheetOpen(false);
+
+    // Hang immediately on Look B and navigate to setup
+    assignHook("b", created.id);
+    setActiveLook("b");
+    onClose();
+    router.push("/setup");
   };
 
   const handleHangOnHook = (slot: Slot, item: ClosetItem) => {
@@ -425,7 +503,13 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
 
                 {/* Status Badges */}
                 <View style={styles.cardBadges}>
-                  {item.status === "wishlist" ? (
+                  {item.tryOnMode === "outfit" ? (
+                    <View style={styles.badgeOutfit}>
+                      <AppText variant="caption" tone="ink" weight={800} style={{ fontSize: 10 }}>
+                        ✨ Set đồ
+                      </AppText>
+                    </View>
+                  ) : item.status === "wishlist" ? (
                     <View style={styles.badgeWishlist}>
                       <AppText variant="caption" tone="limeInk" weight={700}>
                         {tr(locale, "Wishlist", "Ngắm mua")}
@@ -533,6 +617,14 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                     <AppText variant="caption" tone="muted">
                       {activeItem.shop}
                     </AppText>
+                  ) : null}
+                  {activeItem.tryOnMode === "outfit" ? (
+                    <View style={styles.outfitPillBadge}>
+                      <Sparkles size={11} color={colors.ink} strokeWidth={2.2} />
+                      <AppText variant="tag" weight={700} tone="ink" style={{ fontSize: 11 }}>
+                        {tr(locale, "Full Set Try-On (Hat + Bag)", "Thử trọn bộ set (Mũ + Túi)")}
+                      </AppText>
+                    </View>
                   ) : null}
                 </View>
                 <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setActiveItem(null)} variant="quiet" />
@@ -678,6 +770,36 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
               </View>
 
               <ScrollView style={styles.addScroll} showsVerticalScrollIndicator={false}>
+                {/* Quick Fill Shopee / TikTok Shop Demo */}
+                <Touchable
+                  onPress={handleQuickFillShopee}
+                  bg={colors.surface}
+                  pressedBg={colors.surfaceDeep}
+                  style={styles.quickFillBanner}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quick fill Shopee sample screenshot"
+                >
+                  <View style={styles.quickFillLeft}>
+                    <Sparkles size={18} color={colors.ink} strokeWidth={2.2} />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText variant="caption" weight={800} tone="ink">
+                        {tr(
+                          locale,
+                          "🛍️ Quick demo: Shopee Ulzzang Sweatshirt + Cap",
+                          "🛍️ Thử nhanh ảnh Shopee mẫu (Áo nỉ + Mũ nơ + Túi)"
+                        )}
+                      </AppText>
+                      <AppText variant="tag" tone="muted">
+                        {tr(
+                          locale,
+                          "Auto-fills screenshot · 285.000₫ · Ready to try",
+                          "Tự điền ảnh chụp sàn TMĐT · 285.000₫ · Thử camera ngay"
+                        )}
+                      </AppText>
+                    </View>
+                  </View>
+                </Touchable>
+
                 {/* Photo Selection Buttons */}
                 {newImageUri ? (
                   <View style={styles.newPhotoPreview}>
@@ -800,13 +922,89 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                   />
                 </View>
 
-                {/* Save Button */}
-                <Touchable onPress={handleSaveNewItem} bg={colors.lime} pressedBg={colors.limePress} style={styles.saveBtn}>
-                  <Check size={18} color={colors.ink} strokeWidth={2.5} />
-                  <AppText variant="label" weight={800} tone="ink">
-                    {tr(locale, "Save to Closet", "Lưu vào Tủ đồ")}
+                {/* Try-On Mode (Decart Lucy VTON Engine) */}
+                <View style={styles.fieldGroup}>
+                  <AppText variant="label">
+                    {tr(locale, "AI Try-On Mode", "Chế độ Thử AI (Decart VTON)")}
                   </AppText>
-                </Touchable>
+                  <View style={styles.tryOnModeRow}>
+                    <Touchable
+                      onPress={() => setNewTryOnMode("outfit")}
+                      bg={newTryOnMode === "outfit" ? colors.ink : colors.surface}
+                      style={[styles.tryOnModeChip, newTryOnMode === "outfit" && styles.tryOnModeChipActive]}
+                    >
+                      <AppText
+                        variant="caption"
+                        weight={700}
+                        tone={newTryOnMode === "outfit" ? "paper" : "ink"}
+                      >
+                        ✨ {tr(locale, "Full Set (Hat + Bag + Shirt)", "Thử trọn bộ (Áo + Mũ + Túi)")}
+                      </AppText>
+                    </Touchable>
+                    <Touchable
+                      onPress={() => setNewTryOnMode("single")}
+                      bg={newTryOnMode === "single" ? colors.ink : colors.surface}
+                      style={[styles.tryOnModeChip, newTryOnMode === "single" && styles.tryOnModeChipActive]}
+                    >
+                      <AppText
+                        variant="caption"
+                        weight={700}
+                        tone={newTryOnMode === "single" ? "paper" : "ink"}
+                      >
+                        👕 {tr(locale, "Garment only", "Chỉ thử riêng áo/đầm")}
+                      </AppText>
+                    </Touchable>
+                  </View>
+                  <AppText variant="tag" tone="muted" style={{ marginTop: 4 }}>
+                    {newTryOnMode === "outfit"
+                      ? tr(
+                          locale,
+                          "AI keeps the full Ulzzang aesthetic: wearing the cap, shoulder bag and graphic sweatshirt.",
+                          "AI giữ nguyên phong cách Ulzzang từ ảnh shop: đội mũ, đeo túi chéo và mặc áo nỉ lên người bạn."
+                        )
+                      : tr(
+                          locale,
+                          "AI transfers only the primary garment.",
+                          "AI chỉ trích xuất và ướm phần áo/đầm lên người bạn."
+                        )}
+                  </AppText>
+                </View>
+
+                {/* Primary & Secondary Action Buttons */}
+                <View style={styles.addActionsRow}>
+                  <Touchable
+                    onPress={handleSaveAndHangB}
+                    bg={colors.lime}
+                    pressedBg={colors.limePress}
+                    style={styles.hangLookBBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save and try on Look B"
+                  >
+                    <Sparkles size={18} color={colors.ink} strokeWidth={2.5} />
+                    <View style={{ alignItems: "center" }}>
+                      <AppText variant="label" weight={800} tone="ink">
+                        {tr(locale, "⚡ Hang on Look B & Try Now", "⚡ Treo vào Look B & Thử ngay")}
+                      </AppText>
+                      <AppText variant="tag" tone="ink" style={{ fontSize: 11 }}>
+                        {tr(locale, "Saves to Wishlist & opens live camera", "Lưu vào Ngắm mua và mở camera thử trực tiếp")}
+                      </AppText>
+                    </View>
+                  </Touchable>
+
+                  <Touchable
+                    onPress={handleSaveNewItem}
+                    bg={colors.surface}
+                    pressedBg={colors.surfaceDeep}
+                    style={styles.saveOnlyBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save to closet only"
+                  >
+                    <Check size={16} color={colors.ink} strokeWidth={2.2} />
+                    <AppText variant="label" weight={700} tone="ink">
+                      {tr(locale, "Save to Closet only", "Lưu vào Tủ đồ")}
+                    </AppText>
+                  </Touchable>
+                </View>
               </ScrollView>
             </View>
           </View>
@@ -1041,6 +1239,23 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: radii.full,
   },
+  badgeOutfit: {
+    backgroundColor: colors.lime,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  outfitPillBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: colors.lime,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    marginTop: 4,
+  },
   badgeHook: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -1259,5 +1474,61 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 10,
     marginBottom: 30,
+  },
+  quickFillBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: radii.md,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  quickFillLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  tryOnModeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  tryOnModeChip: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: radii.md,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  tryOnModeChipActive: {
+    borderColor: colors.ink,
+  },
+  addActionsRow: {
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  hangLookBBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: radii.lg,
+    gap: 8,
+  },
+  saveOnlyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 46,
+    borderRadius: radii.lg,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
 });

@@ -53,6 +53,8 @@ export interface Garment {
   fitAdvice?: string;
   /** Matching pants from the closet */
   matchingPantsIds?: string[];
+  /** Custom VTON prompt for user uploaded pieces */
+  customPrompt?: string;
 }
 
 export const CATALOG: readonly Garment[] = [
@@ -147,7 +149,12 @@ export function registerCustomGarment(garment: Garment): void {
 
 export function isGarmentId(value: unknown): value is GarmentId {
   if (typeof value !== "string") return false;
-  return (GARMENT_IDS as readonly string[]).includes(value) || CUSTOM_GARMENTS.has(value) || value.startsWith("u_");
+  return (
+    (GARMENT_IDS as readonly string[]).includes(value) ||
+    CUSTOM_GARMENTS.has(value) ||
+    value.startsWith("u_") ||
+    value.startsWith("WISHLIST_")
+  );
 }
 
 export function getGarment(id: GarmentId): Garment {
@@ -155,8 +162,21 @@ export function getGarment(id: GarmentId): Garment {
   if (custom) return custom;
   const normalized = id.includes("_") ? id.replace("_", "-") : id.replace("-", "_");
   const garment = CATALOG.find((g) => g.id === id || g.id === normalized);
-  if (!garment) throw new Error(`Unknown garment id ${id}`);
-  return garment;
+  if (garment) return garment;
+  return {
+    id,
+    name: "Custom Piece",
+    nameVi: "Món đồ phối",
+    type: "shirt",
+    color: "black",
+    formality: 2,
+    styles: ["casual"],
+    cut: "custom piece",
+    image: null,
+    imagePath: "",
+    sample: false,
+    credit: null,
+  };
 }
 
 const GARMENT_PROMPTS: Record<string, string> = {
@@ -207,6 +227,7 @@ const GARMENT_PROMPTS: Record<string, string> = {
  * Supports full-body dresses, skirts, pants, and complete outfits.
  */
 export function tryOnPrompt(garment: Garment): string {
+  if (garment.customPrompt) return garment.customPrompt;
   const prompt = GARMENT_PROMPTS[garment.id] || GARMENT_PROMPTS[garment.id.replace("_", "-")];
   if (prompt) return prompt;
   if (garment.type === "dress") {

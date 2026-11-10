@@ -29,6 +29,8 @@ export interface ClosetItem {
   fitAdvice?: string;
   matchingPantsIds?: string[];
   isCustom?: boolean;
+  tryOnMode?: "outfit" | "single";
+  customPrompt?: string;
 }
 
 export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
@@ -601,9 +603,51 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     image: require("../assets/garments/women/W10_01_coral_wrap_dress.png"),
     fitAdvice: "Dáng wrap dress buộc eo tôn vòng 2 và cổ chữ V thanh thoát, màu san hô rực rỡ dưới nắng.",
   },
+  // Mẫu ngắm mua từ sàn TMĐT (Shopee / TikTok Shop / Anywear Try-on)
+  {
+    id: "WISHLIST_SHOPEE_01",
+    name: "Ulzzang Graphic Sweatshirt & Cap",
+    nameVi: "Set Áo Nỉ Cún & Mũ Nơ Ulzzang",
+    category: "top",
+    gender: "women",
+    color: "white",
+    styles: ["casual", "street"],
+    formality: 1,
+    status: "wishlist",
+    price: "285.000₫",
+    shop: "Shopee Mall · Tihi Official",
+    image: require("../assets/garments/shopee_sample.jpg"),
+    fitAdvice: "Form oversize rộng rãi phong cách Ulzzang. VTON thử nguyên set cả áo nỉ, mũ nơ và túi bông.",
+    matchingPantsIds: ["P01", "P02", "W05-02"],
+    isCustom: true,
+    tryOnMode: "outfit",
+    customPrompt: "The complete outfit from the reference image, including white graphic long-sleeve sweatshirt with cartoon dog print, white baseball cap with black bow, and quilted shoulder bag, worn by the person in the video.",
+  },
 ];
 
-const CLOSET_STORAGE_KEY = "outfitpilot.closet.v3";
+// Register custom garments into catalog immediately
+INITIAL_CLOSET_ITEMS.forEach((it) => {
+  if (it.isCustom) {
+    registerCustomGarment({
+      id: it.id,
+      name: it.name,
+      nameVi: it.nameVi,
+      type: it.category === "pants" ? "pants" : it.category === "dress" ? "dress" : it.tryOnMode === "outfit" ? "outfit" : "shirt",
+      color: it.color,
+      formality: it.formality,
+      styles: it.styles,
+      cut: "custom piece",
+      image: it.image,
+      imagePath: it.imagePath ?? "",
+      sample: false,
+      credit: null,
+      fitAdvice: it.fitAdvice,
+      customPrompt: it.customPrompt,
+    });
+  }
+});
+
+const CLOSET_STORAGE_KEY = "outfitpilot.closet.v4";
 
 export function useCloset() {
   const [items, setItems] = useState<ClosetItem[]>(INITIAL_CLOSET_ITEMS);
@@ -624,7 +668,7 @@ export function useCloset() {
                     id: it.id,
                     name: it.name,
                     nameVi: it.nameVi,
-                    type: it.category === "pants" ? "pants" : it.category === "dress" ? "dress" : "shirt",
+                    type: it.category === "pants" ? "pants" : it.category === "dress" ? "dress" : it.tryOnMode === "outfit" ? "outfit" : "shirt",
                     color: it.color,
                     formality: it.formality,
                     styles: it.styles,
@@ -634,6 +678,7 @@ export function useCloset() {
                     sample: false,
                     credit: null,
                     fitAdvice: it.fitAdvice,
+                    customPrompt: it.customPrompt,
                   });
                 }
               });
@@ -669,7 +714,7 @@ export function useCloset() {
         id,
         name: newItem.name,
         nameVi: newItem.nameVi,
-        type: newItem.category === "pants" ? "pants" : "shirt",
+        type: newItem.category === "pants" ? "pants" : newItem.category === "dress" ? "dress" : newItem.tryOnMode === "outfit" ? "outfit" : "shirt",
         color: newItem.color,
         formality: newItem.formality,
         styles: newItem.styles,
@@ -679,6 +724,7 @@ export function useCloset() {
         sample: false,
         credit: null,
         fitAdvice: newItem.fitAdvice,
+        customPrompt: newItem.customPrompt,
       });
 
       const next = [newItem, ...items];
