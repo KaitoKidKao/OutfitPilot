@@ -31,11 +31,11 @@ import { colors, MIN_TARGET, radii, spacing } from "@/lib/theme";
 const PENDING_NOTE_DELAY_MS = 1200;
 
 const QUICK_OCCASIONS = [
-  { en: "Beach Wedding", vi: "Tiệc cưới bãi biển", icon: "💒" },
-  { en: "Rooftop Bar", vi: "Đi Bar & Pub tối", icon: "🍸" },
-  { en: "Weekend Trip", vi: "Du lịch cuối tuần", icon: "✈️" },
-  { en: "Client Meeting", vi: "Gặp đối tác", icon: "👔" },
-  { en: "Birthday Gala", vi: "Tiệc sinh nhật", icon: "🎂" },
+  { en: "Beach Wedding", vi: "Tiệc cưới bãi biển" },
+  { en: "Rooftop Bar", vi: "Đi Bar & Pub tối" },
+  { en: "Weekend Trip", vi: "Du lịch cuối tuần" },
+  { en: "Client Meeting", vi: "Gặp đối tác" },
+  { en: "Birthday Gala", vi: "Tiệc sinh nhật" },
 ];
 
 export default function ChooseOccasion() {
@@ -286,7 +286,7 @@ export default function ChooseOccasion() {
                   style={[styles.quickTagPill, isSelected && styles.quickTagPillSelected]}
                 >
                   <AppText variant="caption" weight={isSelected ? 700 : 500} tone={isSelected ? "paper" : "ink"}>
-                    {tag.icon} {text}
+                    {text}
                   </AppText>
                 </Touchable>
               );

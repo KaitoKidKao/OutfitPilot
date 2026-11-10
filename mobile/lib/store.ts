@@ -30,6 +30,17 @@ export interface SavedLook {
   savedAt: string;
 }
 
+export interface TryOnRecap {
+  garmentId: GarmentId;
+  garmentName: string;
+  garmentNameVi?: string;
+  slot: Slot;
+  durationSeconds: number;
+  recordedAt: string;
+  aiVideoUri?: string | null;
+  originalPhotoUri?: string | null;
+}
+
 export interface AppState {
   occasionId: OccasionId | null;
   style: StyleChoice;
@@ -52,6 +63,8 @@ export interface AppState {
   customHooks: [GarmentId | null, GarmentId | null] | null;
   /** Free-form custom occasion text when occasionId is "other" */
   customOccasion: string | null;
+  /** Latest recorded try-on video recap */
+  latestRecap: TryOnRecap | null;
 }
 
 export interface AppActions {
@@ -78,6 +91,7 @@ export interface AppActions {
   clear: () => void;
   /** Deletes every saved look. */
   clearSaved: () => void;
+  setLatestRecap: (recap: TryOnRecap | null) => void;
 }
 
 export interface AppStore extends AppState, AppActions {
@@ -124,6 +138,7 @@ function initialState(): AppState {
     savedLoaded: false,
     customHooks: null,
     customOccasion: null,
+    latestRecap: null,
   };
 }
 
@@ -305,7 +320,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const clear = useCallback(() => {
-    setState((s) => ({ ...resetPicks(s), occasionId: null, style: "none", consentGiven: false, customOccasion: null }));
+    setState((s) => ({ ...resetPicks(s), occasionId: null, style: "none", consentGiven: false, customOccasion: null, latestRecap: null }));
+  }, []);
+
+  const setLatestRecap = useCallback((recap: TryOnRecap | null) => {
+    setState((s) => ({ ...s, latestRecap: recap }));
   }, []);
 
   const store = useMemo<AppStore>(() => {
@@ -351,11 +370,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       removeSaved,
       clear,
       clearSaved,
+      setLatestRecap,
       pickFor,
       garmentFor,
       hookIds: [hookA, hookB],
     };
-  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved]);
+  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

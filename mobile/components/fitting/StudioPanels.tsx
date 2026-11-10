@@ -59,9 +59,9 @@ export function ReadyPanel({ letter, isDress = false, notice, blocker, onLayout 
       <AppText
         variant="bodySm"
         tone="mutedDark"
-        helper={`Bấm Bật AI để thử trực tiếp Look ${letter}${isDress ? " (Đầm liền toàn thân)" : ""}. Phiên thử tự dừng sau 2 phút. Chạm vào móc bên dưới để đổi look trước khi bật.`}
+        helper={`Bấm Bật AI để thử trực tiếp Look ${letter}${isDress ? " (Đầm liền toàn thân)" : ""}. Phiên thử tự dừng sau 60 giây. Chạm vào móc bên dưới để đổi look trước khi bật.`}
       >
-        {`Start AI puts Look ${letter}${isDress ? " (full-body dress)" : ""} on you live. It is a paid session and stops by itself after 2 minutes. Tap a hook to choose which look goes first.`}
+        {`Start AI puts Look ${letter}${isDress ? " (full-body dress)" : ""} on you live. It is a paid session and stops by itself after 60 seconds. Tap a hook to choose which look goes first.`}
       </AppText>
       {blocker ? <NoteLine text={blocker} /> : notice ? <NoteLine text={notice} /> : null}
     </StudioPanel>

@@ -50,8 +50,8 @@ export const CAMERA_CAPTURE = {
   height: defaultModel.height,
 } as const;
 
-/** Hard cap per paid session (DESIGN.md / plan: 120 s). The server token TTL is the backstop. */
-export const MAX_SESSION_MS = 120_000;
+/** Hard cap per paid session (DESIGN.md / plan: 60 s). The server token TTL is the backstop. */
+export const MAX_SESSION_MS = 60_000;
 
 function resolveModel(name: string) {
   if (!isRealtimeModel(name)) {

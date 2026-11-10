@@ -5,7 +5,7 @@
 // Keeping saves to the device (store.keepLook -> AsyncStorage), toasts, then opens the
 // Saved looks sheet. Secondary: "Saved N" (top bar, same as Choose Occasion) and "Start over" (end of page).
 import { useFocusEffect, useRouter } from "expo-router";
-import { Layers, Repeat, RotateCcw, Shirt } from "lucide-react-native";
+import { Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -13,6 +13,7 @@ import { ClosetSheet } from "@/components/closet/ClosetSheet";
 import { FinalEmpty, FinalError, FinalLoading } from "@/components/final/FinalStates";
 import { FitNote } from "@/components/final/FitNote";
 import { LookColumn } from "@/components/final/LookColumn";
+import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
 import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
@@ -41,11 +42,12 @@ export default function FinalLook() {
   const toast = useToast();
   const locale = useLocale();
   const { width, fontScale } = useWindowDimensions();
-  const { picks, picksStatus, picksError, occasionId, saved, savedLoaded, consentGiven, keepLook, fetchPicks, clear, hookIds, pickFor } = useAppStore();
+  const { picks, picksStatus, picksError, occasionId, saved, savedLoaded, consentGiven, keepLook, fetchPicks, clear, hookIds, pickFor, latestRecap } = useAppStore();
 
   // Web preview only (/final?seed=final&sheet=saved); readPreviewSeed() is null elsewhere.
   const [sheetOpen, setSheetOpen] = useState(() => readPreviewSeed()?.openSavedSheet ?? false);
   const [closetOpen, setClosetOpen] = useState(false);
+  const [recapOpen, setRecapOpen] = useState(false);
   const [keeping, setKeeping] = useState<Slot | null>(null);
   // "Start over" clears the store while this screen animates away; keep showing the
   // pair the user was looking at instead of flashing the empty state.
@@ -183,11 +185,47 @@ export default function FinalLook() {
           <FittingDock mode="keep" hooks={hooks} onKeep={handleKeep} hooksDisabled={!!keeping} center={center} />
           <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"))} />
           <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
+          <TryOnRecapModal
+            visible={recapOpen}
+            onClose={() => setRecapOpen(false)}
+            recap={latestRecap}
+            onKeepLook={() => latestRecap?.slot && handleKeep(latestRecap.slot)}
+          />
         </>
       }
     >
       <View style={styles.page}>
         <View style={styles.top}>
+          {latestRecap ? (
+            <Touchable
+              onPress={() => setRecapOpen(true)}
+              bg={colors.surface}
+              pressedBg={colors.surfaceDeep}
+              style={styles.recapBanner}
+              accessibilityRole="button"
+              accessibilityLabel="Xem lại video clip thử đồ"
+            >
+              <View style={styles.recapBannerLeft}>
+                <View style={styles.recapPlayPill}>
+                  <Play size={14} color={colors.ink} strokeWidth={2.8} />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText variant="caption" weight={800} tone="ink">
+                    {tr(locale, "Try-On Video Recap", "Xem lại Video Thử Đồ")} ({latestRecap.durationSeconds}s)
+                  </AppText>
+                  <AppText variant="tag" tone="muted">
+                    {locale === "vi" ? latestRecap.garmentNameVi || latestRecap.garmentName : latestRecap.garmentName} · {tr(locale, "Loop replay · 0 token", "Phát lại vòng lặp · 0 token")}
+                  </AppText>
+                </View>
+              </View>
+              <View style={styles.recapBannerBadge}>
+                <AppText variant="tag" weight={800} tone="ink">
+                  {tr(locale, "REPLAY", "XEM CLIP")}
+                </AppText>
+              </View>
+            </Touchable>
+          ) : null}
+
           <View style={styles.intro}>
             <AppText variant="headline" helper="Bạn giữ món nào?">
               Which one do you keep?
@@ -260,6 +298,37 @@ const styles = StyleSheet.create({
   },
   page: { gap: spacing.section, paddingTop: 8 },
   top: { gap: spacing.stack },
+  recapBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  recapBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  recapPlayPill: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.full,
+    backgroundColor: colors.lime,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recapBannerBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    backgroundColor: colors.paper,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   intro: { gap: 10 },
   pair: { flexDirection: "row", alignItems: "flex-start", gap: spacing.gap },
   stackedPair: { gap: spacing.stack },

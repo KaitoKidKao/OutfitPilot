@@ -27,8 +27,8 @@ const FACTS: readonly Fact[] = [
   },
   {
     icon: Timer,
-    text: "A session lasts 2 minutes at most and stops as soon as you leave the fitting room.",
-    textVi: "Mỗi phiên tối đa 2 phút và dừng ngay khi bạn rời phòng thử.",
+    text: "A session lasts 60 seconds at most and stops as soon as you leave the fitting room.",
+    textVi: "Mỗi phiên tối đa 60 giây và dừng ngay khi bạn rời phòng thử.",
   },
 ];
 
