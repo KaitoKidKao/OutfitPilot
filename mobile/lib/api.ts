@@ -94,8 +94,8 @@ function normalizeBaseUrl(raw: string | undefined): string | null {
   const trimmed = raw.trim().replace(/\/+$/, "");
   if (!/^https?:\/\/[^<>\s]+$/.test(trimmed)) return null; // also rejects the "<LAN-IP>" placeholder
   // /api/realtime-token returns a bearer token for a billed session: plain http (LAN API)
-  // is accepted only in development builds, never in a release bundle.
-  if (!__DEV__ && !trimmed.startsWith("https://")) return null;
+  // is accepted only in development builds or LAN IPs during testing, never in a public release bundle.
+  if (!__DEV__ && !trimmed.startsWith("https://") && !/(localhost|127\.0\.0\.1|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(trimmed)) return null;
   return trimmed;
 }
 

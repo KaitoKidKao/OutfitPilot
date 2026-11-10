@@ -22,9 +22,21 @@ import {
   type SessionEnded,
 } from "@decartai/sdk";
 import type { MediaStream } from "@livekit/react-native-webrtc";
+import { LocalParticipant } from "livekit-client";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { ApiError, describeApiError, postRealtimeToken, type RealtimeTokenResponse } from "./api";
+
+// Disable LiveKit multi-layer simulcast for 1-to-1 AI try-on rooms.
+// @decartai/sdk enables 3-layer simulcast for VP8/H264 by default, which causes
+// software encoding on Android/emulators to exceed LiveKit's 15 s negotiation timeout.
+const origPublishTrack = LocalParticipant.prototype.publishTrack;
+LocalParticipant.prototype.publishTrack = function (track, options) {
+  if (options && typeof options === "object") {
+    options = { ...options, simulcast: false };
+  }
+  return origPublishTrack.call(this, track, options);
+};
 
 // ---------- Model + camera capture ----------
 
@@ -202,9 +214,30 @@ const STALE_SESSION_MESSAGE = "Session stopped by the user: redial not allowed."
  * it ourselves on stop()/fail() so video stops flowing even while connect() is still
  * in flight. The caller must capture a fresh stream for the next session.
  */
+const originalTrackStop = new WeakMap<object, () => void>();
+
+/**
+ * Shields local camera tracks from being stopped by livekit-client's internal
+ * unpublish during automatic SDK reconnects; stopStreamTracks() restores and
+ * invokes the real stop() when the session genuinely tears down.
+ */
+function shieldStreamTracks(stream: MediaStream | null): void {
+  stream?.getTracks().forEach((track) => {
+    if (!originalTrackStop.has(track)) {
+      originalTrackStop.set(track, track.stop.bind(track));
+      track.stop = () => undefined;
+    }
+  });
+}
+
 function stopStreamTracks(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => {
     try {
+      const orig = originalTrackStop.get(track);
+      if (orig) {
+        track.stop = orig;
+        originalTrackStop.delete(track);
+      }
       track.stop();
     } catch {
       // already stopped
@@ -265,6 +298,7 @@ export class TryOnSession {
       return;
     }
     this.localStream = localStream;
+    shieldStreamTracks(localStream);
 
     try {
       const image = toDecartImage(look.image);
