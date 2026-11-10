@@ -1,29 +1,29 @@
-// ClosetSheet (Khu Tủ Đồ Cá Nhân & Quản Lý Món Đồ)
-// Cho phép xem, lọc (Wishlist vs Đã có, Danh mục), thêm món mới từ camera/thư viện,
-// chỉnh sửa, xoá và treo ngay lên Look A hoặc Look B của Fitting Dock.
+// ClosetSheet: Khu Tủ Đồ Cá Nhân & Quản Lý Món Đồ
+// Thiết kế 100% Mobile Native theo ngôn ngữ "Fitting Dock · Fresh White" (DESIGN.md)
+// - Native Bottom Sheet (vuốt xuống để đóng, có drag handle trên Android/iOS)
+// - Segmented Control phẳng tối giản (Tất cả / Đã có / Wishlist)
+// - Ảnh trang phục Hero 4:5 bo góc chuẩn OutfitPilot (không đóng khung viền web)
+// - Chạm mở Action Sheet trượt đáy để treo nhanh lên Móc A / Móc B hoặc xem phối đồ
+// - Thêm món mới từ Camera hoặc Thư viện ảnh với form mobile thoáng sạch
 
 import * as ImagePicker from "expo-image-picker";
 import {
   Camera,
   Check,
-  CheckCircle,
-  ChevronRight,
-  Filter,
   Image as ImageIcon,
-  Layers,
   Plus,
-  ShoppingBag,
-  Sparkles,
+  ShieldCheck,
   Tag,
   Trash2,
   X,
 } from "lucide-react-native";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Modal,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -31,7 +31,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Button, Chip, ChipGroup, Touchable } from "@/components/ui";
+import { AppText, Chip, IconButton, Touchable } from "@/components/ui";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import {
   ClosetCategory,
@@ -39,25 +39,28 @@ import {
   OwnershipStatus,
   useCloset,
 } from "@/lib/closet";
+import { tr, useLocale } from "@/lib/locale";
 import { useAppStore, type Slot } from "@/lib/store";
-import { alpha, colors, radii, shadows, spacing } from "@/lib/theme";
+import { alpha, colors, radii, shadows, sizes, spacing } from "@/lib/theme";
 
 export interface ClosetSheetProps {
   visible: boolean;
   onClose: () => void;
-  /** Optional slot to hang directly on */
   defaultSlot?: Slot;
 }
 
-export function ClosetSheet({ visible, onClose, defaultSlot = "a" }: ClosetSheetProps) {
+const IOS = Platform.OS === "ios";
+
+export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
   const insets = useSafeAreaInsets();
+  const locale = useLocale();
   const { items, addItem, updateItem, deleteItem, getMatchingPants } = useCloset();
   const { assignHook, hookIds, setActiveLook } = useAppStore();
 
   const [statusFilter, setStatusFilter] = useState<OwnershipStatus>("all");
   const [categoryFilter, setCategoryFilter] = useState<ClosetCategory>("all");
-  const [detailItem, setDetailItem] = useState<ClosetItem | null>(null);
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<ClosetItem | null>(null);
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
 
   // New item form state
   const [newImageUri, setNewImageUri] = useState<string | null>(null);
@@ -93,7 +96,10 @@ export function ClosetSheet({ visible, onClose, defaultSlot = "a" }: ClosetSheet
 
   const handleSaveNewItem = () => {
     if (!newImageUri || !newName.trim()) {
-      Alert.alert("Thiếu thông tin", "Vui lòng chọn ảnh và nhập tên món đồ.");
+      Alert.alert(
+        tr(locale, "Missing information", "Thiếu thông tin"),
+        tr(locale, "Please select a photo and enter the item name.", "Vui lòng chọn ảnh và nhập tên món đồ.")
+      );
       return;
     }
     addItem({
@@ -107,7 +113,7 @@ export function ClosetSheet({ visible, onClose, defaultSlot = "a" }: ClosetSheet
       price: newPrice.trim() || undefined,
       shop: newShop.trim() || undefined,
       image: { uri: newImageUri },
-      fitAdvice: newFitAdvice.trim() || "Kiểm tra kích thước chuẩn trước khi đặt mua.",
+      fitAdvice: newFitAdvice.trim() || tr(locale, "Check size before purchase.", "Kiểm tra kích thước chuẩn trước khi đặt mua."),
       matchingPantsIds: ["P02", "P03", "P05", "P08"],
     });
 
@@ -117,416 +123,531 @@ export function ClosetSheet({ visible, onClose, defaultSlot = "a" }: ClosetSheet
     setNewPrice("");
     setNewShop("");
     setNewFitAdvice("");
-    setAddModalOpen(false);
+    setAddSheetOpen(false);
   };
 
   const handleHangOnHook = (slot: Slot, item: ClosetItem) => {
     assignHook(slot, item.id);
     setActiveLook(slot);
-    Alert.alert(
-      "Đã treo đồ!",
-      `Đã treo ${item.nameVi || item.name} vào Móc ${slot.toUpperCase()}. Bạn có thể vào phòng thử đồ bất cứ lúc nào!`,
-      [{ text: "OK" }]
-    );
+    setActiveItem(null);
+    onClose();
   };
 
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.root, { paddingTop: Math.max(insets.top, 16) }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <AppText variant="title">Tủ đồ cá nhân · My Closet</AppText>
-            <AppText variant="caption" tone="muted">
-              {filteredItems.length} món đồ · Treo lên móc để thử camera
+  const matchingPants = activeItem ? getMatchingPants(activeItem.id) : [];
+
+  const mainSheetContent = (
+    <View
+      style={[
+        styles.sheet,
+        IOS ? styles.sheetIos : styles.sheetFloating,
+        { paddingBottom: insets.bottom + spacing.stack },
+      ]}
+      accessibilityViewIsModal
+    >
+      {!IOS ? <View style={styles.handle} /> : null}
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerTitles}>
+          <AppText variant="headline">
+            {tr(locale, "My Closet", "Tủ đồ cá nhân")}
+          </AppText>
+          <AppText variant="caption" tone="muted">
+            {filteredItems.length} {tr(locale, "pieces · Tap to hang or inspect", "món đồ · Chạm để thử hoặc xem phối")}
+          </AppText>
+        </View>
+        <View style={styles.headerActions}>
+          <Touchable
+            onPress={() => setAddSheetOpen(true)}
+            style={styles.addBtn}
+            accessibilityLabel={tr(locale, "Add piece", "Thêm món mới")}
+          >
+            <Plus size={16} color={colors.ink} strokeWidth={2.5} />
+            <AppText variant="caption" weight={700}>
+              {tr(locale, "Add", "Thêm")}
             </AppText>
-          </View>
-          <View style={styles.headerRight}>
+          </Touchable>
+          <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={onClose} variant="quiet" />
+        </View>
+      </View>
+
+      {/* Native Segmented Control */}
+      <View style={styles.segmented}>
+        <Touchable
+          onPress={() => setStatusFilter("all")}
+          style={[styles.segmentBtn, statusFilter === "all" && styles.segmentBtnActive]}
+        >
+          <AppText variant="caption" weight={statusFilter === "all" ? 800 : 500} tone={statusFilter === "all" ? "ink" : "muted"}>
+            {tr(locale, "All", "Tất cả")} ({items.length})
+          </AppText>
+        </Touchable>
+        <Touchable
+          onPress={() => setStatusFilter("owned")}
+          style={[styles.segmentBtn, statusFilter === "owned" && styles.segmentBtnActive]}
+        >
+          <AppText variant="caption" weight={statusFilter === "owned" ? 800 : 500} tone={statusFilter === "owned" ? "ink" : "muted"}>
+            {tr(locale, "In Closet", "Đã có trong tủ")}
+          </AppText>
+        </Touchable>
+        <Touchable
+          onPress={() => setStatusFilter("wishlist")}
+          style={[styles.segmentBtn, statusFilter === "wishlist" && styles.segmentBtnActive]}
+        >
+          <AppText variant="caption" weight={statusFilter === "wishlist" ? 800 : 500} tone={statusFilter === "wishlist" ? "ink" : "muted"}>
+            {tr(locale, "Wishlist", "Đang ngắm mua")}
+          </AppText>
+        </Touchable>
+      </View>
+
+      {/* Clean Category Chips */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
+        <Chip
+          label={tr(locale, "All categories", "Tất cả loại")}
+          selected={categoryFilter === "all"}
+          onPress={() => setCategoryFilter("all")}
+        />
+        <Chip
+          label={tr(locale, "Outerwear", "Áo khoác")}
+          selected={categoryFilter === "outerwear"}
+          onPress={() => setCategoryFilter("outerwear")}
+        />
+        <Chip
+          label={tr(locale, "Tops & Shirts", "Sơ mi & Áo thun")}
+          selected={categoryFilter === "top"}
+          onPress={() => setCategoryFilter("top")}
+        />
+        <Chip
+          label={tr(locale, "Knitwear", "Áo len")}
+          selected={categoryFilter === "knitwear"}
+          onPress={() => setCategoryFilter("knitwear")}
+        />
+        <Chip
+          label={tr(locale, "Pants", "Quần (10 mẫu)")}
+          selected={categoryFilter === "pants"}
+          onPress={() => setCategoryFilter("pants")}
+        />
+      </ScrollView>
+
+      {/* Hero Photo Grid */}
+      <ScrollView
+        style={styles.gridScroll}
+        contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 60 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredItems.map((item) => {
+          const isHookA = hookIds[0] === item.id;
+          const isHookB = hookIds[1] === item.id;
+
+          return (
             <Touchable
-              onPress={() => setAddModalOpen(true)}
-              style={styles.addBtn}
-              accessibilityLabel="Thêm món mới"
+              key={item.id}
+              style={styles.card}
+              onPress={() => setActiveItem(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.nameVi || item.name}. Tap to hang or view advice.`}
             >
-              <Plus size={18} color={colors.ink} strokeWidth={2.5} />
-              <AppText variant="label" weight={700}>Thêm</AppText>
-            </Touchable>
-            <Touchable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Đóng">
-              <X size={20} color={colors.ink} />
-            </Touchable>
-          </View>
-        </View>
+              <View style={styles.cardPhotoWrapper}>
+                <GarmentImage garmentId={item.id} radius={radii.card} aspectRatio={4 / 5} />
 
-        {/* Filters */}
-        <View style={styles.filtersSection}>
-          {/* Tầng 1: Trạng thái sở hữu */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-            <Chip
-              label="Tất cả nguồn"
-              selected={statusFilter === "all"}
-              onPress={() => setStatusFilter("all")}
-            />
-            <Chip
-              label="🏷️ Đang ngắm mua (Wishlist)"
-              selected={statusFilter === "wishlist"}
-              onPress={() => setStatusFilter("wishlist")}
-            />
-            <Chip
-              label="👕 Đã có trong tủ (In Closet)"
-              selected={statusFilter === "owned"}
-              onPress={() => setStatusFilter("owned")}
-            />
-          </ScrollView>
-
-          {/* Tầng 2: Danh mục */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-            <Chip
-              label="Tất cả loại"
-              selected={categoryFilter === "all"}
-              onPress={() => setCategoryFilter("all")}
-            />
-            <Chip
-              label="Áo khoác"
-              selected={categoryFilter === "outerwear"}
-              onPress={() => setCategoryFilter("outerwear")}
-            />
-            <Chip
-              label="Sơ mi & Polo"
-              selected={categoryFilter === "top"}
-              onPress={() => setCategoryFilter("top")}
-            />
-            <Chip
-              label="Len & Hoodie"
-              selected={categoryFilter === "knitwear"}
-              onPress={() => setCategoryFilter("knitwear")}
-            />
-            <Chip
-              label="Quần (10 mẫu)"
-              selected={categoryFilter === "pants"}
-              onPress={() => setCategoryFilter("pants")}
-            />
-          </ScrollView>
-        </View>
-
-        {/* Closet Grid */}
-        <ScrollView contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 40 }]}>
-          {filteredItems.map((item) => {
-            const isHookA = hookIds[0] === item.id;
-            const isHookB = hookIds[1] === item.id;
-
-            return (
-              <View key={item.id} style={styles.card}>
-                <Touchable onPress={() => setDetailItem(item)}>
-                  <View style={styles.cardImageWrapper}>
-                    <GarmentImage garmentId={item.id} radius={radii.lg} aspectRatio={1} />
-                    {/* Badge */}
-                    <View style={styles.badgeRow}>
-                      <View style={[styles.badge, item.status === "wishlist" ? styles.badgeWishlist : styles.badgeOwned]}>
-                        <AppText variant="caption" tone={item.status === "wishlist" ? "limeInk" : "paper"} weight={700}>
-                          {item.status === "wishlist" ? "Ngắm mua" : "Đã có"}
-                        </AppText>
-                      </View>
-                      {(isHookA || isHookB) && (
-                        <View style={styles.hookIndicator}>
-                          <AppText variant="caption" tone="paper" weight={800}>
-                            {isHookA ? "Móc A" : "Móc B"}
-                          </AppText>
-                        </View>
-                      )}
+                {/* Status Badges */}
+                <View style={styles.cardBadges}>
+                  {item.status === "wishlist" ? (
+                    <View style={styles.badgeWishlist}>
+                      <AppText variant="caption" tone="limeInk" weight={700}>
+                        {tr(locale, "Wishlist", "Ngắm mua")}
+                      </AppText>
                     </View>
-                  </View>
-                </Touchable>
+                  ) : null}
 
-                <View style={styles.cardBody}>
-                  <AppText variant="bodyStrong" numberOfLines={1}>
-                    {item.nameVi || item.name}
+                  {(isHookA || isHookB) && (
+                    <View style={[styles.badgeHook, isHookA ? styles.badgeHookA : styles.badgeHookB]}>
+                      <AppText variant="caption" tone="paper" weight={800}>
+                        {isHookA ? "LOOK A" : "LOOK B"}
+                      </AppText>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.cardMeta}>
+                <AppText variant="bodyStrong" numberOfLines={1}>
+                  {locale === "vi" ? item.nameVi || item.name : item.name}
+                </AppText>
+                {item.price ? (
+                  <AppText variant="caption" tone="ink" weight={700} numberOfLines={1}>
+                    {item.price} {item.shop ? `· ${item.shop}` : ""}
                   </AppText>
-                  {item.price ? (
-                    <AppText variant="caption" tone="ink" weight={700}>
-                      {item.price} {item.shop ? `· ${item.shop}` : ""}
-                    </AppText>
-                  ) : (
-                    <AppText variant="caption" tone="muted">
-                      {item.styles.join(" · ")}
-                    </AppText>
-                  )}
-
-                  {/* Actions: Treo Móc A / B */}
-                  <View style={styles.cardActions}>
-                    <Touchable
-                      onPress={() => handleHangOnHook("a", item)}
-                      style={[styles.hangBtn, isHookA && styles.hangBtnActive]}
-                    >
-                      <AppText variant="caption" weight={700} tone={isHookA ? "paper" : "ink"}>
-                        {isHookA ? "✓ Móc A" : "Treo A"}
-                      </AppText>
-                    </Touchable>
-                    <Touchable
-                      onPress={() => handleHangOnHook("b", item)}
-                      style={[styles.hangBtn, isHookB && styles.hangBtnActive]}
-                    >
-                      <AppText variant="caption" weight={700} tone={isHookB ? "paper" : "ink"}>
-                        {isHookB ? "✓ Móc B" : "Treo B"}
-                      </AppText>
-                    </Touchable>
-                  </View>
-                </View>
+                ) : (
+                  <AppText variant="caption" tone="muted" numberOfLines={1}>
+                    {item.color} · {item.styles[0]}
+                  </AppText>
+                )}
               </View>
-            );
-          })}
-        </ScrollView>
+            </Touchable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
 
-        {/* Detail Modal */}
-        {detailItem && (
-          <Modal visible transparent animationType="fade" onRequestClose={() => setDetailItem(null)}>
-            <View style={styles.detailOverlay}>
-              <View style={styles.detailCard}>
-                <View style={styles.detailHead}>
-                  <View style={styles.flex}>
-                    <AppText variant="title">{detailItem.nameVi || detailItem.name}</AppText>
-                    <AppText variant="caption" tone="muted">
-                      {detailItem.category.toUpperCase()} · Formality: {detailItem.formality}/5
-                    </AppText>
-                  </View>
-                  <Touchable onPress={() => setDetailItem(null)} style={styles.closeBtn}>
-                    <X size={20} color={colors.ink} />
-                  </Touchable>
-                </View>
-
-                <ScrollView style={styles.detailScroll}>
-                  <GarmentImage garmentId={detailItem.id} aspectRatio={4 / 3} radius={radii.xl} />
-
-                  {/* Fit Advice / Pre-buy Note */}
-                  <View style={styles.fitBox}>
-                    <View style={styles.fitHead}>
-                      <Sparkles size={16} color={colors.limeInk} />
-                      <AppText variant="bodyStrong" tone="limeInk">
-                        Lưu ý kiểm chứng trước khi mua:
-                      </AppText>
-                    </View>
-                    <AppText variant="bodySm" tone="ink">
-                      {detailItem.fitAdvice || "Kiểm tra kỹ bảng size vai và chiều dài lưng áo."}
-                    </AppText>
-                  </View>
-
-                  {/* Matching Pants from Closet */}
-                  {detailItem.category !== "pants" && (
-                    <View style={styles.matchingSection}>
-                      <AppText variant="section">Quần phối ăn ý trong tủ đồ:</AppText>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pantsScroll}>
-                        {getMatchingPants(detailItem.id).map((p) => (
-                          <View key={p.id} style={styles.pantsThumb}>
-                            <GarmentImage garmentId={p.id} radius={radii.md} width={80} aspectRatio={1} />
-                            <AppText variant="caption" numberOfLines={1} align="center">
-                              {p.nameVi}
-                            </AppText>
-                          </View>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-
-                  {/* Ownership Switch */}
-                  <View style={styles.statusToggle}>
-                    <AppText variant="bodyStrong">Trạng thái món đồ:</AppText>
-                    <View style={styles.toggleRow}>
-                      <Touchable
-                        onPress={() => {
-                          updateItem(detailItem.id, { status: "wishlist" });
-                          setDetailItem({ ...detailItem, status: "wishlist" });
-                        }}
-                        style={[styles.toggleBtn, detailItem.status === "wishlist" && styles.toggleBtnActive]}
-                      >
-                        <AppText variant="caption" weight={700}>🏷️ Đang ngắm mua</AppText>
-                      </Touchable>
-                      <Touchable
-                        onPress={() => {
-                          updateItem(detailItem.id, { status: "owned" });
-                          setDetailItem({ ...detailItem, status: "owned" });
-                        }}
-                        style={[styles.toggleBtn, detailItem.status === "owned" && styles.toggleBtnActive]}
-                      >
-                        <AppText variant="caption" weight={700}>👕 Đã có trong tủ</AppText>
-                      </Touchable>
-                    </View>
-                  </View>
-                </ScrollView>
-
-                {/* Footer Buttons */}
-                <View style={styles.detailFooter}>
-                  <Button
-                    label="Treo Look A"
-                    variant="next"
-                    onPress={() => {
-                      handleHangOnHook("a", detailItem);
-                      setDetailItem(null);
-                    }}
-                    style={styles.flex}
-                  />
-                  <Button
-                    label="Treo Look B"
-                    variant="ink"
-                    onPress={() => {
-                      handleHangOnHook("b", detailItem);
-                      setDetailItem(null);
-                    }}
-                    style={styles.flex}
-                  />
-                  {detailItem.isCustom && (
-                    <Touchable
-                      onPress={() => {
-                        deleteItem(detailItem.id);
-                        setDetailItem(null);
-                      }}
-                      style={styles.deleteBtn}
-                    >
-                      <Trash2 size={20} color={colors.danger} />
-                    </Touchable>
-                  )}
-                </View>
-              </View>
-            </View>
-          </Modal>
-        )}
-
-        {/* Add Piece Modal */}
-        <Modal visible={addModalOpen} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setAddModalOpen(false)}>
-          <View style={[styles.root, { padding: spacing.gutter }]}>
-            <View style={styles.detailHead}>
-              <AppText variant="title">Thêm món đồ vào tủ</AppText>
-              <Touchable onPress={() => setAddModalOpen(false)} style={styles.closeBtn}>
-                <X size={20} color={colors.ink} />
-              </Touchable>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.addScroll}>
-              {/* Photo selector */}
-              {newImageUri ? (
-                <View style={styles.newImagePreview}>
-                  <Image source={{ uri: newImageUri }} style={styles.previewImg} />
-                  <Touchable onPress={() => pickImage(false)} style={styles.repickBtn}>
-                    <AppText variant="caption" weight={700}>Đổi ảnh khác</AppText>
-                  </Touchable>
-                </View>
-              ) : (
-                <View style={styles.imagePickerRow}>
-                  <Touchable onPress={() => pickImage(false)} style={styles.pickerBox}>
-                    <ImageIcon size={28} color={colors.ink} />
-                    <AppText variant="bodySm" weight={700}>Chọn từ thư viện</AppText>
-                    <AppText variant="caption" tone="muted">Ảnh chụp Shopee, Zara...</AppText>
-                  </Touchable>
-                  <Touchable onPress={() => pickImage(true)} style={styles.pickerBox}>
-                    <Camera size={28} color={colors.ink} />
-                    <AppText variant="bodySm" weight={700}>Chụp ảnh mới</AppText>
-                    <AppText variant="caption" tone="muted">Chụp đồ thật bạn có</AppText>
-                  </Touchable>
-                </View>
-              )}
-
-              {/* Form inputs */}
-              <View style={styles.inputGroup}>
-                <AppText variant="label" weight={700}>Tên món đồ *</AppText>
-                <TextInput
-                  value={newName}
-                  onChangeText={setNewName}
-                  placeholder="Ví dụ: Áo Blazer Navy Caro, Quần Jean Ống Suông"
-                  style={styles.input}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <AppText variant="label" weight={700}>Phân loại *</AppText>
-                <View style={styles.categoryRow}>
-                  {[
-                    { id: "outerwear", label: "Áo khoác" },
-                    { id: "top", label: "Áo sơ mi/thun" },
-                    { id: "knitwear", label: "Áo len/hoodie" },
-                    { id: "pants", label: "Quần" },
-                  ].map((c) => (
-                    <Chip
-                      key={c.id}
-                      label={c.label}
-                      selected={newCategory === c.id}
-                      onPress={() => setNewCategory(c.id as any)}
-                    />
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <AppText variant="label" weight={700}>Trạng thái</AppText>
-                <View style={styles.categoryRow}>
-                  <Chip
-                    label="🏷️ Đang ngắm mua (Wishlist)"
-                    selected={newStatus === "wishlist"}
-                    onPress={() => setNewStatus("wishlist")}
-                  />
-                  <Chip
-                    label="👕 Đã có trong tủ (Owned)"
-                    selected={newStatus === "owned"}
-                    onPress={() => setNewStatus("owned")}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <AppText variant="label" weight={700}>Giá tiền (tùy chọn)</AppText>
-                <TextInput
-                  value={newPrice}
-                  onChangeText={setNewPrice}
-                  placeholder="Ví dụ: 850.000₫"
-                  style={styles.input}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <AppText variant="label" weight={700}>Tên shop / Thương hiệu (tùy chọn)</AppText>
-                <TextInput
-                  value={newShop}
-                  onChangeText={setNewShop}
-                  placeholder="Ví dụ: Zara, Uniqlo, Shopee Mall"
-                  style={styles.input}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <AppText variant="label" weight={700}>Ghi chú size / phom dáng</AppText>
-                <TextInput
-                  value={newFitAdvice}
-                  onChangeText={setNewFitAdvice}
-                  placeholder="Ví dụ: Áo phom rộng, nên lùi 1 size..."
-                  style={styles.input}
-                />
-              </View>
-
-              <Button
-                label="Lưu vào Tủ Đồ"
-                variant="next"
-                onPress={handleSaveNewItem}
-                style={styles.saveBtn}
-              />
-            </ScrollView>
+  return (
+    <>
+      {/* Main Closet Sheet */}
+      {IOS ? (
+        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+          {mainSheetContent}
+        </Modal>
+      ) : (
+        <Modal visible={visible} animationType="slide" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
+          <View style={styles.backdropWrap}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close closet">
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: alpha.backdrop }]} />
+            </Pressable>
+            {mainSheetContent}
           </View>
         </Modal>
-      </View>
-    </Modal>
+      )}
+
+      {/* Item Action Sheet (Slide up from bottom) */}
+      {activeItem && (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setActiveItem(null)}>
+          <View style={styles.actionSheetBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)}>
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: alpha.backdrop }]} />
+            </Pressable>
+
+            <View style={[styles.actionSheet, { paddingBottom: insets.bottom + 20 }]}>
+              <View style={styles.handle} />
+
+              <View style={styles.actionHead}>
+                <View style={styles.actionHeadThumb}>
+                  <GarmentImage garmentId={activeItem.id} width={70} radius={radii.md} aspectRatio={4 / 5} />
+                </View>
+                <View style={styles.actionHeadMeta}>
+                  <AppText variant="title" numberOfLines={2}>
+                    {locale === "vi" ? activeItem.nameVi || activeItem.name : activeItem.name}
+                  </AppText>
+                  <AppText variant="caption" tone="muted">
+                    {activeItem.status === "owned"
+                      ? tr(locale, "In your closet", "Đã có trong tủ đồ")
+                      : tr(locale, "In your wishlist", "Đang trong danh sách ngắm mua")}
+                    {activeItem.price ? ` · ${activeItem.price}` : ""}
+                  </AppText>
+                </View>
+                <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setActiveItem(null)} variant="quiet" />
+              </View>
+
+              {/* Primary Actions: Hang on Hook A / Hook B */}
+              <View style={styles.hangActionsRow}>
+                <Touchable
+                  onPress={() => handleHangOnHook("a", activeItem)}
+                  style={[styles.hangActionBtn, styles.hangActionBtnA]}
+                >
+                  <AppText variant="label" weight={800} tone="ink">
+                    {tr(locale, "⚡ Hang on Look A", "⚡ Treo vào Look A")}
+                  </AppText>
+                  <AppText variant="caption" tone="ink">
+                    {hookIds[0] === activeItem.id ? tr(locale, "Currently on A", "Đang treo ở Móc A") : tr(locale, "Try on via camera", "Thử đồ qua camera")}
+                  </AppText>
+                </Touchable>
+
+                <Touchable
+                  onPress={() => handleHangOnHook("b", activeItem)}
+                  style={[styles.hangActionBtn, styles.hangActionBtnB]}
+                >
+                  <AppText variant="label" weight={800} tone="paper">
+                    {tr(locale, "⚡ Hang on Look B", "⚡ Treo vào Look B")}
+                  </AppText>
+                  <AppText variant="caption" tone="mutedDark">
+                    {hookIds[1] === activeItem.id ? tr(locale, "Currently on B", "Đang treo ở Móc B") : tr(locale, "Compare with A", "So sánh với Look A")}
+                  </AppText>
+                </Touchable>
+              </View>
+
+              {/* Fit & Fabric Advice */}
+              {activeItem.fitAdvice ? (
+                <View style={styles.adviceBox}>
+                  <ShieldCheck size={16} color={colors.limeInk} strokeWidth={2.2} />
+                  <View style={styles.adviceText}>
+                    <AppText variant="caption" weight={700} tone="limeInk">
+                      {tr(locale, "Fit & Size Guidance:", "Lời khuyên form dáng & size:")}
+                    </AppText>
+                    <AppText variant="caption" tone="ink">
+                      {activeItem.fitAdvice}
+                    </AppText>
+                  </View>
+                </View>
+              ) : null}
+
+              {/* Matching Pants from Closet */}
+              {matchingPants.length > 0 ? (
+                <View style={styles.matchingBox}>
+                  <AppText variant="caption" weight={700} tone="ink">
+                    {tr(locale, "Pairs perfectly with pants in your closet:", "Phối hợp chuẩn với quần trong tủ:")}
+                  </AppText>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchingScroll}>
+                    {matchingPants.map((p) => (
+                      <View key={p.id} style={styles.matchingPill}>
+                        {p.image ? (
+                          <Image source={typeof p.image === "number" ? p.image : { uri: p.image }} style={styles.matchingThumb} />
+                        ) : null}
+                        <View style={styles.matchingPillText}>
+                          <AppText variant="caption" weight={700} numberOfLines={1}>
+                            {locale === "vi" ? p.nameVi : p.name}
+                          </AppText>
+                          <AppText variant="caption" tone="muted" numberOfLines={1}>
+                            {p.status === "owned" ? tr(locale, "In closet", "Đã có sẵn") : "Wishlist"}
+                          </AppText>
+                        </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+
+              {/* Footer Switch Status or Delete */}
+              <View style={styles.actionSheetFooter}>
+                <Touchable
+                  onPress={() => {
+                    const next = activeItem.status === "wishlist" ? "owned" : "wishlist";
+                    updateItem(activeItem.id, { status: next });
+                    setActiveItem({ ...activeItem, status: next });
+                  }}
+                  style={styles.switchStatusBtn}
+                >
+                  <Tag size={14} color={colors.ink} />
+                  <AppText variant="caption" weight={600}>
+                    {activeItem.status === "wishlist"
+                      ? tr(locale, "Mark as Owned (In closet)", "Chuyển sang: Đã có trong tủ")
+                      : tr(locale, "Mark as Wishlist", "Chuyển sang: Đang ngắm mua")}
+                  </AppText>
+                </Touchable>
+
+                {activeItem.id.startsWith("custom_") ? (
+                  <Touchable
+                    onPress={() => {
+                      Alert.alert(
+                        tr(locale, "Delete item", "Xoá món đồ"),
+                        tr(locale, "Are you sure you want to remove this item?", "Bạn có chắc muốn xoá món đồ này?"),
+                        [
+                          { text: tr(locale, "Cancel", "Huỷ"), style: "cancel" },
+                          {
+                            text: tr(locale, "Delete", "Xoá"),
+                            style: "destructive",
+                            onPress: () => {
+                              deleteItem(activeItem.id);
+                              setActiveItem(null);
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                    style={styles.deleteActionBtn}
+                  >
+                    <Trash2 size={16} color={colors.danger} />
+                  </Touchable>
+                ) : null}
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Add Piece Modal (Native Slide Up) */}
+      {addSheetOpen && (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setAddSheetOpen(false)}>
+          <View style={styles.actionSheetBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setAddSheetOpen(false)}>
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: alpha.backdrop }]} />
+            </Pressable>
+
+            <View style={[styles.addSheet, { paddingBottom: insets.bottom + 20 }]}>
+              <View style={styles.handle} />
+
+              <View style={styles.addSheetHead}>
+                <AppText variant="title">
+                  {tr(locale, "Add New Piece", "Thêm món đồ mới")}
+                </AppText>
+                <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setAddSheetOpen(false)} variant="quiet" />
+              </View>
+
+              <ScrollView style={styles.addScroll} showsVerticalScrollIndicator={false}>
+                {/* Photo Selection Buttons */}
+                {newImageUri ? (
+                  <View style={styles.newPhotoPreview}>
+                    <Image source={{ uri: newImageUri }} style={styles.previewImage} />
+                    <Touchable onPress={() => setNewImageUri(null)} style={styles.changePhotoBtn}>
+                      <AppText variant="caption" weight={700}>
+                        {tr(locale, "Change photo", "Chọn lại ảnh")}
+                      </AppText>
+                    </Touchable>
+                  </View>
+                ) : (
+                  <View style={styles.photoPickRow}>
+                    <Touchable onPress={() => void pickImage(true)} style={styles.photoPickBtn}>
+                      <Camera size={24} color={colors.ink} strokeWidth={2} />
+                      <AppText variant="label" weight={700}>
+                        {tr(locale, "Take Photo", "Chụp ảnh")}
+                      </AppText>
+                      <AppText variant="caption" tone="muted">
+                        {tr(locale, "Use phone camera", "Camera trực tiếp")}
+                      </AppText>
+                    </Touchable>
+
+                    <Touchable onPress={() => void pickImage(false)} style={styles.photoPickBtn}>
+                      <ImageIcon size={24} color={colors.ink} strokeWidth={2} />
+                      <AppText variant="label" weight={700}>
+                        {tr(locale, "Photo Library", "Thư viện ảnh")}
+                      </AppText>
+                      <AppText variant="caption" tone="muted">
+                        {tr(locale, "Screenshot or shop", "Ảnh tải hoặc chụp shop")}
+                      </AppText>
+                    </Touchable>
+                  </View>
+                )}
+
+                {/* Form Fields */}
+                <View style={styles.fieldGroup}>
+                  <AppText variant="label">{tr(locale, "Item Name", "Tên món đồ")}</AppText>
+                  <TextInput
+                    value={newName}
+                    onChangeText={setNewName}
+                    placeholder={tr(locale, "e.g. Linen Navy Shirt", "Ví dụ: Áo Sơ Mi Linen Navy")}
+                    placeholderTextColor={colors.muted}
+                    style={styles.nativeInput}
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <AppText variant="label">{tr(locale, "Category", "Danh mục")}</AppText>
+                  <View style={styles.categorySelectRow}>
+                    {(["outerwear", "top", "knitwear", "pants"] as const).map((cat) => (
+                      <Chip
+                        key={cat}
+                        label={
+                          cat === "outerwear"
+                            ? tr(locale, "Outerwear", "Áo khoác")
+                            : cat === "top"
+                            ? tr(locale, "Top", "Sơ mi / Áo")
+                            : cat === "knitwear"
+                            ? tr(locale, "Knitwear", "Áo len")
+                            : tr(locale, "Pants", "Quần")
+                        }
+                        selected={newCategory === cat}
+                        onPress={() => setNewCategory(cat)}
+                      />
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.fieldRow}>
+                  <View style={[styles.fieldGroup, { flex: 1 }]}>
+                    <AppText variant="label">{tr(locale, "Status", "Trạng thái")}</AppText>
+                    <View style={styles.statusChipRow}>
+                      <Chip
+                        label={tr(locale, "Wishlist", "Đang ngắm mua")}
+                        selected={newStatus === "wishlist"}
+                        onPress={() => setNewStatus("wishlist")}
+                      />
+                      <Chip
+                        label={tr(locale, "In Closet", "Đã có trong tủ")}
+                        selected={newStatus === "owned"}
+                        onPress={() => setNewStatus("owned")}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={[styles.fieldGroup, { flex: 1 }]}>
+                    <AppText variant="label">{tr(locale, "Price", "Giá tiền")}</AppText>
+                    <TextInput
+                      value={newPrice}
+                      onChangeText={setNewPrice}
+                      placeholder="e.g. 850.000đ"
+                      placeholderTextColor={colors.muted}
+                      style={styles.nativeInput}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <AppText variant="label">{tr(locale, "Shop / Brand", "Tên Shop hoặc Hãng")}</AppText>
+                  <TextInput
+                    value={newShop}
+                    onChangeText={setNewShop}
+                    placeholder="e.g. Routine, Zara, Uniqlo"
+                    placeholderTextColor={colors.muted}
+                    style={styles.nativeInput}
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <AppText variant="label">{tr(locale, "Fit / Size Guidance", "Lời khuyên form dáng & size")}</AppText>
+                  <TextInput
+                    value={newFitAdvice}
+                    onChangeText={setNewFitAdvice}
+                    placeholder={tr(locale, "e.g. Regular fit. Go 1 size up if broad shoulders.", "Ví dụ: Dáng regular. Nên tăng 1 size nếu vai rộng.")}
+                    placeholderTextColor={colors.muted}
+                    style={styles.nativeInput}
+                  />
+                </View>
+
+                {/* Save Button */}
+                <Touchable onPress={handleSaveNewItem} style={styles.saveBtn}>
+                  <Check size={18} color={colors.ink} strokeWidth={2.5} />
+                  <AppText variant="label" weight={800} tone="ink">
+                    {tr(locale, "Save to Closet", "Lưu vào Tủ đồ")}
+                  </AppText>
+                </Touchable>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  backdropWrap: {
     flex: 1,
-    backgroundColor: colors.surface,
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: colors.paper,
+    paddingHorizontal: spacing.gutter,
+  },
+  sheetIos: {
+    flex: 1,
+    paddingTop: spacing.gutter,
+  },
+  sheetFloating: {
+    maxHeight: "90%",
+    borderTopLeftRadius: radii.dock,
+    borderTopRightRadius: radii.dock,
+    paddingTop: 10,
+    width: "100%",
+    maxWidth: sizes.maxContentWidth + spacing.gutter * 2,
+    alignSelf: "center",
+  },
+  handle: {
+    alignSelf: "center",
+    width: 40,
+    height: 5,
+    borderRadius: radii.full,
+    backgroundColor: colors.line,
+    marginBottom: 12,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.gutter,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderColor: colors.line,
+    alignItems: "flex-start",
+    marginBottom: 14,
   },
-  headerRight: {
+  headerTitles: {
+    flex: 1,
+    gap: 4,
+  },
+  headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -536,46 +657,54 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.lime,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    height: 36,
     borderRadius: radii.full,
     gap: 4,
   },
-  closeBtn: {
-    padding: 8,
+  segmented: {
+    flexDirection: "row",
+    backgroundColor: colors.surface,
     borderRadius: radii.full,
-    backgroundColor: colors.surfaceDeep,
+    padding: 3,
+    marginBottom: 12,
   },
-  filtersSection: {
-    paddingVertical: 10,
-    gap: 8,
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentBtnActive: {
     backgroundColor: colors.paper,
-    borderBottomWidth: 1,
-    borderColor: colors.line,
+    ...shadows.lift,
   },
-  filterRow: {
-    paddingHorizontal: spacing.gutter,
+  categoryRow: {
     gap: 8,
+    paddingBottom: 14,
+  },
+  gridScroll: {
+    flexGrow: 1,
   },
   grid: {
-    padding: spacing.gutter,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 14,
+    gap: 12,
   },
   card: {
     width: "48%",
     backgroundColor: colors.paper,
-    borderRadius: radii.xl,
+    borderRadius: radii.card,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.line,
-    ...shadows.lift,
   },
-  cardImageWrapper: {
+  cardPhotoWrapper: {
     position: "relative",
+    borderRadius: radii.card,
+    overflow: "hidden",
+    backgroundColor: colors.surface,
   },
-  badgeRow: {
+  cardBadges: {
     position: "absolute",
     top: 8,
     left: 8,
@@ -584,188 +713,230 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-  },
   badgeWishlist: {
     backgroundColor: colors.lime,
-  },
-  badgeOwned: {
-    backgroundColor: colors.ink,
-  },
-  hookIndicator: {
-    backgroundColor: "#16A34A",
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: radii.full,
   },
-  cardBody: {
-    padding: 10,
-    gap: 4,
+  badgeHook: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
   },
-  cardActions: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 6,
-  },
-  hangBtn: {
-    flex: 1,
-    paddingVertical: 6,
-    alignItems: "center",
-    backgroundColor: colors.surfaceDeep,
-    borderRadius: radii.md,
-  },
-  hangBtnActive: {
-    backgroundColor: colors.ink,
-  },
-  detailOverlay: {
-    flex: 1,
-    backgroundColor: alpha.backdrop,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  detailCard: {
-    backgroundColor: colors.paper,
-    borderRadius: radii.xxl,
-    width: "100%",
-    maxWidth: 420,
-    maxHeight: "85%",
-    padding: spacing.gutter,
-    gap: 12,
-    ...shadows.dock,
-  },
-  detailHead: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  detailScroll: {
-    flexGrow: 0,
-  },
-  fitBox: {
-    backgroundColor: "#F4FBE8",
-    borderColor: colors.lime,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: 12,
-    marginVertical: 12,
-    gap: 6,
-  },
-  fitHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  matchingSection: {
-    marginVertical: 8,
-    gap: 8,
-  },
-  pantsScroll: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  pantsThumb: {
-    width: 85,
-    marginRight: 10,
-    alignItems: "center",
-    gap: 4,
-  },
-  statusToggle: {
-    marginVertical: 12,
-    gap: 8,
-  },
-  toggleRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: radii.lg,
-    backgroundColor: colors.surfaceDeep,
-  },
-  toggleBtnActive: {
+  badgeHookA: {
     backgroundColor: colors.lime,
   },
-  detailFooter: {
+  badgeHookB: {
+    backgroundColor: colors.ink,
+  },
+  cardMeta: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 2,
+  },
+  actionSheetBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  actionSheet: {
+    backgroundColor: colors.paper,
+    borderTopLeftRadius: radii.dock,
+    borderTopRightRadius: radii.dock,
+    paddingHorizontal: spacing.gutter,
+    paddingTop: 10,
+    gap: 14,
+    ...shadows.dock,
+  },
+  actionHead: {
     flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  actionHeadThumb: {
+    borderRadius: radii.md,
+    overflow: "hidden",
+  },
+  actionHeadMeta: {
+    flex: 1,
+    gap: 4,
+  },
+  hangActionsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  hangActionBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: radii.card,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  hangActionBtnA: {
+    backgroundColor: colors.lime,
+  },
+  hangActionBtnB: {
+    backgroundColor: colors.ink,
+  },
+  adviceBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: colors.limeSoft,
+    padding: 12,
+    borderRadius: radii.md,
+  },
+  adviceText: {
+    flex: 1,
+    gap: 2,
+  },
+  matchingBox: {
+    gap: 8,
+    backgroundColor: colors.surface,
+    padding: 12,
+    borderRadius: radii.md,
+  },
+  matchingScroll: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  matchingPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.paper,
+    padding: 6,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  matchingThumb: {
+    width: 32,
+    height: 40,
+    borderRadius: 6,
+    backgroundColor: colors.surfaceDeep,
+  },
+  matchingPillText: {
+    maxWidth: 120,
+    justifyContent: "center",
+  },
+  actionSheetFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
     paddingTop: 8,
     borderTopWidth: 1,
     borderColor: colors.line,
   },
-  deleteBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.md,
+  switchStatusBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
+    backgroundColor: colors.surface,
+  },
+  deleteActionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.full,
     backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-  flex: {
-    flex: 1,
+  addSheet: {
+    backgroundColor: colors.paper,
+    borderTopLeftRadius: radii.dock,
+    borderTopRightRadius: radii.dock,
+    paddingHorizontal: spacing.gutter,
+    paddingTop: 10,
+    maxHeight: "90%",
+    ...shadows.dock,
+  },
+  addSheetHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
   },
   addScroll: {
     gap: 14,
-    paddingBottom: 40,
   },
-  imagePickerRow: {
+  photoPickRow: {
     flexDirection: "row",
     gap: 12,
-    marginVertical: 8,
+    marginBottom: 14,
   },
-  pickerBox: {
+  photoPickBtn: {
     flex: 1,
-    aspectRatio: 1,
+    aspectRatio: 1.15,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderStyle: "dashed",
     borderColor: colors.line,
-    borderRadius: radii.xl,
-    backgroundColor: colors.surface,
+    borderRadius: radii.card,
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     padding: 10,
-    gap: 4,
   },
-  newImagePreview: {
+  newPhotoPreview: {
     alignItems: "center",
-    marginVertical: 8,
     gap: 8,
+    marginBottom: 14,
   },
-  previewImg: {
+  previewImage: {
     width: 140,
     height: 175,
     borderRadius: radii.lg,
   },
-  repickBtn: {
-    paddingVertical: 6,
+  changePhotoBtn: {
     paddingHorizontal: 12,
-    borderRadius: radii.full,
+    paddingVertical: 6,
     backgroundColor: colors.surfaceDeep,
+    borderRadius: radii.full,
   },
-  inputGroup: {
+  fieldGroup: {
     gap: 6,
+    marginBottom: 12,
   },
-  input: {
+  fieldRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  nativeInput: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: radii.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
+    paddingHorizontal: 14,
+    height: 48,
+    fontSize: 15,
+    fontFamily: "Inter",
     color: colors.ink,
   },
-  categoryRow: {
+  categorySelectRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
+  statusChipRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
   saveBtn: {
-    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.lime,
+    height: 52,
+    borderRadius: radii.lg,
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 30,
   },
 });
