@@ -6,10 +6,12 @@
 // definitions (ResponseCreateParams: input, text.format json_schema
 // {type,name,schema,strict}, temperature, max_output_tokens; Response:
 // output_text, status, incomplete_details, refusal content items).
-// TODO(verify on a real key): that the chosen OPENAI_MODEL accepts `temperature`.
-// Some reasoning models reject it; set OPENAI_TEMPERATURE=off in that case.
-// Reasoning models may also spend the 300-token budget on reasoning and come
-// back "incomplete"; the stylist then falls back to the rule-based picks.
+// Reasoning models (e.g. gpt-5.6-luna, verified 2026-11-10) reject `temperature`
+// with a 400: set OPENAI_TEMPERATURE=off. They also spend output tokens on
+// reasoning, which can exhaust the 300-token budget and come back "incomplete"
+// (the stylist then falls back to the rule-based picks): set
+// OPENAI_REASONING_EFFORT=none (gpt-5.6-luna accepts none|low|medium|high,
+// not minimal) to keep replies fast and inside the budget.
 
 // Named import: Vercel's builder resolves the CJS typings, where the default import is the module.
 import { OpenAI } from "openai";
@@ -62,6 +64,15 @@ export interface OpenAIStylistConfig {
   model: string;
   /** undefined = omit the parameter. */
   temperature?: number;
+  /** Sent as reasoning.effort; undefined = omit (non-reasoning models reject it). */
+  reasoningEffort?: ReasoningEffortSetting;
+}
+
+export const REASONING_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+export type ReasoningEffortSetting = (typeof REASONING_EFFORTS)[number];
+
+function isReasoningEffort(v: string): v is ReasoningEffortSetting {
+  return (REASONING_EFFORTS as readonly string[]).includes(v);
 }
 
 /** Reads OPENAI_* env. Returns null when the key or model is missing. */
@@ -77,7 +88,10 @@ export function readOpenAIConfig(env: NodeJS.ProcessEnv = process.env): OpenAISt
     const n = Number(rawTemp);
     if (Number.isFinite(n) && n >= 0 && n <= 2) temperature = n;
   }
-  return { apiKey, model, temperature };
+  const rawEffort = env.OPENAI_REASONING_EFFORT?.trim().toLowerCase();
+  const reasoningEffort = rawEffort && isReasoningEffort(rawEffort) ? rawEffort : undefined;
+
+  return { apiKey, model, temperature, ...(reasoningEffort ? { reasoningEffort } : {}) };
 }
 
 export function createOpenAIStylistLLM(config: OpenAIStylistConfig): StylistLLM {
@@ -98,6 +112,7 @@ export function createOpenAIStylistLLM(config: OpenAIStylistConfig): StylistLLM 
       },
       max_output_tokens: LLM_MAX_OUTPUT_TOKENS,
       ...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+      ...(config.reasoningEffort === undefined ? {} : { reasoning: { effort: config.reasoningEffort } }),
     });
 
     if (response.status === "incomplete") {
