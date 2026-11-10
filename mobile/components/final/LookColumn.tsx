@@ -65,7 +65,7 @@ export function LookColumn({ slot, pick, source, saved, layout = "column" }: Loo
         <AppText variant="bodySm">{reason}</AppText>
 
         <AppText variant="bodySm" tone="muted">
-          <AppText variant="bodySm" weight={600} tone="ink">
+          <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
             Pair with:{" "}
           </AppText>
           {pick.pairWith}
@@ -85,7 +85,7 @@ export function LookColumn({ slot, pick, source, saved, layout = "column" }: Loo
         {saved ? (
           <View style={styles.saved} accessible accessibilityLabel={`Look ${letter} is saved on this phone`}>
             <Check size={14} color={colors.limeInk} strokeWidth={2.25} />
-            <AppText variant="caption" weight={600} tone="limeInk" style={styles.savedText}>
+            <AppText variant="caption" weight={600} tone="limeInk" helper="Đã lưu trên máy này" style={styles.savedText}>
               Saved on this phone
             </AppText>
           </View>

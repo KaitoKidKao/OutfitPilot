@@ -10,6 +10,10 @@ export * from "./tryOnTypes";
 const NOTE = "Web preview — camera and AI run only in the app";
 const MAX_SECONDS = 120;
 
+export function preloadGarmentPhotos(_ids: readonly GarmentId[]): void {
+  // No-op on web preview.
+}
+
 export function useTryOnSession(_options: UseTryOnOptions = {}): TryOnController {
   const noopAsync = useCallback(async () => undefined, []);
   const falseAsync = useCallback(async () => false, []);

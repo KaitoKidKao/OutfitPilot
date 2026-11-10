@@ -27,7 +27,7 @@ export interface ChipProps {
 
 const HEIGHT = Platform.OS === "android" ? 48 : 44;
 
-export function Chip({ label, helper, showHelper = false, selected, onPress, disabled = false, icon: Icon, role = "radio", style, testID }: ChipProps) {
+export function Chip({ label, helper, selected, onPress, disabled = false, icon: Icon, role = "radio", style, testID }: ChipProps) {
   const fg = selected ? colors.paper : colors.ink;
   const LeadIcon = selected ? Check : Icon;
   return (
@@ -47,7 +47,7 @@ export function Chip({ label, helper, showHelper = false, selected, onPress, dis
       style={[styles.chip, { opacity: disabled ? 0.45 : 1 }, style]}
     >
       {LeadIcon ? <LeadIcon size={16} color={fg} strokeWidth={1.75} /> : null}
-      <AppText variant="label" tone={selected ? "paper" : "ink"} helper={showHelper ? helper : undefined} helperInline helperVariant="caption">
+      <AppText variant="label" tone={selected ? "paper" : "ink"} helper={helper}>
         {label}
       </AppText>
     </Touchable>

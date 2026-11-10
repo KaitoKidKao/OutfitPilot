@@ -27,7 +27,9 @@ export function SavedButton({ count, onPress }: SavedButtonProps) {
       style={styles.button}
     >
       <Bookmark size={18} color={colors.ink} strokeWidth={1.75} />
-      <AppText variant="label">Saved</AppText>
+      <AppText variant="label" helper="Đã lưu">
+        Saved
+      </AppText>
       {count !== null ? (
         <AppText variant="label" weight={700} tabular style={styles.count}>
           {count}

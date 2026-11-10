@@ -34,6 +34,8 @@ const VARIANTS: Record<Exclude<ButtonVariant, "lime">, VariantSpec> = {
 
 export interface ButtonProps {
   label: string;
+  /** Optional Vietnamese label rendered when the active locale is "vi". */
+  labelVi?: string;
   onPress: () => void;
   /** Default "quiet". "lime" is an alias of "next". */
   variant?: ButtonVariant;
@@ -42,6 +44,7 @@ export interface ButtonProps {
   loading?: boolean;
   /** Spoken (and shown) while loading. Default: label. */
   loadingLabel?: string;
+  loadingLabelVi?: string;
   disabled?: boolean;
   /** Stretch to the parent width. */
   fullWidth?: boolean;
@@ -54,12 +57,14 @@ export interface ButtonProps {
 
 export function Button({
   label,
+  labelVi,
   onPress,
   variant = "quiet",
   icon: Icon,
   iconPosition = "left",
   loading = false,
   loadingLabel,
+  loadingLabelVi,
   disabled = false,
   fullWidth = false,
   accessibilityLabel,
@@ -71,6 +76,7 @@ export function Button({
   const inactive = disabled || loading;
   const fg = spec.text === "paper" ? colors.paper : spec.text === "danger" ? colors.danger : colors.ink;
   const shown = loading && loadingLabel ? loadingLabel : label;
+  const shownVi = loading && loadingLabelVi ? loadingLabelVi : labelVi;
   const iconNode = Icon ? <Icon size={18} color={fg} strokeWidth={1.75} /> : null;
 
   return (
@@ -103,7 +109,7 @@ export function Button({
     >
       {loading ? <ActivityIndicator size="small" color={fg} /> : iconPosition === "left" ? iconNode : null}
       <View style={{ flexShrink: 1 }}>
-        <AppText variant={spec.textVariant} tone={spec.text} align="center">
+        <AppText variant={spec.textVariant} tone={spec.text} align="center" helper={shownVi}>
           {shown}
         </AppText>
       </View>

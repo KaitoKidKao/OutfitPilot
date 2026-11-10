@@ -49,6 +49,7 @@ export default function LiveFittingRoom() {
   const [capEnded, setCapEnded] = useState(false);
   const [cue, setCue] = useState<SwitchCue | null>(null);
   const [panelHeight, setPanelHeight] = useState(0);
+  const [peekingOriginal, setPeekingOriginal] = useState(false);
 
   // Latest values for timers and async callbacks.
   const tryOnRef = useRef(tryOn);
@@ -152,6 +153,7 @@ export default function LiveFittingRoom() {
     if (prev === tryOn.state) return;
     if (tryOn.state === "live" && prev === "connecting") announce(`AI try-on is live. Showing Look ${activeLookRef.current.toUpperCase()}.`);
     if (tryOn.state === "lost") announce(`Connection lost. ${tryOn.error ?? ""}`.trim());
+    if (tryOn.state !== "live" && tryOn.state !== "switching") setPeekingOriginal(false);
   }, [tryOn.state, tryOn.error]);
 
   // ----- actions -----
@@ -222,6 +224,7 @@ export default function LiveFittingRoom() {
       case "ready":
         return {
           label: "Start AI",
+          labelVi: "Bật AI",
           icon: Sparkles,
           tone: "lime",
           accessibilityLabel: `Start AI try-on with Look ${letter}`,
@@ -231,12 +234,13 @@ export default function LiveFittingRoom() {
           loading: tryOn.settling,
         };
       case "connecting":
-        return { label: "Cancel", icon: X, tone: "light", accessibilityLabel: "Cancel connecting to AI", onPress: handleCancelConnect };
+        return { label: "Cancel", labelVi: "Huỷ", icon: X, tone: "light", accessibilityLabel: "Cancel connecting to AI", onPress: handleCancelConnect };
       case "live":
         return auto.running
-          ? { label: "Stop", icon: Square, tone: "light", accessibilityLabel: "Stop auto compare", onPress: stopAuto }
+          ? { label: "Stop", labelVi: "Dừng", icon: Square, tone: "light", accessibilityLabel: "Stop auto compare", onPress: stopAuto }
           : {
               label: "Auto compare",
+              labelVi: "Tự đổi A/B",
               icon: Repeat,
               tone: "lime",
               accessibilityLabel: "Auto compare: switch looks every 8 seconds",
@@ -246,6 +250,7 @@ export default function LiveFittingRoom() {
       default:
         return {
           label: "Auto compare",
+          labelVi: "Tự đổi A/B",
           icon: Repeat,
           tone: "quiet",
           accessibilityLabel: "Auto compare",
@@ -257,8 +262,16 @@ export default function LiveFittingRoom() {
   })();
 
   const onPanelLayout = (e: LayoutChangeEvent) => setPanelHeight(Math.round(e.nativeEvent.layout.height));
-  const retry = { label: "Try again", icon: RotateCcw, onPress: handleStart, disabled: !canStart, loading: tryOn.settling, accessibilityHint: "Starts a new paid AI session of up to 2 minutes" };
-  const finish = { label: "Finish", icon: ArrowRight, onPress: handleFinish, accessibilityHint: "Opens Final Look to choose what to keep" };
+  const retry = {
+    label: "Try again",
+    labelVi: "Thử lại",
+    icon: RotateCcw,
+    onPress: handleStart,
+    disabled: !canStart,
+    loading: tryOn.settling,
+    accessibilityHint: "Starts a new paid AI session of up to 2 minutes",
+  };
+  const finish = { label: "Finish", labelVi: "Xong", icon: ArrowRight, onPress: handleFinish, accessibilityHint: "Opens Final Look to choose what to keep" };
 
   const panel = (() => {
     switch (phase) {
@@ -269,7 +282,8 @@ export default function LiveFittingRoom() {
             title="No looks on the hooks yet"
             helper="Chưa có look nào trên móc"
             body="Choose an occasion first. The stylist hangs two looks on the dock for you to try here."
-            primary={{ label: "Choose an occasion", icon: ArrowRight, onPress: () => router.replace("/") }}
+            bodyVi="Hãy chọn dịp trước. AI Stylist sẽ treo hai gợi ý lên dock để bạn thử tại đây."
+            primary={{ label: "Choose an occasion", labelVi: "Chọn dịp", icon: ArrowRight, onPress: () => router.replace("/") }}
           />
         );
       case "resume":
@@ -279,8 +293,9 @@ export default function LiveFittingRoom() {
             title="Paused while you were away"
             helper="Đã tạm dừng khi bạn rời ứng dụng"
             body="The camera and the AI turned off when OutfitPilot went to the background. Nothing runs until you choose."
-            primary={{ label: "Turn camera on", icon: Camera, onPress: () => void tryOn.resumeCamera() }}
-            secondary={{ label: "Not now", onPress: tryOn.dismissResumePrompt }}
+            bodyVi="Camera và AI đã tự tắt khi ứng dụng chạy nền. Không có gì chạy cho tới khi bạn chọn."
+            primary={{ label: "Turn camera on", labelVi: "Bật lại camera", icon: Camera, onPress: () => void tryOn.resumeCamera() }}
+            secondary={{ label: "Not now", labelVi: "Để sau", onPress: tryOn.dismissResumePrompt }}
           />
         );
       case "connecting":
@@ -304,6 +319,7 @@ export default function LiveFittingRoom() {
             title="Connection lost"
             helper="Mất kết nối với AI"
             body={tryOn.error ?? "The AI connection dropped. Your camera preview is still on."}
+            bodyVi={tryOn.error ?? "Kết nối AI bị gián đoạn. Xem trước camera của bạn vẫn đang bật."}
             primary={retry}
             secondary={finish}
           />
@@ -315,6 +331,7 @@ export default function LiveFittingRoom() {
             title="Time's up: 2 minutes"
             helper="Hết 2 phút thử đồ"
             body="The AI session stopped at its limit. Try again for another 2 minutes, or finish and choose the look to keep."
+            bodyVi="Phiên thử AI đã tự dừng sau 2 phút. Bạn có thể thử lại thêm 2 phút hoặc bấm Xong để chọn món ưng ý."
             primary={retry}
             secondary={finish}
           />
@@ -326,6 +343,7 @@ export default function LiveFittingRoom() {
   })();
 
   const bottomReserve = insets.bottom + spacing.dockInset + DOCK_BODY_HEIGHT + DOCK_ABOVE_GAP + panelHeight + 8;
+  const stageSource = peekingOriginal && tryOn.showingAi ? { ...tryOn, videoStream: tryOn.localStream, showingAi: false } : tryOn;
 
   return (
     <Screen
@@ -337,15 +355,18 @@ export default function LiveFittingRoom() {
       testID="fitting-room"
       overlay={
         <>
-          <VideoLayer tryOn={tryOn} />
+          <VideoLayer tryOn={stageSource} />
           <View pointerEvents="box-none" style={[styles.chrome, { paddingTop: insets.top }]}>
             <View pointerEvents="box-none" style={styles.column}>
               <FittingTopBar
-                pill={statusPillFor(tryOn.state, tryOn.cameraStatus, tryOn.statusLabel)}
+                pill={statusPillFor(tryOn.state, tryOn.cameraStatus, tryOn.statusLabel, tryOn.statusLabelVi)}
                 onExit={handleExit}
                 onFlip={handleFlip}
                 flipDisabled={!tryOn.isSupported || tryOn.cameraStatus === "starting" || cameraBlocked}
                 flipHint={tryOn.sessionActive ? "Ends the AI session. Start again after flipping." : undefined}
+                canPeekOriginal={tryOn.showingAi}
+                peekingOriginal={peekingOriginal}
+                onToggleOriginal={() => setPeekingOriginal((v) => !v)}
                 onFinish={handleFinish}
               />
               {hasLooks ? <StudioHud slot={activeLook} garmentName={activeName} secondsLeft={tryOn.aiLive ? tryOn.secondsLeft : null} /> : null}

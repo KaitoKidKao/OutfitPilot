@@ -52,6 +52,13 @@ function garmentBase64(id: GarmentId): Promise<string> {
   return job;
 }
 
+/** Preloads and caches base64 strings for catalog garments ahead of the Fitting Room. */
+export function preloadGarmentPhotos(ids: readonly GarmentId[]): void {
+  ids.forEach((id) => {
+    garmentBase64(id).catch(() => undefined);
+  });
+}
+
 async function resolveLook(input: TryOnLookInput): Promise<Look> {
   if (typeof input !== "string") return input;
   const garment = getGarment(input);

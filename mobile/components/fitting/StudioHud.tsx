@@ -38,7 +38,7 @@ export function StudioHud({ slot, garmentName, secondsLeft }: StudioHudProps) {
           <AppText variant="studioSeconds" tone="paper" style={styles.shadow}>
             {secondsLeft}
           </AppText>
-          <AppText variant="label" tone="mutedDark" maxFontSizeMultiplier={1.3} style={styles.shadow}>
+          <AppText variant="label" tone="mutedDark" helper="giây còn lại" maxFontSizeMultiplier={1.3} style={styles.shadow}>
             s left
           </AppText>
         </View>

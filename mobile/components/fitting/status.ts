@@ -4,31 +4,33 @@
 import type { StatusPillProps } from "@/components/ui";
 import type { CameraStatus, TryOnState } from "@/lib/tryOnSession";
 
-const CAMERA_LABEL: Record<CameraStatus, string> = {
-  on: "Camera preview",
-  starting: "Starting camera",
-  off: "Camera off",
-  denied: "Camera blocked",
-  error: "Camera error",
+const CAMERA_LABEL: Record<CameraStatus, { en: string; vi: string }> = {
+  on: { en: "Camera preview", vi: "Xem trước camera" },
+  starting: { en: "Starting camera", vi: "Đang bật camera" },
+  off: { en: "Camera off", vi: "Camera đang tắt" },
+  denied: { en: "Camera blocked", vi: "Camera bị chặn" },
+  error: { en: "Camera error", vi: "Lỗi camera" },
 };
 
-export function statusPillFor(state: TryOnState, cameraStatus: CameraStatus, statusLabel: string): StatusPillProps {
+export function statusPillFor(state: TryOnState, cameraStatus: CameraStatus, statusLabel: string, statusLabelVi?: string): StatusPillProps {
   switch (state) {
     case "live":
-      return { label: statusLabel, dot: "live", ai: "live", aiLabel: "AI LIVE" };
+      return { label: statusLabel, labelVi: statusLabelVi, dot: "live", ai: "live", aiLabel: "AI LIVE", aiLabelVi: "AI TRỰC TIẾP" };
     case "switching":
-      return { label: statusLabel, dot: "live", ai: null };
+      return { label: statusLabel, labelVi: statusLabelVi, dot: "live", ai: null };
     case "connecting":
-      return { label: statusLabel, dot: cameraStatus === "on" ? "on" : "off", ai: "off" };
+      return { label: statusLabel, labelVi: statusLabelVi, dot: cameraStatus === "on" ? "on" : "off", ai: "off" };
     case "lost":
-      return { label: statusLabel, dot: "warn", ai: "off" };
+      return { label: statusLabel, labelVi: statusLabelVi, dot: "warn", ai: "off" };
     case "preview":
     default:
       return {
-        label: CAMERA_LABEL[cameraStatus],
+        label: CAMERA_LABEL[cameraStatus].en,
+        labelVi: CAMERA_LABEL[cameraStatus].vi,
         dot: cameraStatus === "on" ? "on" : cameraStatus === "denied" || cameraStatus === "error" ? "warn" : "off",
         ai: "off",
         aiLabel: "AI OFF / preview only",
+        aiLabelVi: "AI TẮT / xem trước",
       };
   }
 }

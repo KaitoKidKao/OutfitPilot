@@ -1,7 +1,7 @@
 // Live Fitting Room top controls over the video: exit (stops camera + session),
 // flip camera, white "Finish" pill; the honest status pill sits on its own row so
 // the long "AI OFF / preview only" tag never squeezes the controls on a 360 pt phone.
-import { SwitchCamera, X } from "lucide-react-native";
+import { Eye, EyeOff, SwitchCamera, X } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 
 import { Button, IconButton, StatusPill, type StatusPillProps } from "@/components/ui";
@@ -14,10 +14,24 @@ export interface FittingTopBarProps {
   flipDisabled?: boolean;
   /** Spoken when flipping would end a running AI session. */
   flipHint?: string;
+  /** True when the live AI stream is available so the user can toggle Before/After. */
+  canPeekOriginal?: boolean;
+  peekingOriginal?: boolean;
+  onToggleOriginal?: () => void;
   onFinish: () => void;
 }
 
-export function FittingTopBar({ pill, onExit, onFlip, flipDisabled = false, flipHint, onFinish }: FittingTopBarProps) {
+export function FittingTopBar({
+  pill,
+  onExit,
+  onFlip,
+  flipDisabled = false,
+  flipHint,
+  canPeekOriginal = false,
+  peekingOriginal = false,
+  onToggleOriginal,
+  onFinish,
+}: FittingTopBarProps) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
@@ -30,6 +44,15 @@ export function FittingTopBar({ pill, onExit, onFlip, flipDisabled = false, flip
           onPress={onExit}
         />
         <View style={styles.spacer} />
+        {canPeekOriginal && onToggleOriginal ? (
+          <IconButton
+            icon={peekingOriginal ? EyeOff : Eye}
+            variant="onDark"
+            accessibilityLabel={peekingOriginal ? "Show AI outfit" : "Compare with original camera"}
+            accessibilityHint="Switches between AI output and your raw camera without ending the session"
+            onPress={onToggleOriginal}
+          />
+        ) : null}
         <IconButton
           icon={SwitchCamera}
           variant="onDark"
@@ -40,6 +63,7 @@ export function FittingTopBar({ pill, onExit, onFlip, flipDisabled = false, flip
         />
         <Button
           label="Finish"
+          labelVi="Xong"
           variant="onDark"
           onPress={onFinish}
           accessibilityHint="Ends the AI session and opens Final Look"

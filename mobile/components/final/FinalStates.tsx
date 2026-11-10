@@ -44,7 +44,7 @@ export function FinalError({ message, onChooseOccasion }: { message: string | nu
           ) : null}
         </View>
       </View>
-      <Button label="Choose another occasion" onPress={onChooseOccasion} accessibilityHint="Goes back to the first step" />
+      <Button label="Choose another occasion" labelVi="Chọn dịp khác" onPress={onChooseOccasion} accessibilityHint="Goes back to the first step" />
     </View>
   );
 }

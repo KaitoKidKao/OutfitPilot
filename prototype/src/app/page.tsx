@@ -4,31 +4,31 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { ArrowRight, Bookmark, Check, Plus } from "lucide-react";
 import { Dock } from "@/components/Dock";
-import { SampleTag, Screen } from "@/components/Screen";
+import { LocaleSwitch, SampleTag, Screen } from "@/components/Screen";
 import { useStore } from "@/lib/store";
 
 export default function Home() {
-  const { products, saved } = useStore();
+  const { products, saved, locale, tr } = useStore();
   // Demo pieces don't count: step 1 is done only once the shopper added a photo of their own.
   const hasOwnPiece = products.some((p) => !p.sample);
   const recent = [...products].sort((x, y) => y.addedAt - x.addedAt).slice(0, 8);
 
   const steps = [
     {
-      title: "Add a product photo",
-      vi: "Ảnh chụp màn hình từ shop",
+      title: tr("Add a product photo", "Thêm ảnh sản phẩm"),
+      sub: tr("Screenshot or photo from any shop", "Ảnh chụp màn hình từ shop"),
       href: "/looks",
       done: hasOwnPiece,
     },
     {
-      title: "Prop your phone, step back",
-      vi: "Dựng máy, lùi lại khoảng 1,5 m",
+      title: tr("Prop your phone, step back", "Dựng máy, lùi lại khoảng 1,5 m"),
+      sub: tr("Stand about 1.5 m away in good light", "Đứng cách máy khoảng 1,5 m nơi đủ sáng"),
       href: "/setup",
       done: false,
     },
     {
-      title: "Compare A / B, then decide",
-      vi: "So sánh rồi lưu món ưng ý",
+      title: tr("Compare A / B, then decide", "So sánh A / B rồi quyết định"),
+      sub: tr("Switch looks and save your favourite", "Đổi qua lại và lưu món ưng ý"),
       href: "/studio",
       done: false,
     },
@@ -44,23 +44,32 @@ export default function Home() {
           </span>
           <span className="text-[16px] font-bold tracking-[-0.01em]">OutfitPilot</span>
         </div>
-        <Link
-          href="/saved"
-          className="flex h-11 items-center gap-1.5 rounded-[14px] bg-surface px-3.5 text-[13px] font-semibold transition-colors hover:bg-surface-deep"
-        >
-          <Bookmark className="h-4 w-4" strokeWidth={2} />
-          Saved <span className="tnum">{saved.length}</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/saved"
+            className="flex h-11 items-center gap-1.5 rounded-[14px] bg-surface px-3.5 text-[13px] font-semibold transition-colors hover:bg-surface-deep"
+          >
+            <Bookmark className="h-4 w-4" strokeWidth={2} />
+            {tr("Saved", "Đã lưu")} <span className="tnum">{saved.length}</span>
+          </Link>
+          <LocaleSwitch />
+        </div>
       </header>
 
       <section className="px-5 pt-8">
         <h1 className="text-balance text-[40px] font-extrabold leading-[1.02] tracking-[-0.04em]">
-          Try it <span className="rounded-[10px] bg-lime px-1.5 [box-decoration-break:clone]">before</span> you buy it.
+          {locale === "vi" ? (
+            <>
+              Thử đồ <span className="rounded-[10px] bg-lime px-1.5 [box-decoration-break:clone]">trước khi</span> mua.
+            </>
+          ) : (
+            <>
+              Try it <span className="rounded-[10px] bg-lime px-1.5 [box-decoration-break:clone]">before</span> you buy it.
+            </>
+          )}
         </h1>
         <p className="mt-3 max-w-[34ch] text-[15px] leading-relaxed text-muted">
-          See two pieces on you, one after the other.
-          <br />
-          Thử hai món trên chính bạn rồi mới quyết định.
+          {tr("See two pieces on you, one after the other.", "Thử hai món trên chính bạn rồi mới quyết định.")}
         </p>
       </section>
 
@@ -68,7 +77,7 @@ export default function Home() {
         {steps.map((s, i) => {
           const isCurrent = i === current;
           return (
-            <li key={s.title}>
+            <li key={s.href}>
               <Link
                 href={s.href}
                 className="group flex min-h-[68px] items-center gap-3.5 px-4 py-3 transition-colors first:rounded-t-[22px] last:rounded-b-[22px] hover:bg-surface"
@@ -83,7 +92,7 @@ export default function Home() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold">{s.title}</span>
-                  <span className="mt-0.5 block text-[13px] text-muted">{s.vi}</span>
+                  <span className="mt-0.5 block text-[13px] text-muted">{s.sub}</span>
                 </span>
                 <ArrowRight
                   className={clsx(
@@ -100,9 +109,9 @@ export default function Home() {
 
       <section className="pt-7">
         <div className="flex items-baseline justify-between px-5">
-          <h2 className="text-[16px] font-bold tracking-[-0.01em]">Your pieces</h2>
+          <h2 className="text-[16px] font-bold tracking-[-0.01em]">{tr("Your pieces", "Tủ đồ của bạn")}</h2>
           <Link href="/looks" className="-mr-2 flex min-h-11 items-center px-2 text-[13px] font-semibold text-muted hover:text-ink">
-            My looks
+            {tr("My looks", "Look của tôi")}
           </Link>
         </div>
         {recent.length ? (
@@ -124,23 +133,24 @@ export default function Home() {
                 className="flex h-[104px] w-[84px] flex-col items-center justify-center gap-1 rounded-[16px] border-[1.5px] border-dashed border-line text-[12px] font-semibold text-muted hover:border-muted"
               >
                 <Plus className="h-5 w-5" strokeWidth={2} />
-                Add
+                {tr("Add", "Thêm")}
               </Link>
             </li>
           </ul>
         ) : (
           <p className="mx-5 mt-2 rounded-[16px] bg-surface px-4 py-5 text-[14px] text-muted">
-            Nothing yet. Add a screenshot from any shop to start. · Chưa có món nào.
+            {tr("Nothing yet. Add a screenshot from any shop to start.", "Chưa có món nào. Hãy thêm ảnh chụp màn hình từ shop để bắt đầu.")}
           </p>
         )}
         {recent.some((p) => p.sample) && (
           <p className="mt-3 flex items-center gap-2 px-5 text-[12px] text-muted">
-            <SampleTag className="shadow-none ring-1 ring-line" /> Demo pieces with Unsplash photos. Replace them with your own.
+            <SampleTag className="shadow-none ring-1 ring-line" />{" "}
+            {tr("Demo pieces with Unsplash photos. Replace them with your own.", "Các món mẫu dùng ảnh Unsplash. Bạn có thể thay bằng ảnh của mình.")}
           </p>
         )}
       </section>
 
-      <Dock center={{ label: "Add a product", icon: <Plus strokeWidth={2.25} />, href: "/looks?new=1" }} />
+      <Dock center={{ label: tr("Add a product", "Thêm sản phẩm"), icon: <Plus strokeWidth={2.25} />, href: "/looks?new=1" }} />
     </Screen>
   );
 }

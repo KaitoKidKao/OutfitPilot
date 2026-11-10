@@ -46,7 +46,15 @@ export function StageMessage({ tryOn }: StageMessageProps) {
 
   switch (tryOn.cameraStatus) {
     case "starting":
-      return <Message busy title="Starting camera" helper="Đang bật camera" body="Allow camera access if your phone asks." />;
+      return (
+        <Message
+          busy
+          title="Starting camera"
+          helper="Đang bật camera"
+          body="Allow camera access if your phone asks."
+          bodyVi="Cho phép quyền truy cập camera nếu máy hỏi."
+        />
+      );
     case "denied":
       return (
         <Message
@@ -54,7 +62,8 @@ export function StageMessage({ tryOn }: StageMessageProps) {
           title="Camera access is off"
           helper="Quyền camera đang tắt"
           body="Allow camera for OutfitPilot in Settings, then come back here."
-          action={{ label: "Open Settings", icon: Settings, onPress: () => void Linking.openSettings().catch(() => undefined) }}
+          bodyVi="Hãy cấp quyền camera cho OutfitPilot trong Cài đặt rồi quay lại."
+          action={{ label: "Open Settings", labelVi: "Mở Cài đặt", icon: Settings, onPress: () => void Linking.openSettings().catch(() => undefined) }}
         />
       );
     case "error":
@@ -64,7 +73,8 @@ export function StageMessage({ tryOn }: StageMessageProps) {
           title="The camera didn't start"
           helper="Camera chưa bật được"
           body={tryOn.error ?? "Another app may be using it. Close it and try again."}
-          action={{ label: "Try camera again", icon: RotateCcw, onPress: () => void tryOn.startCamera() }}
+          bodyVi={tryOn.error ?? "Có thể một ứng dụng khác đang dùng camera. Hãy đóng ứng dụng đó rồi thử lại."}
+          action={{ label: "Try camera again", labelVi: "Thử lại camera", icon: RotateCcw, onPress: () => void tryOn.startCamera() }}
         />
       );
     case "off":
@@ -74,7 +84,8 @@ export function StageMessage({ tryOn }: StageMessageProps) {
           title="Camera is off"
           helper="Camera đang tắt"
           body="Turn it on to see yourself, then start the AI try-on."
-          action={{ label: "Turn on camera", icon: Camera, onPress: () => void tryOn.startCamera() }}
+          bodyVi="Bật camera để xem khung hình, sau đó bắt đầu thử đồ bằng AI."
+          action={{ label: "Turn on camera", labelVi: "Bật camera", icon: Camera, onPress: () => void tryOn.startCamera() }}
         />
       );
     case "on":
@@ -87,12 +98,13 @@ interface MessageProps {
   title: string;
   helper: string;
   body?: string;
+  bodyVi?: string;
   icon?: LucideIcon;
   busy?: boolean;
-  action?: { label: string; icon: LucideIcon; onPress: () => void };
+  action?: { label: string; labelVi?: string; icon: LucideIcon; onPress: () => void };
 }
 
-function Message({ title, helper, body, icon: Icon, busy = false, action }: MessageProps) {
+function Message({ title, helper, body, bodyVi, icon: Icon, busy = false, action }: MessageProps) {
   return (
     <View style={styles.message}>
       <View style={styles.iconWell} importantForAccessibility="no" accessibilityElementsHidden>
@@ -102,11 +114,11 @@ function Message({ title, helper, body, icon: Icon, busy = false, action }: Mess
         {title}
       </AppText>
       {body ? (
-        <AppText variant="bodySm" tone="mutedDark" align="center" style={styles.body}>
+        <AppText variant="bodySm" tone="mutedDark" align="center" helper={bodyVi} style={styles.body}>
           {body}
         </AppText>
       ) : null}
-      {action ? <Button label={action.label} icon={action.icon} variant="onDark" onPress={action.onPress} style={styles.action} /> : null}
+      {action ? <Button label={action.label} labelVi={action.labelVi} icon={action.icon} variant="onDark" onPress={action.onPress} style={styles.action} /> : null}
     </View>
   );
 }

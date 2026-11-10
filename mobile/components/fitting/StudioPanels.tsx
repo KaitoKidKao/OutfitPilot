@@ -51,7 +51,11 @@ export function ReadyPanel({ letter, notice, blocker, onLayout }: ReadyPanelProp
       <AppText variant="section" tone="paper" helper="Lùi lại khoảng 1,5 m, đứng gọn trong khung">
         Step back about 1.5 m
       </AppText>
-      <AppText variant="bodySm" tone="mutedDark">
+      <AppText
+        variant="bodySm"
+        tone="mutedDark"
+        helper={`Bấm Bật AI để thử trực tiếp Look ${letter}. Phiên thử tự dừng sau 2 phút. Chạm vào móc bên dưới để đổi look trước khi bật.`}
+      >
         {`Start AI puts Look ${letter} on you live. It is a paid session and stops by itself after 2 minutes. Tap a hook to choose which look goes first.`}
       </AppText>
       {blocker ? <NoteLine text={blocker} /> : notice ? <NoteLine text={notice} /> : null}
@@ -70,7 +74,12 @@ export function ConnectingPanel({ notice, onLayout }: { notice: string | null; o
           Connecting to AI
         </AppText>
       </View>
-      <AppText variant="bodySm" tone="mutedDark" accessibilityLiveRegion="polite">
+      <AppText
+        variant="bodySm"
+        tone="mutedDark"
+        helper={notice ?? "Hình camera được gửi trực tiếp tới Decart để vẽ trang phục. Video không được lưu lại."}
+        accessibilityLiveRegion="polite"
+      >
         {notice ?? "Your camera goes straight to Decart to draw the garment. The video is not saved."}
       </AppText>
     </StudioPanel>
@@ -114,7 +123,7 @@ export function LivePanel({ secondsLeft, maxSeconds, switching, secondsToNext, e
           style={styles.endButton}
         >
           <Square size={14} color={colors.paper} strokeWidth={1.75} fill={colors.paper} />
-          <AppText variant="label" tone="paper">
+          <AppText variant="label" tone="paper" helper="Dừng AI">
             End AI
           </AppText>
         </Touchable>
@@ -137,6 +146,7 @@ export function LivePanel({ secondsLeft, maxSeconds, switching, secondsToNext, e
 
 export interface PanelAction {
   label: string;
+  labelVi?: string;
   icon?: LucideIcon;
   onPress: () => void;
   accessibilityHint?: string;
@@ -148,6 +158,7 @@ export interface ActionPanelProps {
   title: string;
   helper: string;
   body: string;
+  bodyVi?: string;
   /** The panel's next action (lime). */
   primary: PanelAction;
   /** White pill on dark. */
@@ -155,18 +166,19 @@ export interface ActionPanelProps {
   onLayout?: (e: LayoutChangeEvent) => void;
 }
 
-export function ActionPanel({ title, helper, body, primary, secondary, onLayout }: ActionPanelProps) {
+export function ActionPanel({ title, helper, body, bodyVi, primary, secondary, onLayout }: ActionPanelProps) {
   return (
     <StudioPanel onLayout={onLayout}>
       <AppText variant="section" tone="paper" helper={helper} accessibilityRole="header">
         {title}
       </AppText>
-      <AppText variant="bodySm" tone="mutedDark">
+      <AppText variant="bodySm" tone="mutedDark" helper={bodyVi}>
         {body}
       </AppText>
       <View style={styles.actions}>
         <Button
           label={primary.label}
+          labelVi={primary.labelVi}
           icon={primary.icon}
           variant="next"
           onPress={primary.onPress}
@@ -178,6 +190,7 @@ export function ActionPanel({ title, helper, body, primary, secondary, onLayout 
         {secondary ? (
           <Button
             label={secondary.label}
+            labelVi={secondary.labelVi}
             icon={secondary.icon}
             variant="onDark"
             onPress={secondary.onPress}

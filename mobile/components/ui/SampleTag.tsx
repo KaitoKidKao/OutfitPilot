@@ -9,15 +9,17 @@ import { AppText } from "./AppText";
 export interface SampleTagProps {
   /** Default "Sample". */
   label?: string;
+  /** Default "Ảnh mẫu". */
+  labelVi?: string;
   /** "photo" (default) sits on an image; "surface" sits on white. */
   on?: "photo" | "surface";
   style?: StyleProp<ViewStyle>;
 }
 
-export function SampleTag({ label = "Sample", on = "photo", style }: SampleTagProps) {
+export function SampleTag({ label = "Sample", labelVi = "Ảnh mẫu", on = "photo", style }: SampleTagProps) {
   return (
     <View style={[styles.tag, on === "surface" ? styles.onSurface : styles.onPhoto, style]} accessibilityLabel="Sample photo" accessible>
-      <AppText variant="tag" tone="muted" maxFontSizeMultiplier={1.2}>
+      <AppText variant="tag" tone="muted" helper={labelVi} maxFontSizeMultiplier={1.2}>
         {label}
       </AppText>
     </View>

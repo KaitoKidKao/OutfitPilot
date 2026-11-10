@@ -20,7 +20,7 @@ export function PicksEmpty({ onChooseOccasion }: { onChooseOccasion: () => void 
       <AppText variant="body" tone="muted" align="center" helper="Chọn dịp bạn sắp đi, chúng tôi sẽ treo hai món lên dock." containerStyle={styles.center}>
         Pick where you&apos;re going and we&apos;ll hang two looks on your dock.
       </AppText>
-      <Button label="Choose an occasion" variant="next" icon={ArrowLeft} onPress={onChooseOccasion} style={styles.cta} />
+      <Button label="Choose an occasion" labelVi="Chọn dịp" variant="next" icon={ArrowLeft} onPress={onChooseOccasion} style={styles.cta} />
     </View>
   );
 }
@@ -57,8 +57,8 @@ export function PicksError({ message, retrying, onRetry, onChangeOccasion }: Pic
         </View>
       </View>
       <View style={styles.actions}>
-        <Button label="Try again" loadingLabel="Trying again…" variant="next" icon={RotateCcw} loading={retrying} onPress={onRetry} />
-        <Button label="Change occasion" variant="ghost" onPress={onChangeOccasion} />
+        <Button label="Try again" labelVi="Thử lại" loadingLabel="Trying again…" loadingLabelVi="Đang thử lại…" variant="next" icon={RotateCcw} loading={retrying} onPress={onRetry} />
+        <Button label="Change occasion" labelVi="Đổi dịp" variant="ghost" onPress={onChangeOccasion} />
       </View>
     </View>
   );

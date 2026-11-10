@@ -116,6 +116,7 @@ export default function CameraSetup() {
       case "on":
         return {
           label: "Start fitting",
+          labelVi: "Vào thử đồ",
           accessibilityLabel: "Start fitting",
           accessibilityHint: startHint,
           icon: Play,
@@ -124,10 +125,11 @@ export default function CameraSetup() {
           onPress: startFitting,
         };
       case "starting":
-        return { label: "Opening", accessibilityLabel: "Opening the camera", icon: Camera, tone: "lime", loading: true, onPress: () => undefined };
+        return { label: "Opening", labelVi: "Đang mở", accessibilityLabel: "Opening the camera", icon: Camera, tone: "lime", loading: true, onPress: () => undefined };
       case "denied":
         return {
           label: "Settings",
+          labelVi: "Cài đặt",
           accessibilityLabel: "Open settings to allow the camera",
           icon: Settings,
           tone: "lime",
@@ -136,10 +138,11 @@ export default function CameraSetup() {
           },
         };
       case "error":
-        return { label: "Try again", accessibilityLabel: "Try the camera again", icon: RotateCcw, tone: "lime", onPress: () => void allowCamera() };
+        return { label: "Try again", labelVi: "Thử lại", accessibilityLabel: "Try the camera again", icon: RotateCcw, tone: "lime", onPress: () => void allowCamera() };
       case "paused":
         return {
           label: "Camera on",
+          labelVi: "Bật lại",
           accessibilityLabel: "Turn the camera back on",
           icon: Camera,
           tone: "lime",
@@ -149,6 +152,7 @@ export default function CameraSetup() {
       default:
         return {
           label: "Allow camera",
+          labelVi: "Bật camera",
           accessibilityLabel: "Allow camera",
           accessibilityHint: "Asks for camera access and shows a preview. Nothing is sent yet.",
           icon: Camera,
@@ -169,7 +173,7 @@ export default function CameraSetup() {
 
   return (
     <Screen
-      header={<TopBar title="Camera setup" />}
+      header={<TopBar title="Camera setup" titleVi="Chuẩn bị camera" />}
       overlay={<FittingDock hooks={hookIds} lit={hasPicks ? activeLook : null} onHookPress={hasPicks ? setActiveLook : undefined} center={center} />}
     >
       <View style={styles.content}>
@@ -190,12 +194,15 @@ export default function CameraSetup() {
 
         {!hasPicks ? (
           <View style={styles.noPicks}>
-            <AppText variant="bodyStrong">No looks on the dock yet</AppText>
+            <AppText variant="bodyStrong" helper="Chưa có gợi ý trên dock">
+              No looks on the dock yet
+            </AppText>
             <AppText variant="bodySm" helper="Chọn dịp trước để nhận hai gợi ý để thử.">
               Choose an occasion first to get two picks to try on.
             </AppText>
             <Button
               label={occasionId ? "Get my picks" : "Choose an occasion"}
+              labelVi={occasionId ? "Nhận gợi ý" : "Chọn dịp"}
               variant="ink"
               onPress={() => (occasionId ? router.dismissTo("/picks") : router.dismissTo("/"))}
             />

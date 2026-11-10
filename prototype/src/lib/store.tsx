@@ -1,16 +1,23 @@
-"use client";
+k"use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { SAMPLE_PRODUCTS } from "./samples";
 import type { Product, SavedLook, Slot } from "./types";
 
+export type Locale = "vi" | "en";
+
 type State = {
   products: Product[];
   slots: Record<Slot, string | null>;
   saved: SavedLook[];
+  locale?: Locale;
 };
 
 type Store = State & {
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  toggleLocale: () => void;
+  tr: (en: string, vi: string) => string;
   ready: boolean;
   byId: (id: string | null | undefined) => Product | undefined;
   look: (slot: Slot) => Product | undefined;
@@ -32,6 +39,7 @@ const INITIAL: State = {
   products: SAMPLE_PRODUCTS,
   slots: { a: "s-bomber", b: "s-leather" },
   saved: [{ productId: "s-dress", savedAt: 1 }, { productId: "s-shirt", savedAt: 0 }],
+  locale: "vi",
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -48,7 +56,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const raw = window.localStorage.getItem(KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as State;
-        if (Array.isArray(parsed.products) && parsed.slots) setState(parsed);
+        if (Array.isArray(parsed.products) && parsed.slots) {
+          setState({
+            ...parsed,
+            locale: parsed.locale === "en" || parsed.locale === "vi" ? parsed.locale : "vi",
+          });
+        }
       }
     } catch {
       /* private mode or corrupt data: keep the demo state */
@@ -73,10 +86,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const byId = useCallback((id: string | null | undefined) => state.products.find((p) => p.id === id), [state.products]);
+  const locale: Locale = state.locale === "en" ? "en" : "vi";
 
   const store = useMemo<Store>(
     () => ({
       ...state,
+      locale,
+      setLocale: (next) => setState((s) => ({ ...s, locale: next })),
+      toggleLocale: () => setState((s) => ({ ...s, locale: s.locale === "en" ? "vi" : "en" })),
+      tr: (en, vi) => (locale === "vi" ? vi : en),
       ready,
       toast,
       notify,
@@ -116,7 +134,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       unsave: (id) => setState((s) => ({ ...s, saved: s.saved.filter((x) => x.productId !== id) })),
       isSaved: (id) => state.saved.some((x) => x.productId === id),
     }),
-    [state, ready, toast, notify, persistError, byId],
+    [state, locale, ready, toast, notify, persistError, byId],
   );
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;

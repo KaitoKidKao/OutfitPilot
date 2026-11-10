@@ -22,6 +22,27 @@ export function Screen({
   );
 }
 
+export function LocaleSwitch({ tone = "light" }: { tone?: "light" | "dark" }) {
+  const { locale, toggleLocale } = useStore();
+  return (
+    <button
+      type="button"
+      onClick={toggleLocale}
+      aria-label={locale === "vi" ? "Switch language to English" : "Chuyển sang tiếng Việt"}
+      className={clsx(
+        "flex h-9 items-center gap-1 rounded-[12px] px-2.5 text-[12px] font-bold tracking-tight transition-colors",
+        tone === "dark"
+          ? "bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
+          : "bg-surface text-ink hover:bg-surface-deep",
+      )}
+    >
+      <span className={clsx(locale === "vi" ? "font-extrabold opacity-100" : "font-medium opacity-55")}>VI</span>
+      <span className="opacity-35">/</span>
+      <span className={clsx(locale === "en" ? "font-extrabold opacity-100" : "font-medium opacity-55")}>EN</span>
+    </button>
+  );
+}
+
 /** `title` is the screen's h1; pages that set their own h1 pass no title. */
 export function TopBar({
   title,
@@ -44,7 +65,10 @@ export function TopBar({
         </Link>
       )}
       {title && <h1 className="text-[17px] font-semibold tracking-[-0.01em]">{title}</h1>}
-      <div className="ml-auto flex items-center gap-2">{right}</div>
+      <div className="ml-auto flex items-center gap-2">
+        {right}
+        <LocaleSwitch />
+      </div>
     </header>
   );
 }
@@ -61,9 +85,10 @@ export function Toast() {
 }
 
 export function SampleTag({ className }: { className?: string }) {
+  const { tr } = useStore();
   return (
     <span className={clsx("rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-muted shadow-sm", className)}>
-      Sample
+      {tr("Sample", "Ảnh mẫu")}
     </span>
   );
 }

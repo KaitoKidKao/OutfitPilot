@@ -20,6 +20,7 @@ import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import { Touchable } from "@/components/ui/Touchable";
 import { getGarment, type GarmentId } from "@/lib/catalog";
+import { tr, useLocale } from "@/lib/locale";
 import { alpha, colors, motion, radii, shadowDock, sizes, spacing } from "@/lib/theme";
 
 export type DockMode = "display" | "switch" | "keep";
@@ -29,6 +30,7 @@ export type DockCenterTone = "lime" | "light" | "quiet";
 export interface DockCenter {
   /** Visible label under the icon (e.g. "Style me", "Set up camera", "Stop"). Omit for icon-only. */
   label?: string;
+  labelVi?: string;
   /** Required. Spoken label (include the action, e.g. "Style me: get two AI picks"). */
   accessibilityLabel: string;
   accessibilityHint?: string;
@@ -152,13 +154,14 @@ interface HookProps {
 }
 
 function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: HookProps) {
+  const locale = useLocale();
   const garment = garmentId ? getGarment(garmentId) : null;
   const letter = slot.toUpperCase();
   const textTone = lit ? "ink" : "paper";
   const subTone = lit ? "ink" : "mutedDark";
   const interactive = !!onPress && !!garment;
-  const title = mode === "keep" ? `Keep ${letter}` : name;
-  const sub = garment ? garment.name : "Empty";
+  const title = mode === "keep" ? tr(locale, `Keep ${letter}`, `Giữ ${letter}`) : name;
+  const sub = garment ? garment.name : tr(locale, "Empty", "Trống");
 
   const a11yLabel =
     mode === "keep"
@@ -269,6 +272,7 @@ const CENTER_TONE: Record<DockCenterTone, { bg: string; pressedBg: string; fg: s
 
 function CenterButton({
   label,
+  labelVi,
   accessibilityLabel,
   accessibilityHint,
   icon: Icon,
@@ -295,7 +299,7 @@ function CenterButton({
     >
       {loading ? <ActivityIndicator color={t.fg} /> : Icon ? <Icon size={label ? 20 : 24} color={t.fg} strokeWidth={1.75} /> : null}
       {label ? (
-        <AppText variant="label" weight={700} tone={t.text} align="center" numberOfLines={2} maxFontSizeMultiplier={DOCK_TEXT_SCALE}>
+        <AppText variant="label" weight={700} tone={t.text} helper={labelVi} align="center" numberOfLines={2} maxFontSizeMultiplier={DOCK_TEXT_SCALE}>
           {label}
         </AppText>
       ) : null}

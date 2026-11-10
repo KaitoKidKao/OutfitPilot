@@ -21,7 +21,7 @@ export function HonestFootnote({ garmentIds }: { garmentIds: readonly GarmentId[
           Visual preview only. The try-on can&apos;t tell your size or how a piece will fit, so check the store&apos;s size guide before you buy.
         </AppText>
         {credits.length ? (
-          <AppText variant="caption" tone="muted">
+          <AppText variant="caption" tone="muted" helper={`Ảnh mẫu minh hoạ, không phải ảnh sản phẩm chính xác. ${credits.join(" · ")}.`}>
             {`Sample photos, not the exact product. ${credits.join(" · ")}.`}
           </AppText>
         ) : null}

@@ -10,6 +10,7 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 
 import { ApiError, describeApiError, postStyle, type ClientErrorCode, type ErrorCode, type Locale, type Recommendation, type StyleResponse, type StyleSource } from "./api";
 import { getGarment, isGarmentId, OCCASION_IDS, type Garment, type GarmentId, type OccasionId } from "./catalog";
+import { getLocale, hydrateLocale, setGlobalLocale, useLocale } from "./locale";
 import { isStyleChoice, type StyleChoice } from "./occasions";
 import { readPreviewSeed } from "./previewSeed";
 
@@ -105,7 +106,7 @@ function initialState(): AppState {
   return {
     occasionId: seed?.occasionId ?? null,
     style: seed && isStyleChoice(seed.style) ? seed.style : "none",
-    locale: "en",
+    locale: getLocale(),
     picks: seed?.picks ?? null,
     picksStatus: seed?.picks ? "ready" : "idle",
     picksError: null,
@@ -121,9 +122,10 @@ function initialState(): AppState {
 const StoreContext = createContext<AppStore | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
+  const activeLocale = useLocale();
   const [state, setState] = useState<AppState>(initialState);
   const stateRef = useRef(state);
-  stateRef.current = state;
+  stateRef.current = { ...state, locale: activeLocale };
   /** Bumped per fetch; a slower, older response never overwrites a newer one. */
   const requestRef = useRef(0);
   /** occasion+style the current picks were made for. */
@@ -131,6 +133,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   // ----- persistence -----
   useEffect(() => {
+    hydrateLocale();
     let alive = true;
     AsyncStorage.getItem(SAVED_STORAGE_KEY)
       .then((raw) => {
@@ -179,7 +182,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setLocale = useCallback((locale: Locale) => {
-    setState((s) => (s.locale === locale ? s : { ...resetPicks(s), locale }));
+    setGlobalLocale(locale, true);
+    setState((s) => (s.locale === locale ? s : { ...s, locale }));
   }, []);
 
   const fetchPicks = useCallback(async (options?: { force?: boolean }): Promise<StyleResponse | null> => {
@@ -264,6 +268,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     };
     return {
       ...state,
+      locale: activeLocale,
       setOccasion,
       setStyle,
       setLocale,
@@ -279,7 +284,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       garmentFor,
       hookIds: [state.picks?.recommendations[0].garmentId ?? null, state.picks?.recommendations[1].garmentId ?? null],
     };
-  }, [state, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved]);
+  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

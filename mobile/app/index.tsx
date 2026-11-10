@@ -21,6 +21,7 @@ import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
 import { AppText, BrandMark, Chip, ChipGroup, Screen, TopBar, Touchable, useDockClearance, useToast } from "@/components/ui";
 import { getOccasionOption, OCCASION_OPTIONS, STYLE_OPTIONS } from "@/lib/occasions";
+import { tr, useLocale } from "@/lib/locale";
 import { useAppStore } from "@/lib/store";
 import { colors, MIN_TARGET, radii, spacing } from "@/lib/theme";
 
@@ -30,6 +31,7 @@ const PENDING_NOTE_DELAY_MS = 1200;
 export default function ChooseOccasion() {
   const router = useRouter();
   const toast = useToast();
+  const locale = useLocale();
   const clearance = useDockClearance();
   const { occasionId, style, setOccasion, setStyle, fetchPicks, picksStatus, picksError, picksErrorCode, picksErrorStatus, hookIds, saved, savedLoaded } =
     useAppStore();
@@ -90,6 +92,7 @@ export default function ChooseOccasion() {
   if (!occasion) {
     center = {
       label: "Style me",
+      labelVi: "Phối đồ",
       accessibilityLabel: "Style me",
       accessibilityHint: "Choose an occasion first",
       icon: Sparkles,
@@ -100,6 +103,7 @@ export default function ChooseOccasion() {
   } else if (loading) {
     center = {
       label: "Styling…",
+      labelVi: "Đang phối…",
       accessibilityLabel: `Styling. Getting two picks for ${occasion.label}`,
       icon: Sparkles,
       tone: "lime",
@@ -109,6 +113,7 @@ export default function ChooseOccasion() {
   } else if (picksStatus === "error") {
     center = {
       label: "Try again",
+      labelVi: "Thử lại",
       accessibilityLabel: `Try again: get two picks for ${occasion.label}`,
       icon: RotateCcw,
       tone: "lime",
@@ -117,6 +122,7 @@ export default function ChooseOccasion() {
   } else {
     center = {
       label: "Style me",
+      labelVi: "Phối đồ",
       accessibilityLabel: `Style me: get two picks for ${occasion.label}`,
       accessibilityHint: "Opens your two picks",
       icon: Sparkles,
@@ -149,7 +155,7 @@ export default function ChooseOccasion() {
           <SavedSheet
             visible={savedOpen}
             onClose={() => setSavedOpen(false)}
-            onRemoved={() => toast.show("Removed · Đã xoá", { announcement: "Look removed" })}
+            onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"), { announcement: "Look removed" })}
           />
         </>
       }

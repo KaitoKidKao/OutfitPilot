@@ -11,7 +11,7 @@ import type { Product, Slot } from "@/lib/types";
 
 export default function DecidePage() {
   const router = useRouter();
-  const { look, save, notify, updateProduct } = useStore();
+  const { look, save, notify, updateProduct, tr } = useStore();
   const a = look("a");
   const b = look("b");
 
@@ -19,7 +19,7 @@ export default function DecidePage() {
     const p = look(slot);
     if (!p) return;
     save(p.id);
-    notify(`Saved ${p.name}`);
+    notify(tr(`Saved ${p.name}`, `Đã lưu ${p.name}`));
     router.push("/saved");
   };
 
@@ -27,15 +27,15 @@ export default function DecidePage() {
     <Screen>
       <TopBar back="/studio" />
       <div className="px-5">
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.03em]">Which one do you keep?</h1>
-        <p className="mt-1 text-[14px] text-muted">Bạn chọn món nào? Facts on top, your own notes below.</p>
+        <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.03em]">{tr("Which one do you keep?", "Bạn giữ món nào?")}</h1>
+        <p className="mt-1 text-[14px] text-muted">{tr("Facts on top, your own notes below.", "Thông tin sản phẩm ở trên, ghi chú của bạn ở dưới.")}</p>
       </div>
 
       {!a && !b ? (
         <div className="mx-5 mt-6 rounded-[22px] border-[1.5px] border-dashed border-line p-6 text-center">
-          <p className="text-[16px] font-bold">Nothing to compare yet</p>
+          <p className="text-[16px] font-bold">{tr("Nothing to compare yet", "Chưa có món nào để so sánh")}</p>
           <Link href="/looks?new=1" className="mt-4 inline-flex h-12 items-center rounded-[14px] bg-lime px-5 text-[15px] font-semibold">
-            Add a product
+            {tr("Add a product", "Thêm sản phẩm")}
           </Link>
         </div>
       ) : (
@@ -46,12 +46,15 @@ export default function DecidePage() {
       )}
 
       <p className="mx-5 mt-6 rounded-[16px] bg-surface px-4 py-3 text-[12px] leading-relaxed text-muted">
-        Prices are what you typed. OutfitPilot doesn&apos;t check stock, size or fabric, and can&apos;t measure your size. · Giá do bạn nhập; size và chất liệu hãy hỏi shop.
+        {tr(
+          "Prices are what you typed. OutfitPilot doesn't check stock, size or fabric, and can't measure your size.",
+          "Giá do bạn tự nhập. OutfitPilot không kiểm tra tồn kho, kích cỡ hay chất liệu — hãy kiểm tra trực tiếp với shop.",
+        )}
       </p>
 
       <Dock
         mode={{ kind: "keep", onKeep: keep }}
-        center={{ label: "Try them again in the studio", icon: <RotateCcw strokeWidth={2} />, href: "/studio", tone: "quiet" }}
+        center={{ label: tr("Try them again in the studio", "Thử lại trong phòng thử"), icon: <RotateCcw strokeWidth={2} />, href: "/studio", tone: "quiet" }}
       />
     </Screen>
   );

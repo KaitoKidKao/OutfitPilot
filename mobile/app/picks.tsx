@@ -20,9 +20,11 @@ import { PicksEmpty, PicksError } from "@/components/picks/PicksStates";
 import { SourceNote } from "@/components/picks/SourceNote";
 import { AppText, Screen, TopBar, useToast } from "@/components/ui";
 import { getGarment } from "@/lib/catalog";
+import { tr, useLocale } from "@/lib/locale";
 import { STYLE_OPTIONS } from "@/lib/occasions";
 import { useAppStore, type Slot } from "@/lib/store";
 import { spacing } from "@/lib/theme";
+import { preloadGarmentPhotos } from "@/lib/tryOnSession";
 
 /** Space kept above a card when a hook tap scrolls to it. */
 const SCROLL_MARGIN = 12;
@@ -30,6 +32,7 @@ const SCROLL_MARGIN = 12;
 export default function AiPicks() {
   const router = useRouter();
   const toast = useToast();
+  const locale = useLocale();
   const reduced = useReducedMotion();
   const { occasionId, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
 
@@ -45,10 +48,16 @@ export default function AiPicks() {
     };
   }, []);
 
-  // Fetch on arrival. The store reuses picks that already match occasion + style.
+  // Fetch on arrival or when locale changes. The store reuses picks that already match occasion + style + locale.
   useEffect(() => {
     if (occasionId) void fetchPicks();
-  }, [occasionId, fetchPicks]);
+  }, [occasionId, locale, fetchPicks]);
+
+  // Preload garment base64 assets early while the user reads the picks so the Fitting Room starts faster.
+  useEffect(() => {
+    if (!picks) return;
+    preloadGarmentPhotos([picks.recommendations[0].garmentId, picks.recommendations[1].garmentId]);
+  }, [picks]);
 
   // Tell screen-reader users when the pair arrives after a wait.
   const prevStatus = useRef(picksStatus);
@@ -72,10 +81,13 @@ export default function AiPicks() {
     const res = await fetchPicks({ force: true });
     if (!mounted.current) return;
     setAskingAgain(false);
-    if (!res) toast.show("Can't reach the stylist. Keeping these two.", { announcement: "Can't reach the stylist. Keeping these two looks." });
-    else if (res.source === "llm") toast.show("New picks from AI Stylist · Gợi ý mới từ AI Stylist");
-    else toast.show("AI Stylist is still offline · AI Stylist vẫn ngoại tuyến");
-  }, [fetchPicks, toast]);
+    if (!res)
+      toast.show(tr(locale, "Can't reach the stylist. Keeping these two.", "Không kết nối được stylist. Giữ hai gợi ý hiện tại."), {
+        announcement: "Can't reach the stylist. Keeping these two looks.",
+      });
+    else if (res.source === "llm") toast.show(tr(locale, "New picks from AI Stylist", "Gợi ý mới từ AI Stylist"));
+    else toast.show(tr(locale, "AI Stylist is still offline", "AI Stylist vẫn đang ngoại tuyến"));
+  }, [fetchPicks, locale, toast]);
 
   // Card offsets inside the scroll content, recorded on layout for hook taps.
   const onLayoutA = useCallback((e: LayoutChangeEvent) => {
@@ -107,6 +119,7 @@ export default function AiPicks() {
   const center: DockCenter = picks
     ? {
         label: "Set up camera",
+        labelVi: "Mở camera",
         accessibilityLabel: "Set up camera",
         accessibilityHint: "Opens camera setup. Nothing is sent until you agree there.",
         icon: Camera,
@@ -115,6 +128,7 @@ export default function AiPicks() {
       }
     : {
         label: "Set up camera",
+        labelVi: "Mở camera",
         accessibilityLabel: loading ? "Set up camera, waiting for your two looks" : "Set up camera, unavailable until you have two looks",
         icon: Camera,
         tone: loading ? "lime" : "quiet",
@@ -127,7 +141,7 @@ export default function AiPicks() {
     <Screen
       testID="picks-screen"
       scrollRef={scrollRef}
-      header={<TopBar title="Your picks" />}
+      header={<TopBar title="Your picks" titleVi="Gợi ý cho bạn" />}
       overlay={<FittingDock hooks={hookIds} lit={picks ? activeLook : null} onHookPress={picks ? showCard : undefined} center={center} />}
     >
       {!occasionId || !headline ? (
@@ -139,7 +153,7 @@ export default function AiPicks() {
               {headline.en}
             </AppText>
             {styleOption ? (
-              <AppText variant="bodySm" tone="muted" helper={styleOption.labelVi} helperInline style={styles.styleLine}>
+              <AppText variant="bodySm" tone="muted" helper={`Thiên về ${styleOption.labelVi.toLowerCase()}`} style={styles.styleLine}>
                 {`Leaning ${styleOption.label.toLowerCase()}`}
               </AppText>
             ) : null}

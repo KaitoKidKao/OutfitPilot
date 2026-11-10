@@ -45,7 +45,9 @@ export function SourceNote({ source, onRetry, retrying = false }: SourceNoteProp
       {onRetry ? (
         <Button
           label="Ask AI Stylist again"
+          labelVi="Hỏi lại AI Stylist"
           loadingLabel="Asking AI Stylist…"
+          loadingLabelVi="Đang hỏi AI Stylist…"
           icon={RotateCcw}
           variant="ghost"
           loading={retrying}

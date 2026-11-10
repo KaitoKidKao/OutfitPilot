@@ -18,16 +18,19 @@ const DOT: Record<StatusDot, string> = {
 export interface StatusPillProps {
   /** e.g. "Camera preview", "Connecting to AI", "Live AI try-on", "Switching look", "Connection lost". */
   label: string;
+  labelVi?: string;
   dot?: StatusDot;
   /** "off" shows "AI OFF", "live" shows "AI LIVE", null hides the tag. */
   ai?: "off" | "live" | null;
   /** Override the tag text, e.g. "AI OFF · preview only". */
   aiLabel?: string;
+  aiLabelVi?: string;
   style?: StyleProp<ViewStyle>;
 }
 
-export function StatusPill({ label, dot = "off", ai = null, aiLabel, style }: StatusPillProps) {
+export function StatusPill({ label, labelVi, dot = "off", ai = null, aiLabel, aiLabelVi, style }: StatusPillProps) {
   const tag = ai ? (aiLabel ?? (ai === "live" ? "AI LIVE" : "AI OFF")) : null;
+  const tagVi = ai ? (aiLabelVi ?? (ai === "live" ? "AI TRỰC TIẾP" : "AI TẮT")) : undefined;
   return (
     <View
       style={[styles.pill, style]}
@@ -37,11 +40,11 @@ export function StatusPill({ label, dot = "off", ai = null, aiLabel, style }: St
       accessibilityLabel={tag ? `Status: ${label}. ${tag}` : `Status: ${label}`}
     >
       <View style={[styles.dot, { backgroundColor: DOT[dot] }]} />
-      <AppText variant="label" tone="paper" numberOfLines={1} maxFontSizeMultiplier={1.3} style={styles.label}>
+      <AppText variant="label" tone="paper" helper={labelVi} numberOfLines={1} maxFontSizeMultiplier={1.3} style={styles.label}>
         {label}
       </AppText>
       {tag ? (
-        <AppText variant="tag" weight={800} tone="lime" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+        <AppText variant="tag" weight={800} tone="lime" helper={tagVi} numberOfLines={1} maxFontSizeMultiplier={1.3}>
           {tag}
         </AppText>
       ) : null}

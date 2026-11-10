@@ -10,7 +10,9 @@ import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import { IconButton } from "@/components/ui/IconButton";
 import { getGarment } from "@/lib/catalog";
+import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption, SOURCE_LABEL } from "@/lib/occasions";
+import { reasonWithoutName } from "@/lib/reasonText";
 import { useAppStore, type SavedLook } from "@/lib/store";
 import { alpha, colors, radii, sizes, spacing } from "@/lib/theme";
 
@@ -96,16 +98,20 @@ export function SavedSheet({ visible, onClose, onRemoved }: SavedSheetProps) {
 }
 
 function SavedRow({ look, onRemove }: { look: SavedLook; onRemove: () => void }) {
+  const locale = useLocale();
   const garment = getGarment(look.garmentId);
   const occasion = getOccasionOption(look.occasionId);
   const source = SOURCE_LABEL[look.source];
   const date = formatDate(look.savedAt);
+  const reason = reasonWithoutName(look.reason, garment.name);
+  const occasionName = tr(locale, occasion.label, occasion.labelVi);
+  const samplePrefix = garment.sample ? tr(locale, "Sample photo · ", "Ảnh mẫu · ") : "";
 
   return (
     <View style={styles.row}>
       <View
         accessible
-        accessibilityLabel={`${garment.name}${garment.sample ? ", sample photo" : ""}, ${occasion.label}, saved ${date}, ${source.label}`}
+        accessibilityLabel={`${garment.name}${garment.sample ? ", sample photo" : ""}, ${occasion.label}, saved ${date}, ${source.label}. ${reason} Pair with ${look.pairWith}.`}
         style={styles.rowMain}
       >
         {/* The tag does not fit on a 56 pt thumbnail, so "Sample" moves to the meta line. */}
@@ -115,10 +121,20 @@ function SavedRow({ look, onRemove }: { look: SavedLook; onRemove: () => void })
             {garment.name}
           </AppText>
           <AppText variant="bodySm" tone="muted" numberOfLines={2}>
-            {garment.sample ? "Sample photo · " : ""}
-            {occasion.label}
+            {samplePrefix}
+            {occasionName}
             {date ? ` · ${date}` : ""}
           </AppText>
+          {reason ? (
+            <AppText variant="caption" numberOfLines={2}>
+              {reason}
+            </AppText>
+          ) : null}
+          {look.pairWith ? (
+            <AppText variant="caption" tone="muted" numberOfLines={1}>
+              {`${tr(locale, "Pair with:", "Phối cùng:")} ${look.pairWith}`}
+            </AppText>
+          ) : null}
           <AppText variant="caption" tone={look.source === "llm" ? "limeInk" : "muted"} helper={source.labelVi} helperInline helperVariant="caption">
             {source.label}
           </AppText>

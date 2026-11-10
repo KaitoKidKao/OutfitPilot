@@ -63,7 +63,7 @@ export function OccasionCard({ option, selected, onPress, disabled = false, test
         <AppText variant="section" helper={option.labelVi}>
           {option.label}
         </AppText>
-        <AppText variant="bodySm" style={styles.descriptor}>
+        <AppText variant="bodySm" helper={option.descriptorVi} style={styles.descriptor}>
           {option.descriptor}
         </AppText>
       </View>

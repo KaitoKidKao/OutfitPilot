@@ -4,33 +4,41 @@ import { clsx } from "clsx";
 import { ArrowRight, Camera, Lightbulb, MoveHorizontal, ShieldCheck, Smartphone } from "lucide-react";
 import { Dock } from "@/components/Dock";
 import { Screen, TopBar } from "@/components/Screen";
+import { useStore } from "@/lib/store";
 import { useCamera } from "@/lib/useCamera";
 
 const tips = [
   {
     icon: Smartphone,
     title: "Prop it at chest height",
-    vi: "Dựng máy trên bàn hoặc giá đỡ chắc chắn",
+    sub: "Use a stable desk or stand",
+    titleVi: "Dựng máy ngang tầm ngực",
+    subVi: "Đặt trên bàn hoặc giá đỡ chắc chắn",
   },
   {
     icon: MoveHorizontal,
     title: "Step back about 1.5 m",
-    vi: "Lùi lại đến khi thấy từ đầu tới hông",
+    sub: "Until you see your head to hips",
+    titleVi: "Lùi lại khoảng 1,5 m",
+    subVi: "Đến khi thấy rõ từ đầu tới hông",
   },
   {
     icon: Lightbulb,
     title: "Face the light",
-    vi: "Đứng đối diện cửa sổ hoặc đèn, tránh ngược sáng",
+    sub: "Stand facing a window or lamp",
+    titleVi: "Đứng hướng về phía sáng",
+    subVi: "Đối diện cửa sổ hoặc đèn, tránh ngược sáng",
   },
 ];
 
 export default function SetupPage() {
+  const { tr } = useStore();
   const cam = useCamera();
   const live = cam.state === "live";
 
   return (
     <Screen>
-      <TopBar back="/looks" title="Camera setup" />
+      <TopBar back="/looks" title={tr("Camera setup", "Chuẩn bị camera")} />
 
       <section className="px-5">
         <div className="relative aspect-[4/3.4] overflow-hidden rounded-[24px] bg-surface">
@@ -49,21 +57,21 @@ export default function SetupPage() {
             )}
           >
             <span className={clsx("h-2 w-2 rounded-full", live ? "bg-lime" : "bg-muted/50")} />
-            {live ? "Camera preview" : "Camera off"}
+            {live ? tr("Camera preview", "Xem trước camera") : tr("Camera off", "Camera đang tắt")}
           </span>
         </div>
-        {live && <p className="mt-3 text-center text-[14px] font-medium">Fit your head to hips inside the outline. · Căn người vào khung.</p>}
+        {live && <p className="mt-3 text-center text-[14px] font-medium">{tr("Fit your head to hips inside the outline.", "Căn người từ đầu tới hông vào trong khung.")}</p>}
       </section>
 
       <ul className="mx-5 mt-5 space-y-1">
-        {tips.map(({ icon: Icon, title, vi }) => (
+        {tips.map(({ icon: Icon, title, sub, titleVi, subVi }) => (
           <li key={title} className="flex items-center gap-3.5 py-2.5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-surface">
               <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <span>
-              <span className="block text-[15px] font-semibold">{title}</span>
-              <span className="block text-[13px] text-muted">{vi}</span>
+              <span className="block text-[15px] font-semibold">{tr(title, titleVi)}</span>
+              <span className="block text-[13px] text-muted">{tr(sub, subVi)}</span>
             </span>
           </li>
         ))}
@@ -72,29 +80,40 @@ export default function SetupPage() {
       <section className="mx-5 mt-4 rounded-[18px] bg-lime-soft px-4 py-4" aria-live="polite">
         {cam.state === "denied" ? (
           <>
-            <p className="text-[15px] font-semibold">Camera access is blocked</p>
+            <p className="text-[15px] font-semibold">{tr("Camera access is blocked", "Quyền camera đang bị chặn")}</p>
             <p className="mt-1 text-[13px] leading-relaxed text-ink/80">
-              Open your browser&apos;s site settings, allow Camera for this page, then tap Try again. · Hãy bật quyền Camera trong cài đặt trình duyệt.
+              {tr(
+                "Open your browser's site settings, allow Camera for this page, then tap Try again.",
+                "Mở cài đặt trang web trên trình duyệt, cho phép Camera rồi bấm Thử lại.",
+              )}
             </p>
           </>
         ) : cam.state === "unavailable" ? (
           <>
-            <p className="text-[15px] font-semibold">No camera found</p>
+            <p className="text-[15px] font-semibold">{tr("No camera found", "Không tìm thấy camera")}</p>
             <p className="mt-1 text-[13px] leading-relaxed text-ink/80">
-              This device or browser doesn&apos;t offer a camera. You can still open the studio and switch between looks. · Không tìm thấy camera.
+              {tr(
+                "This device or browser doesn't offer a camera. You can still open the studio and switch between looks.",
+                "Thiết bị hoặc trình duyệt này không có camera. Bạn vẫn có thể mở phòng thử và chuyển đổi giữa các look.",
+              )}
             </p>
           </>
         ) : cam.state === "error" ? (
           <>
-            <p className="text-[15px] font-semibold">The camera didn&apos;t start</p>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Another app may be using it. Close it and tap Try again.</p>
+            <p className="text-[15px] font-semibold">{tr("The camera didn't start", "Camera chưa khởi động được")}</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink/80">
+              {tr("Another app may be using it. Close it and tap Try again.", "Có thể ứng dụng khác đang dùng camera. Hãy đóng ứng dụng đó rồi bấm Thử lại.")}
+            </p>
           </>
         ) : (
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden />
             <p className="text-[13px] leading-relaxed text-ink/80">
-              <span className="font-semibold text-ink">Your camera stays on this phone.</span> Nothing is recorded or uploaded, and it turns off when you leave the
-              studio. · Không ghi hình, không tải lên.
+              <span className="font-semibold text-ink">{tr("Your camera stays on this phone.", "Camera chỉ xử lý trên thiết bị của bạn.")}</span>{" "}
+              {tr(
+                "Nothing is recorded or uploaded, and it turns off when you leave the studio.",
+                "Không ghi hình, không tải lên và tự tắt ngay khi bạn rời phòng thử.",
+              )}
             </p>
           </div>
         )}
@@ -103,9 +122,14 @@ export default function SetupPage() {
       <Dock
         center={
           live || cam.state === "unavailable"
-            ? { label: "Studio", icon: <ArrowRight strokeWidth={2.25} />, showLabel: true, href: "/studio" }
+            ? { label: tr("Studio", "Phòng thử"), icon: <ArrowRight strokeWidth={2.25} />, showLabel: true, href: "/studio" }
             : {
-                label: cam.state === "requesting" ? "Waiting…" : cam.state === "idle" ? "Allow camera" : "Try again",
+                label:
+                  cam.state === "requesting"
+                    ? tr("Waiting…", "Đang chờ…")
+                    : cam.state === "idle"
+                      ? tr("Allow camera", "Bật camera")
+                      : tr("Try again", "Thử lại"),
                 icon: <Camera strokeWidth={2} />,
                 showLabel: true,
                 onClick: () => cam.start("user"),

@@ -68,7 +68,7 @@ export function LookCard({ slot, pick, active, onPress, onLayout, testID }: Look
           <AppText variant="title" accessibilityRole="none">
             {garment.name}
           </AppText>
-          <AppText variant="label" tone={active ? "limeInk" : "muted"} helper={role.vi} helperInline>
+          <AppText variant="label" tone={active ? "limeInk" : "muted"} helper={`${name} · ${role.vi}`} helperInline>
             {`${name} · ${role.en}`}
           </AppText>
         </View>

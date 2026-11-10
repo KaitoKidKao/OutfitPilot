@@ -174,7 +174,7 @@ components:
 
 OutfitPilot là một **phòng thử đồ ảo trên điện thoại**, không phải dashboard hay feed mua sắm. Hình ảnh trung tâm là một thanh dock đen cố định dưới ngón cái, có hai móc treo giữ **Look A** và **Look B** trên mọi màn hình, nút hành động chính nằm giữa. Ảnh thumbnail sản phẩm "treo" từ thanh ray của dock và đung đưa vào chỗ khi đổi món. Người mua luôn thấy mình đang cân nhắc hai món nào, dù đang ở màn hình nào.
 
-Nền trắng sạch, chữ mực xanh-đen gần như đen, đường kẻ mảnh, và **một màu lime duy nhất** đánh dấu việc cần làm tiếp theo và món đang được chọn. Mật độ thoáng nhưng gọn: một cột 20px lề, tiêu đề đậm và ngắn, ảnh sản phẩm làm nhân vật chính. Chữ hướng dẫn song ngữ: tiếng Anh là dòng chính, tiếng Việt là dòng phụ màu muted, nối bằng " · " hoặc xuống dòng.
+Nền trắng sạch, chữ mực xanh-đen gần như đen, đường kẻ mảnh, và **một màu lime duy nhất** đánh dấu việc cần làm tiếp theo và món đang được chọn. Mật độ thoáng nhưng gọn: một cột 20px lề, tiêu đề đậm và ngắn, ảnh sản phẩm làm nhân vật chính. Ngôn ngữ tách biệt rõ ràng (Tiếng Việt / Tiếng Anh) qua nút chuyển `VI / EN` trên TopBar thay vì ghép song ngữ chồng lên nhau.
 
 Fitting Studio là ngoại lệ tối duy nhất: video camera tràn màn hình trên nền gần đen, chữ số A/B và đếm ngược cỡ rất lớn bằng lime để đọc được từ 1–2 m. Dock vẫn ở đó, cùng hình dạng, nên người dùng không phải học lại điều khiển.
 
@@ -238,7 +238,7 @@ Bảng màu "Fresh White": trắng và xám-xanh lạnh, mực gần đen, một
 ### Named Rules
 **The Tabular Facts Rule.** Giá, số đếm, số giây và số thứ tự bước luôn dùng chữ số tabular (`fontVariant: ['tabular-nums']`).
 
-**The Bilingual Line Rule.** Tiếng Anh là dòng chính; tiếng Việt là dòng phụ nhỏ hơn, màu `muted`. Không đặt hai ngôn ngữ cùng cỡ cùng độ đậm.
+**The Separate Locale Rule.** Ứng dụng hỗ trợ hai ngôn ngữ riêng biệt (`VI` và `EN`) thông qua nút chuyển trên TopBar (mặc định `VI`, lưu vào bộ nhớ thiết bị). Mỗi màn hình chỉ hiển thị một ngôn ngữ tại một thời điểm, không ghép song ngữ bằng `" · "` hay xếp chồng hai dòng Anh–Việt.
 
 ## Layout
 

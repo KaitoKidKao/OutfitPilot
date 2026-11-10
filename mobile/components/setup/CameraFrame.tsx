@@ -30,6 +30,13 @@ const PILL: Record<Exclude<FrameState, "on" | "denied" | "error">, string> = {
   paused: "Camera paused",
 };
 
+const PILL_VI: Record<Exclude<FrameState, "on" | "denied" | "error">, string> = {
+  web: "Camera đang tắt",
+  off: "Camera đang tắt",
+  starting: "Đang mở camera…",
+  paused: "Camera tạm dừng",
+};
+
 export interface CameraFrameProps {
   state: FrameState;
   stream: TryOnStream | null;
@@ -76,6 +83,7 @@ export function CameraFrame({ state, stream, mirror, errorDetail, onRetry }: Cam
         <StatusPill
           style={styles.pill}
           label={state === "on" ? "Camera preview" : PILL[state]}
+          labelVi={state === "on" ? "Xem trước camera" : PILL_VI[state]}
           dot={state === "on" ? "on" : "off"}
           ai={state === "on" ? "off" : null}
         />
@@ -115,7 +123,7 @@ function FrameMessage({ state, errorDetail, onRetry }: { state: "denied" | "erro
       </View>
       {denied ? (
         <View style={styles.messageActions}>
-          <Button label="Ask again" icon={RotateCcw} variant="quiet" onPress={onRetry} accessibilityHint="Asks for camera access again" />
+          <Button label="Ask again" labelVi="Hỏi lại quyền" icon={RotateCcw} variant="quiet" onPress={onRetry} accessibilityHint="Asks for camera access again" />
         </View>
       ) : null}
     </View>

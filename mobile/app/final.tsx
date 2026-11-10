@@ -18,6 +18,7 @@ import { SavedSheet } from "@/components/SavedSheet";
 import { AppText, Button, Screen, TopBar, useToast } from "@/components/ui";
 import type { StyleResponse } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
+import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption } from "@/lib/occasions";
 import { readPreviewSeed } from "@/lib/previewSeed";
 import { useAppStore, type Slot } from "@/lib/store";
@@ -37,6 +38,7 @@ interface ShownPair {
 export default function FinalLook() {
   const router = useRouter();
   const toast = useToast();
+  const locale = useLocale();
   const { width, fontScale } = useWindowDimensions();
   const { picks, picksStatus, picksError, occasionId, saved, savedLoaded, consentGiven, keepLook, fetchPicks, clear } = useAppStore();
 
@@ -81,11 +83,11 @@ export default function FinalLook() {
     const letter = slot.toUpperCase();
     const look = keepLook(slot);
     if (!look) {
-      toast.show("Couldn’t save this look · Không lưu được look này");
+      toast.show(tr(locale, "Couldn’t save this look", "Không lưu được look này"));
       return;
     }
     const name = getGarment(look.garmentId).name;
-    toast.show(`Saved Look ${letter} · Đã lưu Look ${letter}`, { announcement: `Saved Look ${letter}, ${name}, on this phone` });
+    toast.show(tr(locale, `Saved Look ${letter}`, `Đã lưu Look ${letter}`), { announcement: `Saved Look ${letter}, ${name}, on this phone` });
     setKeeping(slot);
     sheetTimer.current = setTimeout(() => {
       sheetTimer.current = null;
@@ -119,6 +121,7 @@ export default function FinalLook() {
   if (pair) {
     center = {
       label: "Try again",
+      labelVi: "Thử lại",
       accessibilityLabel: "Try again",
       accessibilityHint: consentGiven ? "Goes back to the live fitting room" : "Goes back to camera setup",
       icon: Repeat,
@@ -127,11 +130,11 @@ export default function FinalLook() {
       disabled: !!keeping,
     };
   } else if (picksStatus === "loading") {
-    center = { label: "Loading", accessibilityLabel: "Loading your picks", icon: Shirt, tone: "lime", onPress: () => undefined, loading: true };
+    center = { label: "Loading", labelVi: "Đang tải", accessibilityLabel: "Loading your picks", icon: Shirt, tone: "lime", onPress: () => undefined, loading: true };
   } else if (picksStatus === "error" && occasionId) {
-    center = { label: "Retry", accessibilityLabel: "Retry loading your picks", icon: RotateCcw, tone: "lime", onPress: () => void fetchPicks({ force: true }) };
+    center = { label: "Retry", labelVi: "Thử lại", accessibilityLabel: "Retry loading your picks", icon: RotateCcw, tone: "lime", onPress: () => void fetchPicks({ force: true }) };
   } else {
-    center = { label: "Choose occasion", accessibilityLabel: "Choose an occasion", accessibilityHint: "Goes back to the first step", icon: Shirt, tone: "lime", onPress: goToStart };
+    center = { label: "Choose occasion", labelVi: "Chọn dịp", accessibilityLabel: "Choose an occasion", accessibilityHint: "Goes back to the first step", icon: Shirt, tone: "lime", onPress: goToStart };
   }
 
   return (
@@ -145,7 +148,7 @@ export default function FinalLook() {
       overlay={
         <>
           <FittingDock mode="keep" hooks={hooks} onKeep={handleKeep} hooksDisabled={!!keeping} center={center} />
-          <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show("Removed · Đã xoá")} />
+          <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"))} />
         </>
       }
     >
@@ -181,6 +184,7 @@ export default function FinalLook() {
             <View style={styles.startOver}>
               <Button
                 label="Start over"
+                labelVi="Chọn lại từ đầu"
                 variant="ghost"
                 icon={RotateCcw}
                 onPress={startOver}

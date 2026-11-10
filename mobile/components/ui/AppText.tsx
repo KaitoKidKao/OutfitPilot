@@ -1,8 +1,9 @@
-// Text with the DESIGN.md type ramp, Inter weights, Dynamic Type and the
-// bilingual rule (English primary, Vietnamese helper smaller and muted).
+// Text with the DESIGN.md type ramp, Inter weights, Dynamic Type and separate
+// EN / VI locale rendering (renders either English or Vietnamese cleanly, never stacked).
 import { Text, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from "react-native";
 
 import { fontStyle, type FontWeight } from "@/lib/fonts";
+import { useLocale } from "@/lib/locale";
 import { colors, typeRamp, type TypeVariant } from "@/lib/theme";
 
 export type TextTone = "ink" | "muted" | "paper" | "mutedDark" | "lime" | "limeInk" | "danger";
@@ -62,9 +63,9 @@ export function AppText({
   align,
   tabular,
   helper,
-  helperInline,
-  helperTone,
-  helperVariant = "bodySm",
+  helperInline: _helperInline,
+  helperTone: _helperTone,
+  helperVariant: _helperVariant = "bodySm",
   containerStyle,
   style,
   children,
@@ -73,44 +74,19 @@ export function AppText({
   accessibilityRole,
   ...rest
 }: AppTextProps) {
+  const locale = useLocale();
   const t = typeRamp[variant];
   const role = accessibilityRole ?? (HEADER_VARIANTS.includes(variant) ? "header" : undefined);
-  const hTone = helperTone ?? (tone === "paper" ? "mutedDark" : "muted");
   const base: TextStyle = { ...textStyle(variant, weight, tabular), color: TONE[tone], textAlign: align };
   const scale = maxFontSizeMultiplier ?? t.maxScale;
-
-  if (helper && helperInline) {
-    return (
-      <Text
-        allowFontScaling={allowFontScaling}
-        maxFontSizeMultiplier={scale}
-        accessibilityRole={role}
-        style={[base, style]}
-        {...rest}
-      >
-        {children}
-        <Text style={[textStyle(helperVariant), { color: TONE[hTone] }]}>{` · ${helper}`}</Text>
-      </Text>
-    );
-  }
+  const content = locale === "vi" && helper ? helper : children;
 
   const main = (
     <Text allowFontScaling={allowFontScaling} maxFontSizeMultiplier={scale} accessibilityRole={role} style={[base, style]} {...rest}>
-      {children}
+      {content}
     </Text>
   );
-  if (!helper) return main;
+  if (!containerStyle) return main;
 
-  return (
-    <View style={[{ gap: 2 }, containerStyle]}>
-      {main}
-      <Text
-        allowFontScaling={allowFontScaling}
-        maxFontSizeMultiplier={typeRamp[helperVariant].maxScale}
-        style={[textStyle(helperVariant), { color: TONE[hTone], textAlign: align }]}
-      >
-        {helper}
-      </Text>
-    </View>
-  );
+  return <View style={containerStyle}>{main}</View>;
 }
