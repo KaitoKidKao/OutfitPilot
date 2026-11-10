@@ -13,8 +13,10 @@ import {
   Camera,
   Check,
   Image as ImageIcon,
+  Play,
   Plus,
   ShieldCheck,
+  Sparkles,
   Tag,
   Trash2,
   X,
@@ -54,6 +56,42 @@ export interface ClosetSheetProps {
 }
 
 const IOS = Platform.OS === "ios";
+
+const SHOWDOWN_PRESETS = [
+  {
+    id: "evening_showdown",
+    title: "Tiệc tối · Evening Party",
+    titleEn: "Bar / Evening Showdown",
+    lookA: "W02-01",
+    lookAName: "Đầm Satin Xanh",
+    lookB: "W01-01",
+    lookBName: "Áo Lụa Đen",
+    tag: "Quý phái vs Cá tính",
+    icon: "🍸",
+  },
+  {
+    id: "summer_showdown",
+    title: "Dạo biển · Summer Date",
+    titleEn: "Beach / Summer Showdown",
+    lookA: "W09-01",
+    lookAName: "Đầm Xòe Hoa Nhí",
+    lookB: "W07-01",
+    lookBName: "Sơ Mi Linen Trắng",
+    tag: "Nữ tính vs Phóng khoáng",
+    icon: "🏖️",
+  },
+  {
+    id: "office_showdown",
+    title: "Công sở · Modern Office",
+    titleEn: "Office Style Showdown",
+    lookA: "G01",
+    lookAName: "Navy Blazer Nam",
+    lookB: "W04-01",
+    lookBName: "Camel Blazer Nữ",
+    tag: "Chuẩn mực vs Ấm áp",
+    icon: "💼",
+  },
+] as const;
 
 export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
   const router = useRouter();
@@ -146,6 +184,14 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     setActiveLook(slot);
     setActiveItem(null);
     onClose();
+  };
+
+  const handleApplyShowdown = (preset: (typeof SHOWDOWN_PRESETS)[number]) => {
+    assignHook("a", preset.lookA);
+    assignHook("b", preset.lookB);
+    setActiveLook("a");
+    onClose();
+    router.push("/setup");
   };
 
   const matchingPants = activeItem ? getMatchingPants(activeItem.id) : [];
@@ -294,6 +340,65 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             onPress={() => setCategoryFilter("pants")}
             style={styles.categoryChip}
           />
+        </ScrollView>
+      </View>
+
+      {/* A/B Showdown Banner Section */}
+      <View style={styles.showdownSection}>
+        <View style={styles.showdownHeader}>
+          <Sparkles size={14} color={colors.ink} strokeWidth={2.2} />
+          <AppText variant="caption" weight={800}>
+            {tr(locale, "A/B Showdowns · Tap to compare live", "Cặp so sánh đối lập A/B · 1 chạm thử ngay")}
+          </AppText>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.showdownRow}>
+          {SHOWDOWN_PRESETS.map((p) => (
+            <Touchable
+              key={p.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Showdown: ${p.title}`}
+              onPress={() => handleApplyShowdown(p)}
+              bg={colors.paper}
+              pressedBg={colors.surface}
+              style={styles.showdownCard}
+            >
+              <View style={styles.showdownCardTop}>
+                <AppText variant="tag" weight={800} tone="ink">
+                  {p.icon} {p.title}
+                </AppText>
+                <View style={styles.showdownTagBadge}>
+                  <AppText variant="tag" weight={700} tone="ink" style={{ fontSize: 10 }}>
+                    {p.tag}
+                  </AppText>
+                </View>
+              </View>
+
+              <View style={styles.showdownCompareRow}>
+                <View style={styles.showdownMiniItem}>
+                  <GarmentImage garmentId={p.lookA} width={34} aspectRatio={34 / 44} radius={6} showSampleTag={false} emptyLabel="" />
+                  <AppText variant="tag" weight={700} numberOfLines={1} style={{ fontSize: 10 }}>
+                    A: {p.lookAName}
+                  </AppText>
+                </View>
+                <AppText variant="tag" weight={800} tone="muted">
+                  VS
+                </AppText>
+                <View style={styles.showdownMiniItem}>
+                  <GarmentImage garmentId={p.lookB} width={34} aspectRatio={34 / 44} radius={6} showSampleTag={false} emptyLabel="" />
+                  <AppText variant="tag" weight={700} numberOfLines={1} style={{ fontSize: 10 }}>
+                    B: {p.lookBName}
+                  </AppText>
+                </View>
+              </View>
+
+              <View style={styles.showdownActionBtn}>
+                <Play size={11} color={colors.ink} strokeWidth={2.5} />
+                <AppText variant="tag" weight={800} tone="ink" style={{ fontSize: 11 }}>
+                  {tr(locale, "Try A/B on camera", "Treo A/B & Thử camera")}
+                </AppText>
+              </View>
+            </Touchable>
+          ))}
         </ScrollView>
       </View>
 
@@ -801,6 +906,67 @@ const styles = StyleSheet.create({
   categoryContainer: {
     height: 44,
     marginBottom: 14,
+  },
+  showdownSection: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: 10,
+    marginBottom: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  showdownHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  showdownRow: {
+    gap: 10,
+    paddingVertical: 2,
+  },
+  showdownCard: {
+    width: 250,
+    padding: 10,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    gap: 8,
+    ...shadows.lift,
+  },
+  showdownCardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  showdownTagBadge: {
+    backgroundColor: colors.lime,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  showdownCompareRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    backgroundColor: colors.paper,
+    padding: 6,
+    borderRadius: radii.sm,
+  },
+  showdownMiniItem: {
+    alignItems: "center",
+    gap: 4,
+    width: 85,
+  },
+  showdownActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.lime,
+    height: 30,
+    borderRadius: radii.full,
+    gap: 4,
   },
   floatingTryOnWrap: {
     position: "absolute",
