@@ -8,6 +8,7 @@
 // - Thêm món mới từ Camera hoặc Thư viện ảnh với form mobile thoáng sạch
 
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import {
   Camera,
   Check,
@@ -54,10 +55,13 @@ export interface ClosetSheetProps {
 const IOS = Platform.OS === "ios";
 
 export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const locale = useLocale();
   const { items, addItem, updateItem, deleteItem, getMatchingPants } = useCloset();
   const { assignHook, hookIds, setActiveLook } = useAppStore();
+
+  const hasBothHooks = hookIds[0] !== null && hookIds[1] !== null;
 
   const [statusFilter, setStatusFilter] = useState<OwnershipStatus>("all");
   const [categoryFilter, setCategoryFilter] = useState<ClosetCategory>("all");
@@ -306,6 +310,27 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
           );
         })}
       </ScrollView>
+
+      {/* Floating Action Button when 2 pieces are hung */}
+      {hasBothHooks && (
+        <View style={[styles.floatingTryOnWrap, { bottom: insets.bottom + 12 }]}>
+          <Touchable
+            onPress={() => {
+              onClose();
+              router.push("/setup");
+            }}
+            bg={colors.lime}
+            pressedBg={colors.limePress}
+            style={styles.floatingTryOnBtn}
+            accessibilityLabel={tr(locale, "Ready with 2 pieces, start fitting now", "Đã chọn đủ 2 món, vào thử đồ ngay")}
+          >
+            <Camera size={18} color={colors.ink} strokeWidth={2.2} />
+            <AppText variant="label" weight={800} tone="ink">
+              {tr(locale, "Ready with 2 pieces · Start fitting", "Đã đủ 2 món · Vào thử đồ ngay")}
+            </AppText>
+          </Touchable>
+        </View>
+      )}
     </View>
   );
 
@@ -713,6 +738,24 @@ const styles = StyleSheet.create({
   categoryContainer: {
     height: 44,
     marginBottom: 14,
+  },
+  floatingTryOnWrap: {
+    position: "absolute",
+    left: spacing.gutter,
+    right: spacing.gutter,
+    alignItems: "center",
+    zIndex: 99,
+  },
+  floatingTryOnBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 52,
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: radii.full,
+    ...shadows.dock,
   },
   categoryScroll: {
     flexGrow: 0,

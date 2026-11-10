@@ -41,7 +41,7 @@ export default function FinalLook() {
   const toast = useToast();
   const locale = useLocale();
   const { width, fontScale } = useWindowDimensions();
-  const { picks, picksStatus, picksError, occasionId, saved, savedLoaded, consentGiven, keepLook, fetchPicks, clear } = useAppStore();
+  const { picks, picksStatus, picksError, occasionId, saved, savedLoaded, consentGiven, keepLook, fetchPicks, clear, hookIds, pickFor } = useAppStore();
 
   // Web preview only (/final?seed=final&sheet=saved); readPreviewSeed() is null elsewhere.
   const [sheetOpen, setSheetOpen] = useState(() => readPreviewSeed()?.openSavedSheet ?? false);
@@ -53,8 +53,21 @@ export default function FinalLook() {
   const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const view: ShownPair = frozen ?? { picks, occasionId };
-  const pair = view.picks;
-  const hooks: [GarmentId | null, GarmentId | null] = [pair?.recommendations[0].garmentId ?? null, pair?.recommendations[1].garmentId ?? null];
+  const rawPair = view.picks;
+  const pickA = pickFor("a");
+  const pickB = pickFor("b");
+  const fallbackPair: StyleResponse | null =
+    !rawPair && pickA && pickB
+      ? {
+          recommendations: [pickA, pickB],
+          source: "llm",
+        }
+      : null;
+  const pair = rawPair ?? fallbackPair;
+  const hooks: [GarmentId | null, GarmentId | null] = [
+    pair?.recommendations[0]?.garmentId ?? hookIds[0],
+    pair?.recommendations[1]?.garmentId ?? hookIds[1],
+  ];
   const occasion = view.occasionId ? getOccasionOption(view.occasionId) : null;
   const stacked = fontScale >= STACK_FONT_SCALE || width < STACK_MIN_WIDTH;
 

@@ -10,7 +10,7 @@
 // Changing the occasion or style while a request runs supersedes it (the store
 // drops the stale response) instead of locking the screen.
 import { useFocusEffect, useRouter } from "expo-router";
-import { Layers, RotateCcw, Sparkles, Wrench } from "lucide-react-native";
+import { Camera, Layers, RotateCcw, Sparkles, Wrench } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
@@ -92,13 +92,26 @@ export default function ChooseOccasion() {
   const onAboveLayout = useCallback((e: LayoutChangeEvent) => setAboveHeight(Math.ceil(e.nativeEvent.layout.height)), []);
 
   // ----- dock centre: one lime action, four states -----
+  const hasBothHooks = hookIds[0] !== null && hookIds[1] !== null;
+
   let center: DockCenter;
-  if (!occasion) {
+  if (!occasion && hasBothHooks) {
+    center = {
+      label: "Try on",
+      labelVi: "Vào thử đồ",
+      accessibilityLabel: "Try on the two selected pieces",
+      accessibilityHint: "Opens camera setup directly to try on your selected pieces",
+      icon: Camera,
+      tone: "lime",
+      disabled: false,
+      onPress: () => router.push("/setup"),
+    };
+  } else if (!occasion) {
     center = {
       label: "Style me",
       labelVi: "Phối đồ",
       accessibilityLabel: "Style me",
-      accessibilityHint: "Choose an occasion first",
+      accessibilityHint: "Choose an occasion first or pick pieces from your closet",
       icon: Sparkles,
       tone: "lime",
       disabled: true,
@@ -173,7 +186,13 @@ export default function ChooseOccasion() {
       contentStyle={above ? { paddingBottom: clearance + aboveHeight + spacing.gap } : undefined}
       overlay={
         <>
-          <FittingDock hooks={hookIds} center={center} above={above} testID="occasion-dock" />
+          <FittingDock
+            hooks={hookIds}
+            center={center}
+            onHookPress={hasBothHooks ? () => router.push("/setup") : () => setClosetOpen(true)}
+            above={above}
+            testID="occasion-dock"
+          />
           <SavedSheet
             visible={savedOpen}
             onClose={() => setSavedOpen(false)}
