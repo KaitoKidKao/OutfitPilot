@@ -22,8 +22,8 @@ const FACTS: readonly Fact[] = [
   },
   {
     icon: ShieldCheck,
-    text: "Nothing is recorded or saved.",
-    textVi: "Không ghi hình, không lưu lại.",
+    text: "OutfitPilot does not record or save video; Decart processes the live stream directly to draw your outfit.",
+    textVi: "OutfitPilot không ghi hay lưu video; Decart xử lý trực tiếp để vẽ trang phục.",
   },
   {
     icon: Timer,

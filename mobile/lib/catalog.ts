@@ -100,11 +100,19 @@ export function getGarment(id: GarmentId): Garment {
   return garment;
 }
 
+const GARMENT_PROMPTS: Record<GarmentId, string> = {
+  G01: "A tailored navy blue blazer worn on the upper body by the person in the video.",
+  G02: "A crisp white oxford button-up shirt worn on the upper body by the person in the video.",
+  G03: "A relaxed cream knit sweater worn on the upper body by the person in the video.",
+  G04: "A blue denim jacket worn on the upper body by the person in the video.",
+  G05: "A sporty black bomber jacket worn on the upper body by the person in the video.",
+  G06: "A relaxed beige overshirt worn on the upper body by the person in the video.",
+};
+
 /**
- * Try-on prompt for Lucy VTON. Describes only the visible garment, following the
- * VTON 3.5 prompting guide (seen only as a search snippet; 3.6-specific guidance
- * is UNVERIFIED). TODO(verify): tune wording on device once real photos exist.
+ * Try-on prompt for Lucy VTON. Explicitly specifies upper-body placement and avoids
+ * duplicated color words (e.g. "navy navy blazer" or "blue denim denim jacket").
  */
 export function tryOnPrompt(garment: Garment): string {
-  return `A ${garment.color} ${garment.name.toLowerCase()}, ${garment.cut}, worn by the person in the video.`;
+  return GARMENT_PROMPTS[garment.id] ?? `A ${garment.color} ${garment.type} worn on the upper body by the person in the video.`;
 }

@@ -12,6 +12,7 @@
 //     the camera (lib/tryOnSession does blur/background; the handlers here stop explicitly too)
 //   - garment photos go to Decart as base64 via lib/tryOnSession (catalog id -> prompt + photo)
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
+import { useKeepAwake } from "expo-keep-awake";
 import { ArrowRight, Camera, Repeat, RotateCcw, Sparkles, Square, X } from "lucide-react-native";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AccessibilityInfo, StyleSheet, View, type LayoutChangeEvent } from "react-native";
@@ -41,6 +42,7 @@ function announce(message: string) {
 }
 
 export default function LiveFittingRoom() {
+  useKeepAwake();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { hookIds, activeLook, setActiveLook, consentGiven } = useAppStore();

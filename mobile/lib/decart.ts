@@ -32,10 +32,8 @@ import { ApiError, describeApiError, postRealtimeToken, type RealtimeTokenRespon
 // software encoding on Android/emulators to exceed LiveKit's 15 s negotiation timeout.
 const origPublishTrack = LocalParticipant.prototype.publishTrack;
 LocalParticipant.prototype.publishTrack = function (track, options) {
-  if (options && typeof options === "object") {
-    options = { ...options, simulcast: false };
-  }
-  return origPublishTrack.call(this, track, options);
+  const opts = { ...options, simulcast: false };
+  return origPublishTrack.call(this, track, opts);
 };
 
 // ---------- Model + camera capture ----------
@@ -160,16 +158,16 @@ function describeSdkError(e: DecartSDKError): string {
     case ERROR_CODES.INVALID_API_KEY:
     case ERROR_CODES.TOKEN_EXPIRED:
     case ERROR_CODES.TOKEN_INVALID:
-      return `Decart rejected the session token (${e.code}). Check /api/realtime-token.`;
+      return "Token kết nối AI không hợp lệ hoặc đã hết hạn · Invalid or expired AI token.";
     case ERROR_CODES.WEBRTC_WEBSOCKET_ERROR:
     case ERROR_CODES.WEBRTC_ICE_ERROR:
     case ERROR_CODES.WEBRTC_TIMEOUT_ERROR:
     case ERROR_CODES.WEBRTC_SIGNALING_ERROR:
-      return `Network problem reaching the AI (${e.code}). Try a stronger connection.`;
+      return "Lỗi mạng khi kết nối tới AI. Hãy kiểm tra kết nối mạng · Network problem reaching the AI. Try a stronger connection.";
     case ERROR_CODES.WEBRTC_SERVER_ERROR:
-      return `The AI service returned an error (${e.code}): ${e.message}`;
+      return "Dịch vụ AI phản hồi lỗi tạm thời. Vui lòng thử lại · The AI service returned an error. Please try again.";
     default:
-      return `${e.message} (${e.code})`;
+      return `${e.message}`;
   }
 }
 
@@ -185,15 +183,15 @@ function describeError(e: unknown): string {
 function describeSessionEnd(ended: SessionEnded): string {
   switch (ended.reason) {
     case "moderation_violation":
-      return "The AI provider ended the session (content moderation).";
+      return "Phiên kết thúc do vi phạm kiểm duyệt nội dung · AI ended the session (content moderation).";
     case "policy_violation":
-      return "The AI provider ended the session (policy).";
+      return "Phiên kết thúc do chính sách nhà cung cấp · AI ended the session (policy).";
     case "insufficient_credits":
-      return "The Decart account is out of credits.";
+      return "Tài khoản Decart AI đã hết lượt thử đồ · Decart account is out of credits.";
     case "session_limit":
-      return "The AI provider's session time limit was reached.";
+      return "Đã đạt giới hạn thời gian phiên thử đồ · Session time limit was reached.";
     default:
-      return `The AI provider ended the session (${ended.reason}).`;
+      return `Phiên thử kết thúc · Session ended (${ended.reason}).`;
   }
 }
 
@@ -325,10 +323,11 @@ export class TryOnSession {
         },
       });
 
+      const CONNECT_TIMEOUT_MS = 18_000;
       this.pendingConnects++;
       let realtime: RealTimeClient;
       try {
-        realtime = await decart.realtime.connect<MediaStream>(localStream, {
+        const connectPromise = decart.realtime.connect<MediaStream>(localStream, {
           model,
           // Native camera capture uses VP8. `mirror` is browser-only and throws on
           // React Native, so the preview is mirrored in RTCView instead.
@@ -339,12 +338,18 @@ export class TryOnSession {
           onRemoteStream: (stream) => this.onRemoteStream(gen, stream),
           onConnectionChange: (state) => this.onConnectionChange(gen, state),
           onQueuePosition: ({ position, queueSize }) => {
-            if (gen === this.generation) this.patch({ notice: `In queue: ${position} of ${queueSize}` });
+            if (gen === this.generation) this.patch({ notice: `Đang chờ: ${position}/${queueSize} · In queue: ${position} of ${queueSize}` });
           },
           onCapacityWait: ({ retryAfterMs }) => {
-            if (gen === this.generation) this.patch({ notice: `AI is busy, retrying in ${Math.ceil(retryAfterMs / 1000)} s` });
+            if (gen === this.generation) this.patch({ notice: `Hệ thống bận, thử lại sau ${Math.ceil(retryAfterMs / 1000)}s · AI busy, retrying in ${Math.ceil(retryAfterMs / 1000)}s` });
           },
         });
+        realtime = await Promise.race([
+          connectPromise,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Quá thời gian kết nối AI (18s) · AI connection timed out")), CONNECT_TIMEOUT_MS)
+          ),
+        ]);
       } finally {
         this.pendingConnects--;
         this.patch({});
@@ -387,17 +392,22 @@ export class TryOnSession {
     const client = this.client;
     if (!client || this.snapshot.state !== "live") return;
     const gen = this.generation;
-    this.patch({ state: "switching", notice: "Updating look…", error: null });
+    this.patch({ state: "switching", notice: "Đang đổi look · Updating look…", error: null });
     try {
-      // Always both fields: set({ prompt }) alone would clear the garment image.
-      await client.set({ prompt: look.prompt, enhance: false, image: toDecartImage(look.image) });
+      const SET_TIMEOUT_MS = 10_000;
+      await Promise.race([
+        client.set({ prompt: look.prompt, enhance: false, image: toDecartImage(look.image) }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Quá thời gian đổi look (10s) · Switch look timed out")), SET_TIMEOUT_MS)
+        ),
+      ]);
       if (gen === this.generation && this.currentState() === "switching") this.patch({ state: "live", notice: null });
     } catch (e) {
       if (gen !== this.generation) return;
       this.patch({
         state: this.currentState() === "switching" ? "live" : this.currentState(),
         notice: null,
-        error: `Could not switch look: ${describeError(e)}`,
+        error: `Không thể đổi look · Could not switch look: ${describeError(e)}`,
       });
     }
   };

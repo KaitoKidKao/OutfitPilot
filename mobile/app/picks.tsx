@@ -5,7 +5,7 @@
 //
 // States: no occasion (deep link) · loading · error with nothing to show · ready
 // (source "llm" or "fallback", labelled honestly) · refreshing a fallback pair.
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Camera } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from "react";
 import { AccessibilityInfo, StyleSheet, View, type LayoutChangeEvent, type ScrollView } from "react-native";
@@ -39,7 +39,17 @@ export default function AiPicks() {
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const cardY = useRef<Record<Slot, number | null>>({ a: null, b: null });
   const mounted = useRef(true);
+  const isFocusedRef = useRef(true);
   const [askingAgain, setAskingAgain] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      isFocusedRef.current = true;
+      return () => {
+        isFocusedRef.current = false;
+      };
+    }, []),
+  );
 
   useEffect(() => {
     mounted.current = true;
@@ -48,10 +58,13 @@ export default function AiPicks() {
     };
   }, []);
 
-  // Fetch on arrival or when locale changes. The store reuses picks that already match occasion + style + locale.
+  // Fetch on arrival or when locale changes while viewing picks.
+  // Never re-fetch in the background when locale changes on /setup or /final.
   useEffect(() => {
-    if (occasionId) void fetchPicks();
-  }, [occasionId, locale, fetchPicks]);
+    if (occasionId && (!picks || isFocusedRef.current)) {
+      void fetchPicks();
+    }
+  }, [occasionId, locale, fetchPicks, picks]);
 
   // Preload garment base64 assets early while the user reads the picks so the Fitting Room starts faster.
   useEffect(() => {
