@@ -29,12 +29,14 @@ export interface LookColumnProps {
   /** This garment is already saved for the current occasion. */
   saved: boolean;
   layout?: "column" | "row";
+  /** When false (e.g. single item try-on), hides the slot letter badge. Default true. */
+  showBadge?: boolean;
 }
 
 const BADGE = 32;
 const ROW_PHOTO_WIDTH = 128;
 
-export function LookColumn({ slot, pick, source, saved, layout = "column" }: LookColumnProps) {
+export function LookColumn({ slot, pick, source, saved, layout = "column", showBadge = true }: LookColumnProps) {
   const locale = useLocale();
   const garment = getGarment(pick.garmentId);
   const closetItem = getInitialClosetItem(pick.garmentId);
@@ -49,17 +51,19 @@ export function LookColumn({ slot, pick, source, saved, layout = "column" }: Loo
       <GarmentImage
         garmentId={pick.garmentId}
         width={row ? ROW_PHOTO_WIDTH : "100%"}
-        accessibilityLabel={`Look ${letter}: ${garment.name}${garment.sample ? ", sample photo" : ""}`}
+        accessibilityLabel={showBadge ? `Look ${letter}: ${garment.name}${garment.sample ? ", sample photo" : ""}` : `${garment.name}${garment.sample ? ", sample photo" : ""}`}
       >
-        <View
-          style={[styles.badge, { backgroundColor: saved ? colors.lime : colors.ink }]}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <AppText variant="section" weight={800} tone={saved ? "ink" : "paper"} maxFontSizeMultiplier={1.15}>
-            {letter}
-          </AppText>
-        </View>
+        {showBadge ? (
+          <View
+            style={[styles.badge, { backgroundColor: saved ? colors.lime : colors.ink }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <AppText variant="section" weight={800} tone={saved ? "ink" : "paper"} maxFontSizeMultiplier={1.15}>
+              {letter}
+            </AppText>
+          </View>
+        ) : null}
       </GarmentImage>
 
       <View style={styles.text}>

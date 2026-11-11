@@ -12,12 +12,14 @@ export interface StudioHudProps {
   garmentName: string | null;
   /** null hides the countdown (no paid session running). */
   secondsLeft: number | null;
+  /** When false (e.g. single item try-on), hides the giant 112pt A/B letter. Default true. */
+  showLetter?: boolean;
 }
 
-export function StudioHud({ slot, garmentName, secondsLeft }: StudioHudProps) {
+export function StudioHud({ slot, garmentName, secondsLeft, showLetter = true }: StudioHudProps) {
   const letter = slot.toUpperCase();
   const spoken = [
-    `Showing Look ${letter}${garmentName ? `, ${garmentName}` : ""}.`,
+    showLetter ? `Showing Look ${letter}${garmentName ? `, ${garmentName}` : ""}.` : `Showing ${garmentName ?? "garment"}.`,
     secondsLeft !== null ? `${secondsLeft} seconds left in the AI session.` : null,
   ]
     .filter(Boolean)
@@ -25,9 +27,11 @@ export function StudioHud({ slot, garmentName, secondsLeft }: StudioHudProps) {
 
   return (
     <View style={styles.hud} accessible accessibilityLabel={spoken} pointerEvents="none">
-      <AppText variant="studioNumeral" tone="lime" style={styles.shadow} accessibilityElementsHidden importantForAccessibility="no">
-        {letter}
-      </AppText>
+      {showLetter ? (
+        <AppText variant="studioNumeral" tone="lime" style={styles.shadow} accessibilityElementsHidden importantForAccessibility="no">
+          {letter}
+        </AppText>
+      ) : null}
       {garmentName ? (
         <AppText variant="label" tone="paper" numberOfLines={2} maxFontSizeMultiplier={1.3} style={[styles.name, styles.shadow]}>
           {garmentName}

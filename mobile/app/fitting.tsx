@@ -70,8 +70,9 @@ export default function LiveFittingRoom() {
   const userStoppedRef = useRef(false);
 
   const idFor = (slot: Slot): GarmentId | null => hookIds[slot === "a" ? 0 : 1];
-  const hasLooks = hookIds[0] !== null && hookIds[1] !== null;
-  const activeId = idFor(activeLook);
+  const hasLooks = hookIds[0] !== null || hookIds[1] !== null;
+  const isComparing = hookIds[0] !== null && hookIds[1] !== null;
+  const activeId = idFor(activeLook) ?? hookIds[0] ?? hookIds[1];
   const activeName = activeId ? getGarment(activeId).name : null;
   const letter = activeLook.toUpperCase();
 
@@ -103,8 +104,8 @@ export default function LiveFittingRoom() {
   );
 
   const auto = useAutoCompare({
-    available: tryOn.aiLive,
-    canSwitchNow: () => tryOnRef.current.state === "live",
+    available: tryOn.aiLive && isComparing,
+    canSwitchNow: () => tryOnRef.current.state === "live" && isComparing,
     onSwitch: () => showLook(activeLookRef.current === "a" ? "b" : "a"),
   });
   const { stop: stopAuto } = auto;
@@ -181,7 +182,10 @@ export default function LiveFittingRoom() {
     const prev = prevStateRef.current;
     prevStateRef.current = tryOn.state;
     if (prev === tryOn.state) return;
-    if (tryOn.state === "live" && prev === "connecting") announce(`AI try-on is live. Showing Look ${activeLookRef.current.toUpperCase()}.`);
+    if (tryOn.state === "live" && prev === "connecting") {
+      if (isComparing) announce(`AI try-on is live. Showing Look ${activeLookRef.current.toUpperCase()}.`);
+      else announce(`AI try-on is live for ${activeName ?? "garment"}.`);
+    }
     if (tryOn.state === "lost") announce(`Connection lost. ${tryOn.error ?? ""}`.trim());
     if (tryOn.state !== "live" && tryOn.state !== "switching") setPeekingOriginal(false);
   }, [tryOn.state, tryOn.error]);
@@ -261,7 +265,7 @@ export default function LiveFittingRoom() {
           labelVi: "Bật AI",
           icon: Sparkles,
           tone: "lime",
-          accessibilityLabel: `Start AI try-on with Look ${letter}`,
+          accessibilityLabel: isComparing ? `Start AI try-on with Look ${letter}` : `Start AI try-on with ${activeName ?? "garment"}`,
           accessibilityHint: "Paid session. Sends your camera to Decart for up to 60 seconds.",
           onPress: handleStart,
           disabled: !canStart,
@@ -270,24 +274,35 @@ export default function LiveFittingRoom() {
       case "connecting":
         return { label: "Cancel", labelVi: "Huỷ", icon: X, tone: "light", accessibilityLabel: "Cancel connecting to AI", onPress: handleCancelConnect };
       case "live":
-        return auto.running
-          ? { label: "Stop", labelVi: "Dừng", icon: Square, tone: "light", accessibilityLabel: "Stop auto compare", onPress: stopAuto }
-          : {
-              label: "Auto compare",
-              labelVi: "Tự đổi A/B",
-              icon: Repeat,
-              tone: "lime",
-              accessibilityLabel: "Auto compare: switch looks every 8 seconds",
-              accessibilityHint: "Tap a hook any time to take over",
-              onPress: auto.start,
-            };
+        if (isComparing) {
+          return auto.running
+            ? { label: "Stop", labelVi: "Dừng", icon: Square, tone: "light", accessibilityLabel: "Stop auto compare", onPress: stopAuto }
+            : {
+                label: "Auto compare",
+                labelVi: "Tự đổi A/B",
+                icon: Repeat,
+                tone: "lime",
+                accessibilityLabel: "Auto compare: switch looks every 8 seconds",
+                accessibilityHint: "Tap a hook any time to take over",
+                onPress: auto.start,
+              };
+        }
+        return {
+          label: "Finish",
+          labelVi: "Xem kết quả",
+          icon: ArrowRight,
+          tone: "lime",
+          accessibilityLabel: "Finish fitting and view result",
+          accessibilityHint: "Opens Final Look to view and keep your fitted garment",
+          onPress: handleFinish,
+        };
       default:
         return {
-          label: "Auto compare",
-          labelVi: "Tự đổi A/B",
-          icon: Repeat,
+          label: isComparing ? "Auto compare" : "Fitting",
+          labelVi: isComparing ? "Tự đổi A/B" : "Đang thử đồ",
+          icon: isComparing ? Repeat : Sparkles,
           tone: "quiet",
-          accessibilityLabel: "Auto compare",
+          accessibilityLabel: isComparing ? "Auto compare" : "Fitting",
           accessibilityHint: "Available while the AI try-on is live",
           onPress: noop,
           disabled: true,
@@ -314,9 +329,9 @@ export default function LiveFittingRoom() {
           <ActionPanel
             onLayout={onPanelLayout}
             title="No looks on the hooks yet"
-            helper="Chưa có look nào trên móc"
-            body="Choose an occasion first. The stylist hangs two looks on the dock for you to try here."
-            bodyVi="Hãy chọn dịp trước. AI Stylist sẽ treo hai gợi ý lên dock để bạn thử tại đây."
+            helper="Chưa có món nào trên móc"
+            body="Choose an occasion first or pick a piece from your closet to try here."
+            bodyVi="Hãy chọn dịp hoặc chọn món từ tủ đồ để thử tại đây."
             primary={{ label: "Choose an occasion", labelVi: "Chọn dịp", icon: ArrowRight, onPress: () => router.replace("/") }}
           />
         );
@@ -423,7 +438,14 @@ export default function LiveFittingRoom() {
                 onToggleOriginal={() => setPeekingOriginal((v) => !v)}
                 onFinish={handleFinish}
               />
-              {hasLooks ? <StudioHud slot={activeLook} garmentName={activeName} secondsLeft={tryOn.aiLive ? tryOn.secondsLeft : null} /> : null}
+              {hasLooks ? (
+                <StudioHud
+                  slot={activeLook}
+                  garmentName={activeName}
+                  secondsLeft={tryOn.aiLive ? tryOn.secondsLeft : null}
+                  showLetter={isComparing}
+                />
+              ) : null}
               <View pointerEvents="box-none" style={[styles.middle, { paddingBottom: bottomReserve }]}>
                 <StageMessage tryOn={tryOn} />
               </View>

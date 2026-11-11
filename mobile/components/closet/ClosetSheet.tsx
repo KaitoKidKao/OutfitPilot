@@ -227,6 +227,15 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     router.push("/setup");
   };
 
+  const handleTryOnSingle = (item: ClosetItem) => {
+    assignHook("a", item.id);
+    assignHook("b", null);
+    setActiveLook("a");
+    setActiveItem(null);
+    onClose();
+    router.push("/setup");
+  };
+
   const handleHangOnHook = (slot: Slot, item: ClosetItem) => {
     assignHook(slot, item.id);
     setActiveLook(slot);
@@ -539,33 +548,59 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                 <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setActiveItem(null)} variant="quiet" />
               </View>
 
-              {/* Primary Actions: Hang on Hook A / Hook B with vibrant solid backgrounds */}
+              {/* Primary Action: Direct 1-Tap Single Item Try-On (Wearable garments) */}
+              {activeItem.category !== "other" ? (
+                <Touchable
+                  onPress={() => handleTryOnSingle(activeItem)}
+                  bg={colors.lime}
+                  pressedBg={colors.limePress}
+                  style={styles.instantTryBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Thử ngay món này qua camera không cần so sánh"
+                >
+                  <View style={styles.instantTryContent}>
+                    <View style={styles.instantTryIconCircle}>
+                      <Camera size={20} color={colors.ink} strokeWidth={2.4} />
+                    </View>
+                    <View style={styles.instantTryTextCol}>
+                      <AppText variant="label" weight={800} tone="ink">
+                        {tr(locale, "Try on now via camera", "Thử ngay món này qua camera")}
+                      </AppText>
+                      <AppText variant="caption" tone="ink">
+                        {tr(locale, "Direct 1-item fitting · No comparison needed", "Thử 1 chạm trực tiếp · Không cần so sánh")}
+                      </AppText>
+                    </View>
+                  </View>
+                </Touchable>
+              ) : null}
+
+              {/* Secondary Actions: Hang on Hook A / Hook B for comparison */}
               <View style={styles.hangActionsRow}>
                 <Touchable
                   onPress={() => handleHangOnHook("a", activeItem)}
-                  bg={colors.lime}
-                  pressedBg={colors.limePress}
+                  bg={activeItem.category === "other" ? colors.lime : colors.surface}
+                  pressedBg={activeItem.category === "other" ? colors.limePress : colors.surfaceDeep}
                   style={styles.hangActionBtnA}
                 >
                   <AppText variant="label" weight={800} tone="ink">
                     {tr(locale, "Hang on Look A", "Treo vào Look A")}
                   </AppText>
-                  <AppText variant="caption" tone="ink">
-                    {hookIds[0] === activeItem.id ? tr(locale, "Currently on A", "Đang treo ở Móc A") : tr(locale, "Try on via camera", "Thử đồ qua camera")}
+                  <AppText variant="caption" tone={activeItem.category === "other" ? "ink" : "muted"}>
+                    {hookIds[0] === activeItem.id ? tr(locale, "Currently on A", "Đang treo ở Móc A") : tr(locale, "Slot A", "Vị trí A")}
                   </AppText>
                 </Touchable>
 
                 <Touchable
                   onPress={() => handleHangOnHook("b", activeItem)}
-                  bg={colors.ink}
-                  pressedBg={colors.inkWell}
+                  bg={activeItem.category === "other" ? colors.ink : colors.surface}
+                  pressedBg={activeItem.category === "other" ? colors.inkWell : colors.surfaceDeep}
                   style={styles.hangActionBtnB}
                 >
-                  <AppText variant="label" weight={800} tone="paper">
+                  <AppText variant="label" weight={800} tone={activeItem.category === "other" ? "paper" : "ink"}>
                     {tr(locale, "Hang on Look B", "Treo vào Look B")}
                   </AppText>
-                  <AppText variant="caption" tone="mutedDark">
-                    {hookIds[1] === activeItem.id ? tr(locale, "Currently on B", "Đang treo ở Móc B") : tr(locale, "Compare with A", "So sánh với Look A")}
+                  <AppText variant="caption" tone={activeItem.category === "other" ? "mutedDark" : "muted"}>
+                    {hookIds[1] === activeItem.id ? tr(locale, "Currently on B", "Đang treo ở Móc B") : tr(locale, "Compare with Look A", "So sánh với Look A")}
                   </AppText>
                 </Touchable>
               </View>
@@ -1149,6 +1184,30 @@ const styles = StyleSheet.create({
   actionHeadMeta: {
     flex: 1,
     gap: 4,
+  },
+  instantTryBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    borderColor: colors.limePress,
+  },
+  instantTryContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  instantTryIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.full,
+    backgroundColor: colors.paper,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  instantTryTextCol: {
+    flex: 1,
+    gap: 2,
   },
   hangActionsRow: {
     flexDirection: "row",

@@ -117,13 +117,14 @@ export default function ChooseOccasion() {
 
   // ----- dock centre: one lime action, four states -----
   const hasBothHooks = hookIds[0] !== null && hookIds[1] !== null;
+  const hasAnyHook = hookIds[0] !== null || hookIds[1] !== null;
 
   let center: DockCenter;
-  if (!occasion && hasBothHooks) {
+  if (!occasion && hasAnyHook) {
     center = {
       label: "Try on",
       labelVi: "Vào thử đồ",
-      accessibilityLabel: "Try on the two selected pieces",
+      accessibilityLabel: hasBothHooks ? "Try on the two selected pieces" : "Try on the selected piece",
       accessibilityHint: "Opens camera setup directly to try on your selected pieces",
       icon: Camera,
       tone: "lime",

@@ -18,7 +18,7 @@ import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
 import { AppText, Button, Screen, TopBar, Touchable, useToast } from "@/components/ui";
-import type { StyleResponse } from "@/lib/api";
+import type { Recommendation, StyleResponse, StyleSource } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption } from "@/lib/occasions";
@@ -32,8 +32,13 @@ const SHEET_DELAY_MS = 650;
 const STACK_FONT_SCALE = 1.35;
 const STACK_MIN_WIDTH = 340;
 
+interface ShownPicks {
+  recommendations: Recommendation[];
+  source: StyleSource;
+}
+
 interface ShownPair {
-  picks: StyleResponse | null;
+  picks: ShownPicks | null;
   occasionId: OccasionId | null;
 }
 
@@ -68,20 +73,21 @@ export default function FinalLook() {
 
   const view: ShownPair = frozen ?? { picks, occasionId };
   const rawPair = view.picks;
-  const pickA = pickFor("a");
-  const pickB = pickFor("b");
-  const fallbackPair: StyleResponse | null =
-    !rawPair && pickA && pickB
+  const pickA = hookIds[0] ? pickFor("a") : null;
+  const pickB = hookIds[1] ? pickFor("b") : null;
+  const activePicks = [pickA, pickB].filter((p): p is NonNullable<typeof p> => p !== null);
+  const isSingleLook = activePicks.length === 1;
+  const singleSlot: Slot = pickA ? "a" : "b";
+
+  const fallbackPair: ShownPicks | null =
+    activePicks.length > 0
       ? {
-          recommendations: [pickA, pickB],
-          source: "llm",
+          recommendations: activePicks,
+          source: rawPair?.source ?? "llm",
         }
       : null;
-  const pair = rawPair ?? fallbackPair;
-  const hooks: [GarmentId | null, GarmentId | null] = [
-    pair?.recommendations[0]?.garmentId ?? hookIds[0],
-    pair?.recommendations[1]?.garmentId ?? hookIds[1],
-  ];
+  const pair = isSingleLook ? fallbackPair : (rawPair ?? fallbackPair);
+  const hooks: [GarmentId | null, GarmentId | null] = [hookIds[0], hookIds[1]];
   const occasion = view.occasionId ? getOccasionOption(view.occasionId) : null;
   const stacked = fontScale >= STACK_FONT_SCALE || width < STACK_MIN_WIDTH;
 
@@ -105,7 +111,7 @@ export default function FinalLook() {
     }, [cancelSheetTimer]),
   );
 
-  const isSaved = (garmentId: GarmentId) => !!view.occasionId && saved.some((l) => l.garmentId === garmentId && l.occasionId === view.occasionId);
+  const isSaved = (garmentId: GarmentId) => saved.some((l) => l.garmentId === garmentId && (!view.occasionId || l.occasionId === view.occasionId));
 
   const handleKeep = (slot: Slot) => {
     if (keeping) return;
@@ -239,16 +245,27 @@ export default function FinalLook() {
           ) : null}
 
           <View style={styles.intro}>
-            <AppText variant="headline" helper="Bạn giữ món nào?">
-              Which one do you keep?
+            <AppText
+              variant="headline"
+              helper={isSingleLook ? "Bạn thấy món đồ này thế nào?" : "Bạn giữ món nào?"}
+            >
+              {isSingleLook ? "How does it look on you?" : "Which one do you keep?"}
             </AppText>
             {pair ? (
               <AppText
                 variant="body"
                 tone="muted"
-                helper={occasion ? `Cho dịp ${occasion.labelVi.toLowerCase()}. Giữ một món ở dưới để lưu vào máy.` : "Giữ một món ở dưới để lưu vào máy."}
+                helper={
+                  isSingleLook
+                    ? "Nhấn nút 'Giữ' bên dưới để lưu lại món này vào máy."
+                    : occasion
+                      ? `Cho dịp ${occasion.labelVi.toLowerCase()}. Giữ một món ở dưới để lưu vào máy.`
+                      : "Giữ một món ở dưới để lưu vào máy."
+                }
               >
-                {occasion ? `For your ${occasion.label.toLowerCase()}. ` : ""}Keep one below to save it on this phone.
+                {isSingleLook
+                  ? "Tap 'Keep' below to save this look on this phone."
+                  : `${occasion ? `For your ${occasion.label.toLowerCase()}. ` : ""}Keep one below to save it on this phone.`}
               </AppText>
             ) : null}
           </View>
@@ -257,13 +274,26 @@ export default function FinalLook() {
           {pair ? <FitNote /> : null}
         </View>
 
-        {pair ? (
+        {pair && pair.recommendations.length > 0 ? (
           <>
-            <View style={stacked ? styles.stackedPair : styles.pair}>
-              <LookColumn slot="a" pick={pair.recommendations[0]} source={pair.source} saved={isSaved(pair.recommendations[0].garmentId)} layout={stacked ? "row" : "column"} />
-              {stacked ? <View style={styles.divider} /> : null}
-              <LookColumn slot="b" pick={pair.recommendations[1]} source={pair.source} saved={isSaved(pair.recommendations[1].garmentId)} layout={stacked ? "row" : "column"} />
-            </View>
+            {isSingleLook ? (
+              <View style={styles.singleLookWrap}>
+                <LookColumn
+                  slot={singleSlot}
+                  pick={pair.recommendations[0]!}
+                  source={pair.source}
+                  saved={isSaved(pair.recommendations[0]!.garmentId)}
+                  layout="column"
+                  showBadge={false}
+                />
+              </View>
+            ) : pair.recommendations.length >= 2 ? (
+              <View style={stacked ? styles.stackedPair : styles.pair}>
+                <LookColumn slot="a" pick={pair.recommendations[0]!} source={pair.source} saved={isSaved(pair.recommendations[0]!.garmentId)} layout={stacked ? "row" : "column"} />
+                {stacked ? <View style={styles.divider} /> : null}
+                <LookColumn slot="b" pick={pair.recommendations[1]!} source={pair.source} saved={isSaved(pair.recommendations[1]!.garmentId)} layout={stacked ? "row" : "column"} />
+              </View>
+            ) : null}
 
             <View style={styles.startOver}>
               <Button
@@ -342,6 +372,11 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   intro: { gap: 10 },
+  singleLookWrap: {
+    maxWidth: 420,
+    width: "100%",
+    alignSelf: "center",
+  },
   pair: { flexDirection: "row", alignItems: "flex-start", gap: spacing.gap },
   stackedPair: { gap: spacing.stack },
   divider: { height: 1, backgroundColor: colors.line },

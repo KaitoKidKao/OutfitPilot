@@ -35,7 +35,7 @@ export default function AiPicks() {
   const toast = useToast();
   const locale = useLocale();
   const reduced = useReducedMotion();
-  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
+  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds, assignHook } = useAppStore();
 
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const cardY = useRef<Record<Slot, number | null>>({ a: null, b: null });
@@ -124,6 +124,19 @@ export default function AiPicks() {
     [setActiveLook, reduced, hookIds],
   );
 
+  const handleTrySingle = useCallback(
+    (slot: Slot) => {
+      if (!picks) return;
+      const rec = slot === "a" ? picks.recommendations[0] : picks.recommendations[1];
+      if (!rec) return;
+      assignHook("a", rec.garmentId);
+      assignHook("b", null);
+      setActiveLook("a");
+      router.push("/setup");
+    },
+    [picks, assignHook, setActiveLook, router],
+  );
+
   const loading = !!occasionId && !picks && (picksStatus === "loading" || picksStatus === "idle");
   const failed = !!occasionId && !picks && picksStatus === "error";
   const styleOption = style !== "none" ? STYLE_OPTIONS.find((s) => s.value === style) : undefined;
@@ -210,10 +223,10 @@ export default function AiPicks() {
               </View>
 
               <View onLayout={onLayoutA} style={styles.firstCard}>
-                <LookCard testID="look-card-a" slot="a" pick={picks.recommendations[0]} active={activeLook === "a"} onPress={setActiveLook} />
+                <LookCard testID="look-card-a" slot="a" pick={picks.recommendations[0]} active={activeLook === "a"} onPress={setActiveLook} onTrySingle={handleTrySingle} />
               </View>
               <View onLayout={onLayoutB} style={styles.nextCard}>
-                <LookCard testID="look-card-b" slot="b" pick={picks.recommendations[1]} active={activeLook === "b"} onPress={setActiveLook} />
+                <LookCard testID="look-card-b" slot="b" pick={picks.recommendations[1]} active={activeLook === "b"} onPress={setActiveLook} onTrySingle={handleTrySingle} />
               </View>
 
               <View style={styles.footnote}>

@@ -8,6 +8,7 @@
 import type { LayoutChangeEvent } from "react-native";
 import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
+import { Camera } from "lucide-react-native";
 
 import { AppText, GarmentImage, Touchable } from "@/components/ui";
 import type { Recommendation } from "@/lib/api";
@@ -25,6 +26,7 @@ export interface LookCardProps {
   pick: Recommendation;
   active: boolean;
   onPress: (slot: Slot) => void;
+  onTrySingle?: (slot: Slot) => void;
   onLayout?: (e: LayoutChangeEvent) => void;
   testID?: string;
 }
@@ -32,7 +34,7 @@ export interface LookCardProps {
 const RING = 2;
 const RING_GAP = 2;
 
-export function LookCard({ slot, pick, active, onPress, onLayout, testID }: LookCardProps) {
+export function LookCard({ slot, pick, active, onPress, onTrySingle, onLayout, testID }: LookCardProps) {
   const locale = useLocale();
   const garment = getGarment(pick.garmentId);
   const role = SLOT_ROLE[slot];
@@ -114,6 +116,21 @@ export function LookCard({ slot, pick, active, onPress, onLayout, testID }: Look
               </View>
             </View>
           ) : null}
+          {onTrySingle ? (
+            <Touchable
+              onPress={() => onTrySingle(slot)}
+              bg={active ? colors.lime : colors.surface}
+              pressedBg={active ? colors.limePress : colors.surfaceDeep}
+              style={styles.singleTryBtn}
+              accessibilityRole="button"
+              accessibilityLabel={`Thử riêng Look ${slot.toUpperCase()}`}
+            >
+              <Camera size={14} color={colors.ink} strokeWidth={2.4} />
+              <AppText variant="caption" weight={800} tone="ink">
+                {tr(locale, `Try Look ${slot.toUpperCase()} only (no compare)`, `Thử riêng Look ${slot.toUpperCase()} (không so sánh)`)}
+              </AppText>
+            </Touchable>
+          ) : null}
         </View>
       </View>
     </Touchable>
@@ -174,5 +191,17 @@ const styles = StyleSheet.create({
   pantsMeta: {
     flex: 1,
     justifyContent: "center",
+  },
+  singleTryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
 });
