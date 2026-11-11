@@ -54,9 +54,9 @@ export async function mintDecartToken(
   apiKey: string | readonly string[],
   fetchImpl: typeof fetch = fetch,
 ): Promise<MintedToken> {
-  const keys = Array.isArray(apiKey)
-    ? apiKey.filter(Boolean)
-    : apiKey.split(/[\s,]+/).map((k) => k.trim()).filter(Boolean);
+  const keys = typeof apiKey === "string"
+    ? apiKey.split(/[\s,]+/).map((k: string) => k.trim()).filter(Boolean)
+    : [...apiKey].filter(Boolean);
 
   if (keys.length === 0) {
     throw new DecartTokenError("Decart API key is missing", 0);
