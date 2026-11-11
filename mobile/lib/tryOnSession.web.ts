@@ -8,7 +8,7 @@ import { TRYON_STATE_LABEL, type TryOnController, type TryOnLookInput, type UseT
 export * from "./tryOnTypes";
 
 const NOTE = "Web preview — camera and AI run only in the app";
-const MAX_SECONDS = 120;
+const MAX_SECONDS = 60;
 
 export function preloadGarmentPhotos(_ids: readonly GarmentId[]): void {
   // No-op on web preview.

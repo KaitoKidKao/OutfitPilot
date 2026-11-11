@@ -5,12 +5,13 @@
 //
 // States: no occasion (deep link) · loading · error with nothing to show · ready
 // (source "llm" or "fallback", labelled honestly) · refreshing a fallback pair.
-import { useRouter } from "expo-router";
-import { Camera } from "lucide-react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { Camera, Layers } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from "react";
 import { AccessibilityInfo, StyleSheet, View, type LayoutChangeEvent, type ScrollView } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 
+import { ClosetSheet } from "@/components/closet/ClosetSheet";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { PICKS_HEADLINE, slotName } from "@/components/picks/copy";
 import { HonestFootnote } from "@/components/picks/HonestFootnote";
@@ -18,12 +19,12 @@ import { LookCard } from "@/components/picks/LookCard";
 import { PicksLoading } from "@/components/picks/PicksLoading";
 import { PicksEmpty, PicksError } from "@/components/picks/PicksStates";
 import { SourceNote } from "@/components/picks/SourceNote";
-import { AppText, Screen, TopBar, useToast } from "@/components/ui";
+import { AppText, Screen, TopBar, Touchable, useToast } from "@/components/ui";
 import { getGarment } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
 import { STYLE_OPTIONS } from "@/lib/occasions";
 import { useAppStore, type Slot } from "@/lib/store";
-import { spacing } from "@/lib/theme";
+import { colors, radii, spacing } from "@/lib/theme";
 import { preloadGarmentPhotos } from "@/lib/tryOnSession";
 
 /** Space kept above a card when a hook tap scrolls to it. */
@@ -34,12 +35,23 @@ export default function AiPicks() {
   const toast = useToast();
   const locale = useLocale();
   const reduced = useReducedMotion();
-  const { occasionId, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
+  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
 
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const cardY = useRef<Record<Slot, number | null>>({ a: null, b: null });
   const mounted = useRef(true);
+  const isFocusedRef = useRef(true);
   const [askingAgain, setAskingAgain] = useState(false);
+  const [closetOpen, setClosetOpen] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      isFocusedRef.current = true;
+      return () => {
+        isFocusedRef.current = false;
+      };
+    }, []),
+  );
 
   useEffect(() => {
     mounted.current = true;
@@ -48,10 +60,13 @@ export default function AiPicks() {
     };
   }, []);
 
-  // Fetch on arrival or when locale changes. The store reuses picks that already match occasion + style + locale.
+  // Fetch on arrival or when locale changes while viewing picks.
+  // Never re-fetch in the background when locale changes on /setup or /final.
   useEffect(() => {
-    if (occasionId) void fetchPicks();
-  }, [occasionId, locale, fetchPicks]);
+    if (occasionId && (!picks || isFocusedRef.current)) {
+      void fetchPicks();
+    }
+  }, [occasionId, locale, fetchPicks, picks]);
 
   // Preload garment base64 assets early while the user reads the picks so the Fitting Room starts faster.
   useEffect(() => {
@@ -112,7 +127,10 @@ export default function AiPicks() {
   const loading = !!occasionId && !picks && (picksStatus === "loading" || picksStatus === "idle");
   const failed = !!occasionId && !picks && picksStatus === "error";
   const styleOption = style !== "none" ? STYLE_OPTIONS.find((s) => s.value === style) : undefined;
-  const headline = occasionId ? PICKS_HEADLINE[occasionId] : null;
+  const headline =
+    occasionId === "other" && customOccasion?.trim()
+      ? { en: `Two looks for ${customOccasion.trim()}`, vi: `Hai lựa chọn cho ${customOccasion.trim()}` }
+      : (occasionId ? PICKS_HEADLINE[occasionId] : null);
 
   // One lime action per screen: the dock centre when picks exist (or are on their
   // way); otherwise it goes quiet and the recovery button in the content is lime.
@@ -141,8 +159,34 @@ export default function AiPicks() {
     <Screen
       testID="picks-screen"
       scrollRef={scrollRef}
-      header={<TopBar title="Your picks" titleVi="Gợi ý cho bạn" />}
-      overlay={<FittingDock hooks={hookIds} lit={picks ? activeLook : null} onHookPress={picks ? showCard : undefined} center={center} />}
+      header={
+        <TopBar
+          title="Your picks"
+          titleVi="Gợi ý cho bạn"
+          right={
+            <Touchable
+              accessibilityRole="button"
+              accessibilityLabel="Mở tủ đồ cá nhân"
+              onPress={() => setClosetOpen(true)}
+              bg={colors.surface}
+              pressedBg={colors.surfaceDeep}
+              style={styles.closetBtn}
+              testID="open-closet-picks-btn"
+            >
+              <Layers size={14} color={colors.ink} strokeWidth={2} />
+              <AppText variant="caption" weight={700}>
+                {tr(locale, "Closet", "Tủ đồ")}
+              </AppText>
+            </Touchable>
+          }
+        />
+      }
+      overlay={
+        <>
+          <FittingDock hooks={hookIds} lit={picks ? activeLook : null} onHookPress={picks ? showCard : undefined} center={center} />
+          <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
+        </>
+      }
     >
       {!occasionId || !headline ? (
         <PicksEmpty onChooseOccasion={goToOccasions} />
@@ -192,6 +236,16 @@ export default function AiPicks() {
 }
 
 const styles = StyleSheet.create({
+  closetBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 38,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   head: { paddingTop: spacing.gap, gap: 6 },
   styleLine: { marginTop: 4 },
   source: { marginTop: spacing.stack },

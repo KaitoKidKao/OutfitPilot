@@ -154,6 +154,7 @@ interface HookProps {
 }
 
 function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: HookProps) {
+  const isSlotB = slot === "b";
   const locale = useLocale();
   const garment = garmentId ? getGarment(garmentId) : null;
   const letter = slot.toUpperCase();
@@ -174,13 +175,14 @@ function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: 
     <>
       <View style={[styles.thumbCol, compact && styles.thumbColCompact]}>
         <View style={[styles.rail, { backgroundColor: lit ? colors.ink : colors.muted }]} />
-        <HangingThumb garmentId={garmentId} compact={compact} />
+        <HangingThumb garmentId={garmentId} compact={compact} slot={slot} />
       </View>
-      <View style={styles.hookText}>
+      <View style={[styles.hookText, isSlotB && styles.hookTextB]}>
         <AppText
           variant={mode === "keep" && garment ? "label" : "tag"}
           weight={mode === "keep" && garment ? 800 : 700}
           tone={textTone}
+          align={isSlotB ? "right" : "left"}
           numberOfLines={1}
           // Native shrinks the short title ("Keep A") rather than cutting it; web ignores this.
           adjustsFontSizeToFit
@@ -189,16 +191,33 @@ function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: 
         >
           {garment || mode !== "keep" ? title : name}
         </AppText>
-        <AppText variant="tag" tone={subTone} numberOfLines={2} maxFontSizeMultiplier={DOCK_TEXT_SCALE}>
+        <AppText
+          variant="tag"
+          tone={subTone}
+          align={isSlotB ? "right" : "left"}
+          numberOfLines={2}
+          maxFontSizeMultiplier={DOCK_TEXT_SCALE}
+        >
           {sub}
         </AppText>
       </View>
     </>
   );
 
+  const hookStyles = [
+    styles.hook,
+    isSlotB && styles.hookB,
+    compact && styles.hookCompact,
+    disabled && styles.disabled,
+  ];
+
   if (!interactive) {
     return (
-      <View style={[styles.hook, compact && styles.hookCompact, { backgroundColor: lit ? colors.lime : colors.inkWell }]} accessible accessibilityLabel={a11yLabel}>
+      <View
+        style={[hookStyles, { backgroundColor: lit ? colors.lime : colors.inkWell }]}
+        accessible
+        accessibilityLabel={a11yLabel}
+      >
         {content}
       </View>
     );
@@ -215,7 +234,7 @@ function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: 
       bg={lit ? colors.lime : colors.inkWell}
       pressedBg={lit ? colors.limePress : colors.inkLine}
       pressScale={motion.pressScale}
-      style={[styles.hook, compact && styles.hookCompact, disabled && styles.disabled]}
+      style={hookStyles}
     >
       {content}
     </Touchable>
@@ -223,7 +242,7 @@ function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: 
 }
 
 /** 44x56 (compact 34x44) thumbnail that swings onto the rail when its garment changes. */
-function HangingThumb({ garmentId, compact }: { garmentId: GarmentId | null; compact: boolean }) {
+function HangingThumb({ garmentId, compact, slot }: { garmentId: GarmentId | null; compact: boolean; slot?: DockSlot }) {
   const thumb = compact ? COMPACT.thumb : sizes.hookThumb;
   const reduced = useReducedMotion();
   const y = useSharedValue(0);
@@ -236,11 +255,17 @@ function HangingThumb({ garmentId, compact }: { garmentId: GarmentId | null; com
       return;
     }
     const half = motion.duration.hang / 2;
+    const direction = slot === "b" ? 1 : -1;
     y.set(-14);
-    rot.set(-7);
+    rot.set(direction * 7);
     y.set(withTiming(0, { duration: half, easing: motion.easing }));
-    rot.set(withSequence(withTiming(3, { duration: half, easing: motion.easing }), withTiming(0, { duration: half, easing: motion.easing })));
-  }, [garmentId, reduced, y, rot]);
+    rot.set(
+      withSequence(
+        withTiming(-direction * 3, { duration: half, easing: motion.easing }),
+        withTiming(0, { duration: half, easing: motion.easing }),
+      ),
+    );
+  }, [garmentId, reduced, y, rot, slot]);
 
   const style = useAnimatedStyle(() => ({
     transform: [{ translateY: y.get() }, { rotate: `${rot.get()}deg` }],
@@ -330,12 +355,18 @@ const styles = StyleSheet.create({
     gap: 6,
     overflow: "hidden",
   },
+  hookB: {
+    flexDirection: "row-reverse",
+  },
   hookCompact: { paddingHorizontal: COMPACT.hookPaddingX, gap: COMPACT.hookPaddingX },
   thumbCol: { width: sizes.hookThumb.width, alignItems: "center", alignSelf: "stretch", justifyContent: "flex-start", paddingTop: 4 },
   thumbColCompact: { width: COMPACT.thumb.width, paddingTop: 8 },
   rail: { width: sizes.hookRail.width, height: sizes.hookRail.height, borderRadius: 2 },
   thumbHang: { marginTop: 2, transformOrigin: "top" },
   hookText: { flex: 1, minWidth: 0, gap: 1 },
+  hookTextB: {
+    alignItems: "flex-end",
+  },
   center: {
     width: CENTER_WIDTH,
     height: sizes.dockCenter,

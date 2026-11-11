@@ -1,7 +1,7 @@
 // Display copy for screen 1 (Choose Occasion), from DESIGN.md §6.1.
 // Ids and dress codes live in lib/catalog.ts (mirrors the server); this file only
 // adds the bilingual labels, the short descriptor and an icon per occasion.
-import { Briefcase, Coffee, GraduationCap, type LucideIcon } from "lucide-react-native";
+import { Briefcase, Coffee, GraduationCap, Sparkles, type LucideIcon } from "lucide-react-native";
 
 import { OCCASION_IDS, OCCASIONS, type OccasionId } from "./catalog";
 
@@ -23,25 +23,33 @@ export const OCCASION_OPTIONS: readonly OccasionOption[] = [
     id: "job_interview",
     label: OCCASIONS.job_interview.label,
     labelVi: "Phỏng vấn xin việc",
-    descriptor: "Formal and neat: a shirt or a blazer.",
+    descriptor: "Formal: shirt or blazer.",
     descriptorVi: "Trang trọng, gọn gàng, sơ mi/blazer.",
     icon: Briefcase,
   },
   {
     id: "campus_day",
     label: OCCASIONS.campus_day.label,
-    labelVi: "Một ngày ở trường",
-    descriptor: "Relaxed, easy to move in all day.",
-    descriptorVi: "Thoải mái, năng động, dễ vận động cả ngày.",
+    labelVi: "Đi học & làm việc",
+    descriptor: "Relaxed: easy all day.",
+    descriptorVi: "Thoải mái, năng động, dễ vận động.",
     icon: GraduationCap,
   },
   {
     id: "coffee_date",
     label: OCCASIONS.coffee_date.label,
-    labelVi: "Hẹn cà phê",
+    labelVi: "Hẹn hò & cà phê",
     descriptor: "Smart casual in warm tones.",
-    descriptorVi: "Smart casual, thanh lịch, màu sắc ấm áp dễ gần.",
+    descriptorVi: "Smart casual, thanh lịch, dễ gần.",
     icon: Coffee,
+  },
+  {
+    id: "other",
+    label: "Custom occasion",
+    labelVi: "Dịp khác...",
+    descriptor: "Type your own occasion.",
+    descriptorVi: "Tự do nhập dịp của riêng bạn.",
+    icon: Sparkles,
   },
 ];
 
@@ -66,7 +74,7 @@ export interface StyleOption {
 }
 
 export const STYLE_OPTIONS: readonly StyleOption[] = [
-  { value: "none", label: "None", labelVi: "Không chọn" },
+  { value: "none", label: "None", labelVi: "Tất cả" },
   { value: "minimal", label: "Minimal", labelVi: "Tối giản" },
   { value: "casual", label: "Casual", labelVi: "Thoải mái" },
   { value: "smart", label: "Smart", labelVi: "Lịch sự" },

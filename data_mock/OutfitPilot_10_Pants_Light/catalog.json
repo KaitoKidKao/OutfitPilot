@@ -1,0 +1,92 @@
+[
+  {
+    "id": "P01",
+    "name": "Gray jogger sweatpants",
+    "category": "pants",
+    "style": "Casual",
+    "image": "P01_Gray_Joggers.jpg",
+    "width": 1086,
+    "height": 1448
+  },
+  {
+    "id": "P02",
+    "name": "Dark indigo jeans",
+    "category": "pants",
+    "style": "Casual",
+    "image": "P02_Dark_Indigo_Jeans.jpg",
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "id": "P03",
+    "name": "Charcoal tailored trousers",
+    "category": "pants",
+    "style": "Formal",
+    "image": "P03_Charcoal_Trousers.jpg",
+    "width": 1086,
+    "height": 1448
+  },
+  {
+    "id": "P04",
+    "name": "Olive cargo pants",
+    "category": "pants",
+    "style": "Utility",
+    "image": "P04_Olive_Cargo_Pants.jpg",
+    "width": 1086,
+    "height": 1448
+  },
+  {
+    "id": "P05",
+    "name": "Beige chinos",
+    "category": "pants",
+    "style": "Smart casual",
+    "image": "P05_Beige_Chinos.jpg",
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "id": "P06",
+    "name": "Black tailored trousers",
+    "category": "pants",
+    "style": "Formal",
+    "image": "P06_Black_Trousers.jpg",
+    "width": 1086,
+    "height": 1448
+  },
+  {
+    "id": "P07",
+    "name": "Black dress trousers — variation",
+    "category": "pants",
+    "style": "Formal",
+    "image": "P07_Black_Dress_Trousers_Alt.jpg",
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "id": "P08",
+    "name": "Navy tailored trousers",
+    "category": "pants",
+    "style": "Formal",
+    "image": "P08_Navy_Trousers.jpg",
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "id": "P09",
+    "name": "Beige chinos — variation",
+    "category": "pants",
+    "style": "Smart casual",
+    "image": "P09_Beige_Chinos_Alt.jpg",
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "id": "P10",
+    "name": "Charcoal trousers — variation",
+    "category": "pants",
+    "style": "Formal",
+    "image": "P10_Charcoal_Trousers_Alt.jpg",
+    "width": 1024,
+    "height": 1536
+  }
+]

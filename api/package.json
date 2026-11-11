@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "npx vercel@65.12.1 --prod"
+    "deploy": "npx vercel deploy --prod --yes"
   },
   "dependencies": {
     "hono": "4.13.17",

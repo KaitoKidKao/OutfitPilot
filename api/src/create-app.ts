@@ -52,6 +52,14 @@ function readTokenGlobalPerMin(env: NodeJS.ProcessEnv): number | null {
   return n > 0 ? n : null;
 }
 
+/** TOKEN_PER_CLIENT_PER_MIN as a positive integer, or null when unset/invalid. */
+function readTokenPerClientPerMin(env: NodeJS.ProcessEnv): number | null {
+  const raw = env.TOKEN_PER_CLIENT_PER_MIN?.trim();
+  if (!raw || !/^\d+$/.test(raw)) return null;
+  const n = Number(raw);
+  return n > 0 ? n : null;
+}
+
 function defaultLLMFactory(): (env: NodeJS.ProcessEnv) => StylistLLM | null {
   let cacheKey = "";
   let cached: StylistLLM | null = null;
@@ -121,17 +129,27 @@ export function createApp(deps: AppDeps = {}, app: Hono = new Hono()): Hono {
     const parsed = styleRequestSchema.safeParse(body.value);
     if (!parsed.success) return c.json(errorBody("bad_request", describeZodError(parsed.error)), 400);
 
-    const result: StyleResponse = await recommend(parsed.data, createLLM(getEnv()), log);
+    const env = getEnv();
+    const useStageCache = env.STAGE_MODE === "true" || env.USE_STAGE_CACHE === "true";
+    const result: StyleResponse = await recommend(parsed.data, createLLM(env), log, { useStageCache });
     return c.json(result);
   });
 
-  const tokenLimit = rateLimit(limiter, "token", limits.token, {
-    clientIp: deps.clientIp,
-    global: () => {
-      const perMin = readTokenGlobalPerMin(getEnv());
-      return perMin ? { limit: perMin, windowMs: 60_000 } : limits.tokenGlobal;
+  const tokenLimit = rateLimit(
+    limiter,
+    "token",
+    () => {
+      const perClient = readTokenPerClientPerMin(getEnv());
+      return perClient ? { limit: perClient, windowMs: 60_000 } : limits.token;
     },
-  });
+    {
+      clientIp: deps.clientIp,
+      global: () => {
+        const perMin = readTokenGlobalPerMin(getEnv());
+        return perMin ? { limit: perMin, windowMs: 60_000 } : limits.tokenGlobal;
+      },
+    },
+  );
 
   // The contract request is always {}; the body is ignored (never parsed), so
   // this route has no 400 path: 200 | 429 | 500 | 503 only.

@@ -8,6 +8,7 @@ export const PICKS_HEADLINE: Record<OccasionId, { en: string; vi: string }> = {
   job_interview: { en: "Two looks for your job interview", vi: "Hai món cho buổi phỏng vấn xin việc" },
   campus_day: { en: "Two looks for a day on campus", vi: "Hai món cho một ngày ở trường" },
   coffee_date: { en: "Two looks for your coffee date", vi: "Hai món cho buổi hẹn cà phê" },
+  other: { en: "Two looks for your occasion", vi: "Hai lựa chọn cho dịp của bạn" },
 };
 
 /** Role of each slot on its card. A is always the stronger match (contract: [0] = Look A). */

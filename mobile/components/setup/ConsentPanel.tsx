@@ -22,13 +22,13 @@ const FACTS: readonly Fact[] = [
   },
   {
     icon: ShieldCheck,
-    text: "Nothing is recorded or saved.",
-    textVi: "Không ghi hình, không lưu lại.",
+    text: "OutfitPilot does not record or save video; Decart processes the live stream directly to draw your outfit.",
+    textVi: "OutfitPilot không ghi hay lưu video; Decart xử lý trực tiếp để vẽ trang phục.",
   },
   {
     icon: Timer,
-    text: "A session lasts 2 minutes at most and stops as soon as you leave the fitting room.",
-    textVi: "Mỗi phiên tối đa 2 phút và dừng ngay khi bạn rời phòng thử.",
+    text: "A session lasts 60 seconds at most and stops as soon as you leave the fitting room.",
+    textVi: "Mỗi phiên tối đa 60 giây và dừng ngay khi bạn rời phòng thử.",
   },
 ];
 

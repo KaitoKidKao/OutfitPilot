@@ -30,9 +30,22 @@ export interface SavedLook {
   savedAt: string;
 }
 
+export interface TryOnRecap {
+  garmentId: GarmentId;
+  garmentName: string;
+  garmentNameVi?: string;
+  slot: Slot;
+  durationSeconds: number;
+  recordedAt: string;
+  aiVideoUri?: string | null;
+  originalPhotoUri?: string | null;
+}
+
 export interface AppState {
   occasionId: OccasionId | null;
   style: StyleChoice;
+  /** User gender preference: "men" or "women". Persisted across sessions. */
+  gender: "men" | "women";
   /** Language of reason/pairWith requested from /api/style. English is primary. */
   locale: Locale;
   picks: StyleResponse | null;
@@ -48,13 +61,21 @@ export interface AppState {
   saved: SavedLook[];
   /** false until AsyncStorage has been read once. */
   savedLoaded: boolean;
+  /** Explicit override for hooks from Closet or user choice */
+  customHooks: [GarmentId | null, GarmentId | null] | null;
+  /** Free-form custom occasion text when occasionId is "other" */
+  customOccasion: string | null;
+  /** Latest recorded try-on video recap */
+  latestRecap: TryOnRecap | null;
 }
 
 export interface AppActions {
   /** Changing the occasion drops picks made for the old one. */
   setOccasion: (id: OccasionId) => void;
+  setCustomOccasion: (custom: string | null) => void;
   /** Changing the style drops picks made for the old one. */
   setStyle: (style: StyleChoice) => void;
+  setGender: (gender: "men" | "women") => void;
   setLocale: (locale: Locale) => void;
   /**
    * Calls POST /api/style for the current occasion + style. Returns the cached picks
@@ -63,6 +84,7 @@ export interface AppActions {
    */
   fetchPicks: (options?: { force?: boolean }) => Promise<StyleResponse | null>;
   setActiveLook: (slot: Slot) => void;
+  assignHook: (slot: Slot, id: GarmentId | null) => void;
   giveConsent: () => void;
   revokeConsent: () => void;
   /** Saves the pick in `slot` (dedupes the same garment + occasion). Returns the saved entry. */
@@ -72,6 +94,7 @@ export interface AppActions {
   clear: () => void;
   /** Deletes every saved look. */
   clearSaved: () => void;
+  setLatestRecap: (recap: TryOnRecap | null) => void;
 }
 
 export interface AppStore extends AppState, AppActions {
@@ -84,6 +107,7 @@ export interface AppStore extends AppState, AppActions {
 }
 
 export const SAVED_STORAGE_KEY = "outfitpilot.saved.v1";
+export const GENDER_STORAGE_KEY = "outfitpilot.gender.v1";
 const MAX_SAVED = 50;
 
 function isSavedLook(v: unknown): v is SavedLook {
@@ -106,6 +130,7 @@ function initialState(): AppState {
   return {
     occasionId: seed?.occasionId ?? null,
     style: seed && isStyleChoice(seed.style) ? seed.style : "none",
+    gender: "men",
     locale: getLocale(),
     picks: seed?.picks ?? null,
     picksStatus: seed?.picks ? "ready" : "idle",
@@ -116,6 +141,9 @@ function initialState(): AppState {
     consentGiven: seed?.consentGiven ?? false,
     saved: seed?.saved ?? [],
     savedLoaded: false,
+    customHooks: null,
+    customOccasion: null,
+    latestRecap: null,
   };
 }
 
@@ -134,6 +162,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   // ----- persistence -----
   useEffect(() => {
     hydrateLocale();
+    AsyncStorage.getItem(GENDER_STORAGE_KEY)
+      .then((savedGender) => {
+        if (savedGender === "men" || savedGender === "women") {
+          setState((s) => ({ ...s, gender: savedGender }));
+        }
+      })
+      .catch((e) => console.warn("[store] could not read saved gender", e));
+
     let alive = true;
     AsyncStorage.getItem(SAVED_STORAGE_KEY)
       .then((raw) => {
@@ -174,11 +210,23 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   };
 
   const setOccasion = useCallback((id: OccasionId) => {
-    setState((s) => (s.occasionId === id ? s : { ...resetPicks(s), occasionId: id }));
+    setState((s) => (s.occasionId === id ? { ...s, occasionId: null } : { ...resetPicks(s), occasionId: id }));
+  }, []);
+
+  const setCustomOccasion = useCallback((custom: string | null) => {
+    setState((s) => ({ ...s, customOccasion: custom }));
   }, []);
 
   const setStyle = useCallback((style: StyleChoice) => {
     setState((s) => (s.style === style ? s : { ...resetPicks(s), style }));
+  }, []);
+
+  const setGender = useCallback((gender: "men" | "women") => {
+    setState((s) => {
+      if (s.gender === gender) return s;
+      return { ...resetPicks(s), gender, customHooks: null };
+    });
+    AsyncStorage.setItem(GENDER_STORAGE_KEY, gender).catch((e) => console.warn("[store] could not save gender", e));
   }, []);
 
   const setLocale = useCallback((locale: Locale) => {
@@ -189,13 +237,47 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const fetchPicks = useCallback(async (options?: { force?: boolean }): Promise<StyleResponse | null> => {
     const s = stateRef.current;
     if (!s.occasionId) return null;
-    const key = `${s.occasionId}|${s.style}|${s.locale}`;
+    const key = `${s.occasionId}|${s.style}|${s.locale}|${s.gender}|${s.customOccasion ?? ""}`;
     if (!options?.force && s.picks && picksKeyRef.current === key) return s.picks;
 
     const req = ++requestRef.current;
     setState((prev) => ({ ...prev, picksStatus: "loading", picksError: null, picksErrorCode: null, picksErrorStatus: 0 }));
     try {
-      const res = await postStyle({ occasionId: s.occasionId, style: s.style, locale: s.locale });
+      const customText = s.customOccasion?.trim() || undefined;
+      let res: StyleResponse;
+      try {
+        res = await postStyle({
+          occasionId: s.occasionId,
+          style: s.style,
+          locale: s.locale,
+          customOccasion: customText,
+          gender: s.gender,
+        });
+      } catch (err) {
+        // Compatibility fallback if calling an older server deployment that doesn't yet recognize "other" or "customOccasion":
+        if (err instanceof ApiError && err.status === 400) {
+          const fallbackOccasion = customText && /tiệc|cưới|lễ|họp|formal|suit|blazer|party|bar|night|lounge/i.test(customText)
+            ? "job_interview"
+            : (customText && /beach|biển|campus|street|trip|casual|gym|dạo/i.test(customText) ? "campus_day" : "coffee_date");
+          try {
+            res = await postStyle({
+              occasionId: fallbackOccasion,
+              style: s.style,
+              locale: s.locale,
+              customOccasion: customText,
+              gender: s.gender,
+            });
+          } catch {
+            res = await postStyle({
+              occasionId: fallbackOccasion,
+              style: s.style,
+              locale: s.locale,
+            });
+          }
+        } else {
+          throw err;
+        }
+      }
       if (req !== requestRef.current) return null;
       picksKeyRef.current = key;
       setState((prev) => ({ ...prev, picks: res, picksStatus: "ready", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a" }));
@@ -213,22 +295,34 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => (s.activeLook === slot ? s : { ...s, activeLook: slot }));
   }, []);
 
+  const assignHook = useCallback((slot: Slot, id: GarmentId | null) => {
+    setState((prev) => {
+      const curA = prev.customHooks ? prev.customHooks[0] : (prev.picks?.recommendations[0]?.garmentId ?? null);
+      const curB = prev.customHooks ? prev.customHooks[1] : (prev.picks?.recommendations[1]?.garmentId ?? null);
+      const nextHooks: [GarmentId | null, GarmentId | null] = slot === "a" ? [id, curB] : [curA, id];
+      return { ...prev, customHooks: nextHooks };
+    });
+  }, []);
+
   const giveConsent = useCallback(() => setState((s) => ({ ...s, consentGiven: true })), []);
   const revokeConsent = useCallback(() => setState((s) => ({ ...s, consentGiven: false })), []);
 
   const keepLook = useCallback(
     (slot: Slot): SavedLook | null => {
       const s = stateRef.current;
-      const rec = s.picks?.recommendations[slot === "a" ? 0 : 1];
-      if (!s.picks || !rec || !s.occasionId) return null;
+      const hookId = s.customHooks ? s.customHooks[slot === "a" ? 0 : 1] : (s.picks?.recommendations[slot === "a" ? 0 : 1]?.garmentId ?? null);
+      if (!hookId) return null;
+      const occasionId = s.occasionId ?? "job_interview";
+      const rec = s.picks?.recommendations.find((r) => r.garmentId === hookId);
+      const garment = getGarment(hookId);
       const savedAt = new Date().toISOString();
       const look: SavedLook = {
-        id: `${rec.garmentId}-${s.occasionId}-${Date.parse(savedAt)}`,
-        garmentId: rec.garmentId,
-        occasionId: s.occasionId,
-        reason: rec.reason,
-        pairWith: rec.pairWith,
-        source: s.picks.source,
+        id: `${hookId}-${occasionId}-${Date.parse(savedAt)}`,
+        garmentId: hookId,
+        occasionId,
+        reason: rec?.reason ?? garment.fitAdvice ?? `Món đồ từ Tủ Đồ (${garment.name})`,
+        pairWith: rec?.pairWith ?? "Quần phù hợp từ tủ đồ",
+        source: rec ? s.picks?.source ?? "llm" : "llm",
         savedAt,
       };
       const next = [look, ...s.saved.filter((l) => !(l.garmentId === look.garmentId && l.occasionId === look.occasionId))].slice(0, MAX_SAVED);
@@ -257,34 +351,63 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const clear = useCallback(() => {
-    setState((s) => ({ ...resetPicks(s), occasionId: null, style: "none", consentGiven: false }));
+    setState((s) => ({ ...resetPicks(s), occasionId: null, style: "none", consentGiven: false, customOccasion: null, latestRecap: null }));
+  }, []);
+
+  const setLatestRecap = useCallback((recap: TryOnRecap | null) => {
+    setState((s) => ({ ...s, latestRecap: recap }));
   }, []);
 
   const store = useMemo<AppStore>(() => {
-    const pickFor = (slot: Slot) => state.picks?.recommendations[slot === "a" ? 0 : 1] ?? null;
-    const garmentFor = (slot: Slot) => {
-      const rec = pickFor(slot);
-      return rec ? getGarment(rec.garmentId) : null;
+    const hookA = state.customHooks ? state.customHooks[0] : (state.picks?.recommendations[0]?.garmentId ?? null);
+    const hookB = state.customHooks ? state.customHooks[1] : (state.picks?.recommendations[1]?.garmentId ?? null);
+
+    const pickFor = (slot: Slot) => {
+      const hookId = slot === "a" ? hookA : hookB;
+      if (!hookId) return null;
+      const rec = state.picks?.recommendations.find((r) => r.garmentId === hookId);
+      if (rec) return rec;
+      try {
+        const g = getGarment(hookId);
+        return { garmentId: hookId, reason: g.fitAdvice ?? g.name, pairWith: "Quần phối hợp từ tủ đồ" };
+      } catch {
+        return null;
+      }
     };
+
+    const garmentFor = (slot: Slot) => {
+      const hookId = slot === "a" ? hookA : hookB;
+      if (!hookId) return null;
+      try {
+        return getGarment(hookId);
+      } catch {
+        return null;
+      }
+    };
+
     return {
       ...state,
       locale: activeLocale,
       setOccasion,
+      setCustomOccasion,
       setStyle,
+      setGender,
       setLocale,
       fetchPicks,
       setActiveLook,
+      assignHook,
       giveConsent,
       revokeConsent,
       keepLook,
       removeSaved,
       clear,
       clearSaved,
+      setLatestRecap,
       pickFor,
       garmentFor,
-      hookIds: [state.picks?.recommendations[0].garmentId ?? null, state.picks?.recommendations[1].garmentId ?? null],
+      hookIds: [hookA, hookB],
     };
-  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved]);
+  }, [state, activeLocale, setOccasion, setStyle, setGender, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

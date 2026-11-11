@@ -13,6 +13,7 @@
 //                                      picks exist; giveConsent() then /fitting
 // Nothing leaves the phone on this screen: no Decart session is ever started here.
 import { useFocusEffect, useRouter } from "expo-router";
+import { useKeepAwake } from "expo-keep-awake";
 import { Camera, Play, RotateCcw, Settings } from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
 import { AppState, Linking, StyleSheet, View } from "react-native";
@@ -46,6 +47,7 @@ const CAPTION: Record<FrameState, { text: string; vi: string }> = {
 };
 
 export default function CameraSetup() {
+  useKeepAwake();
   const router = useRouter();
   const { hookIds, activeLook, setActiveLook, consentGiven, giveConsent, revokeConsent, occasionId } = useAppStore();
   const tryOn = useTryOnSession({ consentGiven });

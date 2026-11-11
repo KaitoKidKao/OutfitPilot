@@ -7,6 +7,7 @@
 // output, and no paid session without an explicit consent + Start tap.
 import { RTCView } from "@livekit/react-native-webrtc";
 import * as ImagePicker from "expo-image-picker";
+import { useKeepAwake } from "expo-keep-awake";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -68,6 +69,7 @@ function Btn(props: { label: string; onPress: () => void; tone: Tone; disabled?:
 }
 
 export default function TryOnHarness() {
+  useKeepAwake();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const camera = useCamera("user");
