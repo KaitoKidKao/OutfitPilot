@@ -152,7 +152,7 @@ TASK
 From the CATALOG, pick exactly 2 different garments that suit the OCCASION (or CUSTOM_OCCASION when provided). The user tries them on one after the other (Look A, then Look B). Look A is your best match; Look B is a clearly different but still appropriate alternative.
 
 HOW TO DECIDE
-1. Formality first. If CUSTOM_OCCASION is provided, prioritize it: infer the vibe, venue, context and target formality for this specific event (e.g. "Rooftop Bar", "Beach Wedding", "Music Festival", "Club / Party"). Otherwise compare each garment's "formality" (1 = casual, 5 = formal) with the occasion's "targetFormality" and prefer the smallest gap.
+1. Formality first. If CUSTOM_OCCASION is provided, prioritize it: infer the vibe, venue, context and target formality for this specific event (e.g. "Rooftop Bar", "Beach Wedding", "Music Festival", "Club / Party"). If the occasion implies a feminine aesthetic (e.g. đầm, váy, tiệc nàng, dạ hội, bikini, nàng thơ) or masculine aesthetic, prioritize garments matching that gender. Otherwise compare each garment's "formality" (1 = casual, 5 = formal) with the occasion's "targetFormality" and prefer the smallest gap.
 2. Then STYLE_PREFERENCE. Prefer garments whose "styles" include it; if it is "none", skip this step. The dress code outranks the preference: never pick a garment that clearly breaks the dress code just to match the preference.
 3. Then versatility: neutral colors and easy pairing with plain trousers and shoes.
 4. Look A is the best overall fit. Look B is the best remaining garment that differs from Look A in formality, cut or color. If Look B has a trade-off for this occasion, say so honestly in its reason.

@@ -22,8 +22,9 @@ export function rankGarments(occasionId: OccasionId, style: string, customOccasi
       target = 2;
     }
   }
+  const pool = occasionId === "other" ? CATALOG : CATALOG.filter((g) => ["G01", "G02", "G03", "G04", "G05", "G06"].includes(g.id));
   const matchesStyle = (g: Garment) => (style !== "none" && g.styles.includes(style) ? 0 : 1);
-  return CATALOG.map((g, index) => ({ g, index }))
+  return pool.map((g, index) => ({ g, index }))
     .sort(
       (x, y) =>
         Math.abs(x.g.formality - target) - Math.abs(y.g.formality - target) ||
@@ -72,8 +73,27 @@ function fitNote(locale: Locale, garment: Garment, occasion: Occasion, customOcc
   return gap > 0 ? "a little more formal than needed" : "a little more casual than needed";
 }
 
+const COLOR_VI: Record<string, string> = {
+  white: "trắng",
+  navy: "xanh navy",
+  cream: "kem",
+  black: "đen",
+  beige: "be",
+  "blue denim": "xanh denim",
+  "light blue": "xanh nhạt",
+  charcoal: "xám than",
+  gray: "xám",
+  "emerald green": "xanh ngọc",
+  burgundy: "đỏ rượu",
+  camel: "lạc đà",
+  "sky blue": "xanh da trời",
+  floral: "hoa nhí",
+  coral: "san hô",
+  "blush pink": "hồng phấn",
+};
+
 // Vietnamese color and cut for each catalog garment (catalog text is English).
-const VI_DESCRIPTOR: Record<GarmentId, { color: string; cut: string }> = {
+const VI_DESCRIPTOR: Partial<Record<GarmentId, { color: string; cut: string }>> = {
   G01: { color: "xanh navy", cut: "cắt may gọn, đứng dáng" },
   G02: { color: "trắng", cut: "phẳng phiu, cổ điển" },
   G03: { color: "kem", cut: "len dệt, thoải mái" },
@@ -86,7 +106,10 @@ function reasonFor(locale: Locale, garment: Garment, occasion: Occasion, customO
   const where = (customOccasion && customOccasion.trim()) ? customOccasion.trim() : OCCASION_NAME[locale][occasion.id];
   const note = fitNote(locale, garment, occasion, customOccasion);
   if (locale === "vi") {
-    const d = VI_DESCRIPTOR[garment.id];
+    const d = VI_DESCRIPTOR[garment.id] ?? {
+      color: COLOR_VI[garment.color] ?? garment.color,
+      cut: garment.cut,
+    };
     return `${garment.name}: ${note} cho ${where}, màu ${d.color}, dáng ${d.cut}.`;
   }
   return `${garment.name}: ${note} for ${where}; ${garment.color}, ${garment.cut}.`;
