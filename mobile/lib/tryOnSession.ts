@@ -9,7 +9,7 @@
 //
 // Web uses lib/tryOnSession.web.ts instead (stub, no camera, no AI).
 import { Asset } from "expo-asset";
-import { File } from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
@@ -35,6 +35,40 @@ function mimeFor(path: string): string {
   return "image/jpeg";
 }
 
+async function readBase64FromUri(uri: string): Promise<string> {
+  if (uri.startsWith("data:")) {
+    return uri.replace(/^data:[^,]*,/, "");
+  }
+
+  // Primary: expo-file-system legacy readAsStringAsync
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: "base64",
+    });
+    if (base64) return base64;
+  } catch (fsErr) {
+    // console.warn and fall through to fetch
+  }
+
+  // Fallback: fetch blob and FileReader (handles http, content, or asset paths)
+  try {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        const b64 = result.replace(/^data:[^,]*,/, "");
+        resolve(b64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    throw new Error(`Failed to convert image to base64 (${uri}): ${(err as Error)?.message ?? err}`);
+  }
+}
+
 /** Reads a bundled catalog photo or user file as base64 (the SDK rejects file:// URIs). Cached per garment. */
 function garmentBase64(id: GarmentId): Promise<string> {
   const cached = base64Cache.get(id);
@@ -46,11 +80,11 @@ function garmentBase64(id: GarmentId): Promise<string> {
       const asset = await Asset.fromModule(garment.image).downloadAsync();
       const uri = asset.localUri ?? asset.uri;
       if (!uri) throw new Error(`Could not load the photo of ${garment.name}.`);
-      return new File(uri).base64();
+      return readBase64FromUri(uri);
     }
     const uri = typeof garment.image === "string" ? garment.image : (garment.image as { uri: string }).uri;
     if (!uri) throw new Error(`Could not load photo for ${garment.name}.`);
-    return new File(uri).base64();
+    return readBase64FromUri(uri);
   })();
   base64Cache.set(id, job);
   job.catch(() => base64Cache.delete(id));

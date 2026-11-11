@@ -26,7 +26,7 @@ import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
 import { useAutoCompare } from "@/components/fitting/useAutoCompare";
 import { StageMessage, VideoLayer } from "@/components/fitting/VideoStage";
 import { DOCK_BODY_HEIGHT, FittingDock, type DockCenter } from "@/components/FittingDock";
-import { Screen } from "@/components/ui";
+import { Screen, useToast } from "@/components/ui";
 import { getGarment, type GarmentId } from "@/lib/catalog";
 import { useAppStore, type Slot, type TryOnRecap } from "@/lib/store";
 import { sizes, spacing } from "@/lib/theme";
@@ -45,6 +45,7 @@ function announce(message: string) {
 export default function LiveFittingRoom() {
   useSafeKeepAwake();
   const router = useRouter();
+  const toast = useToast();
   const insets = useSafeAreaInsets();
   const { hookIds, activeLook, setActiveLook, consentGiven, setLatestRecap, latestRecap } = useAppStore();
   const tryOn = useTryOnSession({ consentGiven, autoStartCamera: consentGiven });
@@ -189,6 +190,12 @@ export default function LiveFittingRoom() {
     if (tryOn.state === "lost") announce(`Connection lost. ${tryOn.error ?? ""}`.trim());
     if (tryOn.state !== "live" && tryOn.state !== "switching") setPeekingOriginal(false);
   }, [tryOn.state, tryOn.error]);
+
+  useEffect(() => {
+    if (tryOn.error && tryOn.state !== "live") {
+      toast.show(tryOn.error);
+    }
+  }, [tryOn.error, tryOn.state, toast]);
 
   // ----- actions -----
 
