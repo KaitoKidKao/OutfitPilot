@@ -12,6 +12,11 @@ export const GARMENT_IDS = [
   "W13_01", "W14_01", "W14_02", "W15_01", "W15_02",
   "M11_01", "M11_02", "M12_01", "M12_02", "M13_01", "M13_02",
   "M14_01", "M14_02", "M14_03", "M15_01", "M15_02", "M15_03",
+  // Accessories & Other (Shoes, Bags, Hats, Eyewear, Jewelry)
+  "W01_03", "W01_04", "W02_03", "W02_04", "W03_03", "W03_04", "W04_04", "W04_05",
+  "W05_03", "W05_04", "W06_04", "W06_05", "W07_03", "W07_04", "W07_05", "W08_02",
+  "W08_03", "W08_04", "W09_02", "W09_03", "W09_04", "W09_05", "W09_06", "W10_02",
+  "W10_03", "W10_04",
 ] as const;
 export type GarmentId = (typeof GARMENT_IDS)[number];
 
@@ -63,6 +68,33 @@ export const CATALOG: readonly Garment[] = [
   { id: "W13_01", name: "Blush Satin Slip Dress", type: "dress", color: "blush pink", formality: 4, styles: ["date", "evening", "party"], cut: "slip dress, delicate", gender: "women" },
   { id: "W14_01", name: "Gray Cropped Hoodie", type: "top", color: "gray", formality: 1, styles: ["sports", "casual", "street"], cut: "cropped, athletic", gender: "women" },
   { id: "W15_01", name: "Black Off-Shoulder Top", type: "top", color: "black", formality: 3, styles: ["party", "bar", "evening"], cut: "off-shoulder, glamorous", gender: "women" },
+  // Accessories & Other (type: "other")
+  { id: "W01_03", name: "Silver Evening Clutch", type: "other", color: "silver", formality: 4, styles: ["bar", "evening", "party"], cut: "clutch, metallic", gender: "women" },
+  { id: "W01_04", name: "Black Strappy Heels", type: "other", color: "black", formality: 4, styles: ["bar", "evening", "party"], cut: "heels, strappy", gender: "women" },
+  { id: "W02_03", name: "Black Shoulder Bag", type: "other", color: "black", formality: 4, styles: ["evening", "party", "smart"], cut: "shoulder bag, leather", gender: "women" },
+  { id: "W02_04", name: "Black Evening Heels", type: "other", color: "black", formality: 5, styles: ["evening", "formal", "party"], cut: "heels, pointed", gender: "women" },
+  { id: "W03_03", name: "Black Chain Bag", type: "other", color: "black", formality: 3, styles: ["bar", "date"], cut: "crossbody, chain", gender: "women" },
+  { id: "W03_04", name: "Black Ankle Boots", type: "other", color: "black", formality: 3, styles: ["bar", "date", "street"], cut: "boots, ankle", gender: "women" },
+  { id: "W04_04", name: "Black Structured Handbag", type: "other", color: "black", formality: 4, styles: ["office", "formal", "smart"], cut: "handbag, structured", gender: "women" },
+  { id: "W04_05", name: "Black Leather Loafers", type: "other", color: "black", formality: 4, styles: ["office", "smart", "formal"], cut: "loafers, leather", gender: "women" },
+  { id: "W05_03", name: "Tan Crossbody Bag", type: "other", color: "tan", formality: 2, styles: ["casual", "daily"], cut: "crossbody, leather", gender: "women" },
+  { id: "W05_04", name: "White Casual Sneakers", type: "other", color: "white", formality: 2, styles: ["casual", "daily", "street"], cut: "sneakers, low-top", gender: "women" },
+  { id: "W06_04", name: "Black Duffel Gym Bag", type: "other", color: "black", formality: 1, styles: ["sports", "gym"], cut: "duffel, athletic", gender: "women" },
+  { id: "W06_05", name: "White Running Shoes", type: "other", color: "white", formality: 1, styles: ["sports", "gym", "running"], cut: "running, cushioned", gender: "women" },
+  { id: "W07_03", name: "Wide-Brim Straw Hat", type: "other", color: "beige", formality: 2, styles: ["beach", "holiday", "summer"], cut: "hat, straw", gender: "women" },
+  { id: "W07_04", name: "Straw Beach Tote", type: "other", color: "beige", formality: 2, styles: ["beach", "holiday", "summer"], cut: "tote, straw", gender: "women" },
+  { id: "W07_05", name: "Woven Beach Slides", type: "other", color: "beige", formality: 1, styles: ["beach", "holiday"], cut: "slides, woven", gender: "women" },
+  { id: "W08_02", name: "Ribbon Straw Hat", type: "other", color: "beige", formality: 3, styles: ["beach", "holiday"], cut: "hat, ribbon", gender: "women" },
+  { id: "W08_03", name: "Raffia Hobo Bag", type: "other", color: "beige", formality: 3, styles: ["beach", "holiday"], cut: "hobo, raffia", gender: "women" },
+  { id: "W08_04", name: "Tan Strappy Sandals", type: "other", color: "tan", formality: 3, styles: ["beach", "holiday", "resort"], cut: "sandals, strappy", gender: "women" },
+  { id: "W09_02", name: "Cream Cat-Eye Sunglasses", type: "other", color: "cream", formality: 3, styles: ["summer", "date"], cut: "sunglasses, cat-eye", gender: "women" },
+  { id: "W09_03", name: "Gold Hoop Earrings", type: "other", color: "gold", formality: 3, styles: ["summer", "date", "party"], cut: "earrings, hoops", gender: "women" },
+  { id: "W09_04", name: "Delicate Gold Necklace", type: "other", color: "gold", formality: 3, styles: ["summer", "date", "party"], cut: "necklace, pendant", gender: "women" },
+  { id: "W09_05", name: "Woven Shoulder Bag", type: "other", color: "beige", formality: 3, styles: ["summer", "date", "casual"], cut: "shoulder bag, woven", gender: "women" },
+  { id: "W09_06", name: "White Espadrille Wedges", type: "other", color: "white", formality: 3, styles: ["summer", "date", "holiday"], cut: "wedges, espadrille", gender: "women" },
+  { id: "W10_02", name: "Tortoise Shell Sunglasses", type: "other", color: "brown", formality: 3, styles: ["beach", "holiday"], cut: "sunglasses, tortoise", gender: "women" },
+  { id: "W10_03", name: "Straw Market Tote", type: "other", color: "beige", formality: 3, styles: ["beach", "holiday"], cut: "tote, market", gender: "women" },
+  { id: "W10_04", name: "White Canvas Sneakers", type: "other", color: "white", formality: 2, styles: ["beach", "casual", "daily"], cut: "sneakers, canvas", gender: "women" },
 ];
 
 export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date", "other"] as const;

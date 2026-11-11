@@ -380,6 +380,12 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             onPress={() => setCategoryFilter("pants")}
             style={styles.categoryChip}
           />
+          <Chip
+            label={tr(locale, "Shoes, Bags & Accessories", "Giày, Mũ, Túi & Khác")}
+            selected={categoryFilter === "other"}
+            onPress={() => setCategoryFilter("other")}
+            style={styles.categoryChip}
+          />
         </ScrollView>
       </View>
 
