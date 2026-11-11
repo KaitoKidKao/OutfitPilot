@@ -20,6 +20,7 @@ export interface StylistInput {
   style: string;
   locale: Locale;
   customOccasion?: string;
+  gender?: "women" | "men";
 }
 
 export type StylistLogger = (event: string, detail?: Record<string, unknown>) => void;
@@ -52,7 +53,7 @@ export async function recommend(
   const fallback = (why: string): StyleResponse => {
     log("stylist_fallback", { why });
     return {
-      recommendations: fallbackRecommendations(input.occasionId, input.style, input.locale, input.customOccasion),
+      recommendations: fallbackRecommendations(input.occasionId, input.style, input.locale, input.customOccasion, input.gender),
       source: "fallback",
     };
   };

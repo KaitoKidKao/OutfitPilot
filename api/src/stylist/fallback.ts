@@ -11,7 +11,12 @@
 import { CATALOG, OCCASIONS, type Garment, type GarmentId, type Occasion, type OccasionId } from "../catalog.js";
 import type { Locale, Recommendation } from "../contract.js";
 
-export function rankGarments(occasionId: OccasionId, style: string, customOccasion?: string): Garment[] {
+export function rankGarments(
+  occasionId: OccasionId,
+  style: string,
+  customOccasion?: string,
+  gender?: "women" | "men",
+): Garment[] {
   let target = OCCASIONS[occasionId].targetFormality;
   if (occasionId === "other" && customOccasion) {
     if (/tiệc|party|cưới|wedding|formal|lễ|gala|hội thảo|bar|lounge/i.test(customOccasion)) {
@@ -22,7 +27,18 @@ export function rankGarments(occasionId: OccasionId, style: string, customOccasi
       target = 2;
     }
   }
-  const pool = occasionId === "other" ? CATALOG : CATALOG.filter((g) => ["G01", "G02", "G03", "G04", "G05", "G06"].includes(g.id));
+  let pool = occasionId === "other"
+    ? CATALOG
+    : (gender === "women"
+      ? CATALOG.filter((g) => g.gender === "women")
+      : CATALOG.filter((g) => ["G01", "G02", "G03", "G04", "G05", "G06"].includes(g.id)));
+
+  if (gender) {
+    pool = pool.filter((g) => !g.gender || g.gender === gender || g.gender === "unisex");
+  }
+
+  pool = pool.filter((g) => (g as any).type !== "other" && (g as any).type !== "pants" && (g as any).type !== "skirt");
+
   const matchesStyle = (g: Garment) => (style !== "none" && g.styles.includes(style) ? 0 : 1);
   return pool.map((g, index) => ({ g, index }))
     .sort(
@@ -120,9 +136,10 @@ export function fallbackRecommendations(
   style: string,
   locale: Locale,
   customOccasion?: string,
+  gender?: "women" | "men",
 ): [Recommendation, Recommendation] {
   const occasion = OCCASIONS[occasionId];
-  const [a, b] = rankGarments(occasionId, style, customOccasion) as [Garment, Garment, ...Garment[]];
+  const [a, b] = rankGarments(occasionId, style, customOccasion, gender) as [Garment, Garment, ...Garment[]];
   const make = (g: Garment): Recommendation => ({
     garmentId: g.id,
     reason: reasonFor(locale, g, occasion, customOccasion),

@@ -21,7 +21,7 @@ import {
   Trash2,
   X,
 } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -62,15 +62,21 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
   const insets = useSafeAreaInsets();
   const locale = useLocale();
   const { items, addItem, updateItem, deleteItem, getMatchingPants } = useCloset();
-  const { assignHook, hookIds, setActiveLook } = useAppStore();
+  const { assignHook, hookIds, setActiveLook, gender } = useAppStore();
 
   const hasBothHooks = hookIds[0] !== null && hookIds[1] !== null;
 
-  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>(gender);
   const [statusFilter, setStatusFilter] = useState<OwnershipStatus>("all");
   const [categoryFilter, setCategoryFilter] = useState<ClosetCategory>("all");
   const [activeItem, setActiveItem] = useState<ClosetItem | null>(null);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setGenderFilter(gender);
+    }
+  }, [visible, gender]);
 
   // New item form state
   const [newImageUri, setNewImageUri] = useState<string | null>(null);

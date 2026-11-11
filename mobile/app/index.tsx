@@ -47,6 +47,8 @@ export default function ChooseOccasion() {
     occasionId,
     customOccasion,
     style,
+    gender,
+    setGender,
     setOccasion,
     setCustomOccasion,
     setStyle,
@@ -241,6 +243,35 @@ export default function ChooseOccasion() {
         </AppText>
       </View>
 
+      <View style={styles.genderRow} accessibilityRole="radiogroup" accessibilityLabel="Chọn giới tính phối đồ">
+        <Touchable
+          onPress={() => setGender("men")}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: gender === "men" }}
+          bg={gender === "men" ? colors.ink : colors.surface}
+          pressedBg={gender === "men" ? colors.ink : colors.surfaceDeep}
+          style={[styles.genderPill, gender === "men" && styles.genderPillActive]}
+          testID="gender-men-btn"
+        >
+          <AppText variant="caption" weight={700} tone={gender === "men" ? "paper" : "ink"}>
+            {tr(locale, "Men", "Đồ Nam")}
+          </AppText>
+        </Touchable>
+        <Touchable
+          onPress={() => setGender("women")}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: gender === "women" }}
+          bg={gender === "women" ? colors.ink : colors.surface}
+          pressedBg={gender === "women" ? colors.ink : colors.surfaceDeep}
+          style={[styles.genderPill, gender === "women" && styles.genderPillActive]}
+          testID="gender-women-btn"
+        >
+          <AppText variant="caption" weight={700} tone={gender === "women" ? "paper" : "ink"}>
+            {tr(locale, "Women", "Đồ Nữ")}
+          </AppText>
+        </Touchable>
+      </View>
+
       <OccasionGroup accessibilityLabel="Occasion">
         {OCCASION_OPTIONS.map((o) => (
           <OccasionCard key={o.id} option={o} selected={occasionId === o.id} onPress={() => setOccasion(o.id)} testID={`occasion-${o.id}`} />
@@ -378,7 +409,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
   },
-  intro: { paddingTop: 4, paddingBottom: 12, gap: 4 },
+  intro: { paddingTop: 4, paddingBottom: 8, gap: 4 },
+  genderRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 14,
+  },
+  genderPill: {
+    flex: 1,
+    height: 38,
+    borderRadius: radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  genderPillActive: {
+    borderColor: colors.ink,
+  },
   headline: { gap: 2 },
   customOccasionBox: {
     marginTop: 10,

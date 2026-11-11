@@ -28,6 +28,7 @@ export interface StyleRequest {
   style: string;
   locale: Locale;
   customOccasion?: string;
+  gender?: "women" | "men";
 }
 
 export interface Recommendation {

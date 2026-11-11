@@ -44,6 +44,8 @@ export interface TryOnRecap {
 export interface AppState {
   occasionId: OccasionId | null;
   style: StyleChoice;
+  /** User gender preference: "men" or "women". Persisted across sessions. */
+  gender: "men" | "women";
   /** Language of reason/pairWith requested from /api/style. English is primary. */
   locale: Locale;
   picks: StyleResponse | null;
@@ -73,6 +75,7 @@ export interface AppActions {
   setCustomOccasion: (custom: string | null) => void;
   /** Changing the style drops picks made for the old one. */
   setStyle: (style: StyleChoice) => void;
+  setGender: (gender: "men" | "women") => void;
   setLocale: (locale: Locale) => void;
   /**
    * Calls POST /api/style for the current occasion + style. Returns the cached picks
@@ -104,6 +107,7 @@ export interface AppStore extends AppState, AppActions {
 }
 
 export const SAVED_STORAGE_KEY = "outfitpilot.saved.v1";
+export const GENDER_STORAGE_KEY = "outfitpilot.gender.v1";
 const MAX_SAVED = 50;
 
 function isSavedLook(v: unknown): v is SavedLook {
@@ -126,6 +130,7 @@ function initialState(): AppState {
   return {
     occasionId: seed?.occasionId ?? null,
     style: seed && isStyleChoice(seed.style) ? seed.style : "none",
+    gender: "men",
     locale: getLocale(),
     picks: seed?.picks ?? null,
     picksStatus: seed?.picks ? "ready" : "idle",
@@ -157,6 +162,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   // ----- persistence -----
   useEffect(() => {
     hydrateLocale();
+    AsyncStorage.getItem(GENDER_STORAGE_KEY)
+      .then((savedGender) => {
+        if (savedGender === "men" || savedGender === "women") {
+          setState((s) => ({ ...s, gender: savedGender }));
+        }
+      })
+      .catch((e) => console.warn("[store] could not read saved gender", e));
+
     let alive = true;
     AsyncStorage.getItem(SAVED_STORAGE_KEY)
       .then((raw) => {
@@ -208,6 +221,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => (s.style === style ? s : { ...resetPicks(s), style }));
   }, []);
 
+  const setGender = useCallback((gender: "men" | "women") => {
+    setState((s) => {
+      if (s.gender === gender) return s;
+      return { ...resetPicks(s), gender, customHooks: null };
+    });
+    AsyncStorage.setItem(GENDER_STORAGE_KEY, gender).catch((e) => console.warn("[store] could not save gender", e));
+  }, []);
+
   const setLocale = useCallback((locale: Locale) => {
     setGlobalLocale(locale, true);
     setState((s) => (s.locale === locale ? s : { ...s, locale }));
@@ -216,7 +237,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const fetchPicks = useCallback(async (options?: { force?: boolean }): Promise<StyleResponse | null> => {
     const s = stateRef.current;
     if (!s.occasionId) return null;
-    const key = `${s.occasionId}|${s.style}|${s.locale}|${s.customOccasion ?? ""}`;
+    const key = `${s.occasionId}|${s.style}|${s.locale}|${s.gender}|${s.customOccasion ?? ""}`;
     if (!options?.force && s.picks && picksKeyRef.current === key) return s.picks;
 
     const req = ++requestRef.current;
@@ -230,6 +251,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           style: s.style,
           locale: s.locale,
           customOccasion: customText,
+          gender: s.gender,
         });
       } catch (err) {
         // Compatibility fallback if calling an older server deployment that doesn't yet recognize "other" or "customOccasion":
@@ -243,6 +265,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
               style: s.style,
               locale: s.locale,
               customOccasion: customText,
+              gender: s.gender,
             });
           } catch {
             res = await postStyle({
@@ -368,6 +391,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       setOccasion,
       setCustomOccasion,
       setStyle,
+      setGender,
       setLocale,
       fetchPicks,
       setActiveLook,
@@ -383,7 +407,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       garmentFor,
       hookIds: [hookA, hookB],
     };
-  }, [state, activeLocale, setOccasion, setStyle, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
+  }, [state, activeLocale, setOccasion, setStyle, setGender, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

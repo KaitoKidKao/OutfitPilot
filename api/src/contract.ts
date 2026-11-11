@@ -36,6 +36,7 @@ export const styleRequestSchema = z
     style: styleValueSchema,
     locale: z.enum(LOCALES),
     customOccasion: z.string().max(120).optional(),
+    gender: z.enum(["women", "men"]).optional(),
   })
   .strict();
 
