@@ -1127,6 +1127,20 @@ export function useCloset() {
     [items, save]
   );
 
+  function resolveMatchingBottoms(garment: ClosetItem | undefined, pool: ClosetItem[]): ClosetItem[] {
+    if (!garment || garment.category === "dress" || garment.category === "pants" || garment.category === "skirt") {
+      return [];
+    }
+    const matchingIds = garment.matchingPantsIds ?? (
+      garment.gender === "women"
+        ? ["W11_03", "W12_04", "W14_02", "W15_02", "W05-02"]
+        : ["P02", "P03", "P05", "P08"]
+    );
+    return pool.filter(
+      (it) => (it.category === "pants" || it.category === "skirt") && matchingIds.includes(it.id)
+    );
+  }
+
   const getItem = useCallback(
     (id: string): ClosetItem | undefined => {
       return items.find((it) => it.id === id);
@@ -1137,8 +1151,7 @@ export function useCloset() {
   const getMatchingPants = useCallback(
     (garmentId: string): ClosetItem[] => {
       const garment = items.find((it) => it.id === garmentId);
-      const matchingIds = garment?.matchingPantsIds ?? ["P02", "P03", "P05", "P08"];
-      return items.filter((it) => it.category === "pants" && matchingIds.includes(it.id));
+      return resolveMatchingBottoms(garment, items);
     },
     [items]
   );
@@ -1160,7 +1173,16 @@ export function getInitialClosetItem(id: string): ClosetItem | undefined {
 
 export function getInitialMatchingPants(garmentId: string): ClosetItem[] {
   const garment = INITIAL_CLOSET_ITEMS.find((it) => it.id === garmentId);
-  const matchingIds = garment?.matchingPantsIds ?? ["P02", "P03", "P05", "P08"];
-  return INITIAL_CLOSET_ITEMS.filter((it) => it.category === "pants" && matchingIds.includes(it.id));
+  if (!garment || garment.category === "dress" || garment.category === "pants" || garment.category === "skirt") {
+    return [];
+  }
+  const matchingIds = garment.matchingPantsIds ?? (
+    garment.gender === "women"
+      ? ["W11_03", "W12_04", "W14_02", "W15_02", "W05-02"]
+      : ["P02", "P03", "P05", "P08"]
+  );
+  return INITIAL_CLOSET_ITEMS.filter(
+    (it) => (it.category === "pants" || it.category === "skirt") && matchingIds.includes(it.id)
+  );
 }
 

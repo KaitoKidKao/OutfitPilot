@@ -91,7 +91,7 @@ export function LookCard({ slot, pick, active, onPress, onLayout, testID }: Look
           {matchingPants.length > 0 ? (
             <View style={styles.pantsBox}>
               <AppText variant="caption" weight={700} tone="ink">
-                {tr(locale, "Compatible in your closet:", "Quần phối hợp sẵn trong tủ đồ:")}
+                {tr(locale, "Compatible in your closet:", "Đồ phối sẵn trong tủ đồ:")}
               </AppText>
               <View style={styles.pantsRow}>
                 {matchingPants.slice(0, 2).map((p) => (
