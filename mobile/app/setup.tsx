@@ -13,7 +13,6 @@
 //                                      picks exist; giveConsent() then /fitting
 // Nothing leaves the phone on this screen: no Decart session is ever started here.
 import { useFocusEffect, useRouter } from "expo-router";
-import { useKeepAwake } from "expo-keep-awake";
 import { Camera, Play, RotateCcw, Settings } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Linking, StyleSheet, View } from "react-native";
@@ -26,6 +25,7 @@ import { AppText, Button, Screen, TopBar } from "@/components/ui";
 import { useAppStore } from "@/lib/store";
 import { colors, radii, spacing } from "@/lib/theme";
 import { useTryOnSession } from "@/lib/tryOnSession";
+import { useSafeKeepAwake } from "@/lib/useSafeKeepAwake";
 
 const CAPTION: Record<FrameState, { text: string; vi: string }> = {
   web: { text: "Web preview: the camera and AI run only in the app.", vi: "Bản xem trước web — camera và AI chỉ chạy trong app." },
@@ -47,7 +47,7 @@ const CAPTION: Record<FrameState, { text: string; vi: string }> = {
 };
 
 export default function CameraSetup() {
-  useKeepAwake();
+  useSafeKeepAwake();
   const router = useRouter();
   const { hookIds, activeLook, setActiveLook, consentGiven, giveConsent, revokeConsent, occasionId } = useAppStore();
   const tryOn = useTryOnSession({ consentGiven });
