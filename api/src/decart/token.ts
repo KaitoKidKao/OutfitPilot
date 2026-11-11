@@ -51,31 +51,48 @@ export function buildTokenRequestBody() {
 }
 
 export async function mintDecartToken(
-  apiKey: string,
+  apiKey: string | readonly string[],
   fetchImpl: typeof fetch = fetch,
 ): Promise<MintedToken> {
-  let res: Response;
-  try {
-    res = await fetchImpl(`${DECART_API_BASE}/v1/client/tokens`, {
-      method: "POST",
-      headers: { "X-API-KEY": apiKey, "content-type": "application/json" },
-      body: JSON.stringify(buildTokenRequestBody()),
-      signal: AbortSignal.timeout(DECART_TIMEOUT_MS),
-    });
-  } catch (err) {
-    const name = err instanceof Error ? err.name : "unknown";
-    throw new DecartTokenError(`Decart token request failed (${name})`, 0);
+  const keys = Array.isArray(apiKey)
+    ? apiKey.filter(Boolean)
+    : apiKey.split(/[\s,]+/).map((k) => k.trim()).filter(Boolean);
+
+  if (keys.length === 0) {
+    throw new DecartTokenError("Decart API key is missing", 0);
   }
 
-  if (!res.ok) {
-    // TODO(verify): the exact status codes and JSON error body of
-    // /v1/client/tokens are not documented in the SDK (it only reads the
-    // status and raw text). We map by status alone and never forward the
-    // upstream body to the app.
-    throw new DecartTokenError(`Decart token request returned HTTP ${res.status}`, res.status);
+  let lastError: DecartTokenError | null = null;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]!;
+    let res: Response;
+    try {
+      res = await fetchImpl(`${DECART_API_BASE}/v1/client/tokens`, {
+        method: "POST",
+        headers: { "X-API-KEY": key, "content-type": "application/json" },
+        body: JSON.stringify(buildTokenRequestBody()),
+        signal: AbortSignal.timeout(DECART_TIMEOUT_MS),
+      });
+    } catch (err) {
+      const name = err instanceof Error ? err.name : "unknown";
+      lastError = new DecartTokenError(`Decart token request failed (${name})`, 0);
+      continue;
+    }
+
+    if (!res.ok) {
+      lastError = new DecartTokenError(`Decart token request returned HTTP ${res.status}`, res.status);
+      continue;
+    }
+
+    try {
+      return parseTokenResponse(await res.json().catch(() => null));
+    } catch (err) {
+      lastError = err instanceof DecartTokenError ? err : new DecartTokenError("Failed to parse Decart token response", 0);
+      continue;
+    }
   }
 
-  return parseTokenResponse(await res.json().catch(() => null));
+  throw lastError ?? new DecartTokenError("All Decart API keys failed", 0);
 }
 
 /** Pulls { apiKey, expiresAt } out of Decart's response; rejects anything else. */
