@@ -48,11 +48,23 @@ export default function FinalLook() {
   const [sheetOpen, setSheetOpen] = useState(() => readPreviewSeed()?.openSavedSheet ?? false);
   const [closetOpen, setClosetOpen] = useState(false);
   const [recapOpen, setRecapOpen] = useState(false);
+  const hasAutoOpenedRef = useRef(false);
   const [keeping, setKeeping] = useState<Slot | null>(null);
   // "Start over" clears the store while this screen animates away; keep showing the
   // pair the user was looking at instead of flashing the empty state.
   const [frozen, setFrozen] = useState<ShownPair | null>(null);
   const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Automatically pop up Try-On Video Recap modal when arriving at Final Look with a freshly recorded session
+  useEffect(() => {
+    if (latestRecap && !hasAutoOpenedRef.current) {
+      hasAutoOpenedRef.current = true;
+      const timer = setTimeout(() => {
+        setRecapOpen(true);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [latestRecap]);
 
   const view: ShownPair = frozen ?? { picks, occasionId };
   const rawPair = view.picks;
