@@ -17,6 +17,12 @@ export const GARMENT_IDS = [
   "W05_03", "W05_04", "W06_04", "W06_05", "W07_03", "W07_04", "W07_05", "W08_02",
   "W08_03", "W08_04", "W09_02", "W09_03", "W09_04", "W09_05", "W09_06", "W10_02",
   "W10_03", "W10_04",
+  // Men's Accessories (Shoes, Watches, Belts, Bags, Hats, Eyewear, Scarf, Wallet, Bracelet)
+  "M_ACC_001", "M_ACC_002", "M_ACC_003", "M_ACC_004", "M_ACC_005", "M_ACC_006",
+  "M_ACC_007", "M_ACC_008", "M_ACC_009", "M_ACC_010", "M_ACC_011", "M_ACC_012",
+  "M_ACC_013", "M_ACC_014", "M_ACC_015", "M_ACC_016", "M_ACC_017", "M_ACC_018",
+  "M_ACC_019", "M_ACC_020", "M_ACC_021", "M_ACC_022", "M_ACC_023", "M_ACC_024",
+  "M_ACC_025", "M_ACC_026", "M_ACC_027", "M_ACC_028", "M_ACC_029", "M_ACC_030",
 ] as const;
 export type GarmentId = (typeof GARMENT_IDS)[number];
 
@@ -95,6 +101,37 @@ export const CATALOG: readonly Garment[] = [
   { id: "W10_02", name: "Tortoise Shell Sunglasses", type: "other", color: "brown", formality: 3, styles: ["beach", "holiday"], cut: "sunglasses, tortoise", gender: "women" },
   { id: "W10_03", name: "Straw Market Tote", type: "other", color: "beige", formality: 3, styles: ["beach", "holiday"], cut: "tote, market", gender: "women" },
   { id: "W10_04", name: "White Canvas Sneakers", type: "other", color: "white", formality: 2, styles: ["beach", "casual", "daily"], cut: "sneakers, canvas", gender: "women" },
+  // Men's Accessories (Shoes, Watches, Belts, Bags, Hats, Eyewear, Scarf, Wallet, Bracelet)
+  { id: "M_ACC_001", name: "White Low-Top Sneakers", type: "other", color: "white", formality: 2, styles: ["casual", "streetwear"], cut: "sneakers, low-top", gender: "men" },
+  { id: "M_ACC_002", name: "Black Sport Sneakers", type: "other", color: "black", formality: 1, styles: ["casual", "streetwear", "sport"], cut: "sneakers, athletic", gender: "men" },
+  { id: "M_ACC_003", name: "Gray Running Sneakers", type: "other", color: "gray", formality: 1, styles: ["sport", "casual"], cut: "running, cushioned", gender: "men" },
+  { id: "M_ACC_004", name: "Black Leather Loafers", type: "other", color: "black", formality: 4, styles: ["office", "smart casual", "formal"], cut: "loafers, leather", gender: "men" },
+  { id: "M_ACC_005", name: "Black Derby Shoes", type: "other", color: "black", formality: 5, styles: ["formal", "office"], cut: "derby, formal", gender: "men" },
+  { id: "M_ACC_006", name: "Black Chelsea Boots", type: "other", color: "black", formality: 3, styles: ["date", "party", "smart"], cut: "boots, chelsea", gender: "men" },
+  { id: "M_ACC_007", name: "Classic Brown Leather Watch", type: "other", color: "brown", formality: 4, styles: ["office", "smart casual"], cut: "watch, leather strap", gender: "men" },
+  { id: "M_ACC_008", name: "Minimal Black Dial Watch", type: "other", color: "black", formality: 3, styles: ["date", "office", "minimal"], cut: "watch, minimal", gender: "men" },
+  { id: "M_ACC_009", name: "Silver Chronograph Watch", type: "other", color: "silver", formality: 2, styles: ["sport", "casual", "smart"], cut: "watch, chronograph", gender: "men" },
+  { id: "M_ACC_010", "name": "Blue Diver Watch", type: "other", color: "blue", formality: 2, styles: ["casual", "travel"], cut: "watch, diver", gender: "men" },
+  { id: "M_ACC_011", name: "Black Leather Belt", type: "other", color: "black", formality: 4, styles: ["office", "formal", "smart"], cut: "belt, leather", gender: "men" },
+  { id: "M_ACC_012", name: "Brown Leather Belt", type: "other", color: "brown", formality: 3, styles: ["smart casual", "office"], cut: "belt, leather", gender: "men" },
+  { id: "M_ACC_013", name: "Navy Braided Belt", type: "other", color: "navy", formality: 2, styles: ["casual", "travel"], cut: "belt, braided", gender: "men" },
+  { id: "M_ACC_014", name: "Olive Canvas Belt", type: "other", color: "olive", formality: 1, styles: ["streetwear", "outdoor"], cut: "belt, canvas", gender: "men" },
+  { id: "M_ACC_015", name: "Black Crossbody Bag", type: "other", color: "black", formality: 2, styles: ["casual", "travel"], cut: "crossbody, leather", gender: "men" },
+  { id: "M_ACC_016", name: "Black Sling Bag", type: "other", color: "black", formality: 1, styles: ["streetwear", "travel"], cut: "sling bag, streetwear", gender: "men" },
+  { id: "M_ACC_017", name: "Brown Messenger Bag", type: "other", color: "brown", formality: 4, styles: ["office", "casual", "smart"], cut: "messenger, briefcase", gender: "men" },
+  { id: "M_ACC_018", name: "Black Travel Backpack", type: "other", color: "black", formality: 2, styles: ["daily", "travel"], cut: "backpack, travel", gender: "men" },
+  { id: "M_ACC_019", name: "Cream Canvas Tote", type: "other", color: "cream", formality: 2, styles: ["casual", "beach"], cut: "tote, canvas", gender: "men" },
+  { id: "M_ACC_020", name: "Navy Baseball Cap", type: "other", color: "navy", formality: 1, styles: ["casual", "streetwear"], cut: "cap, baseball", gender: "men" },
+  { id: "M_ACC_021", name: "Beige Bucket Hat", type: "other", color: "beige", formality: 2, styles: ["beach", "casual"], cut: "hat, bucket", gender: "men" },
+  { id: "M_ACC_022", name: "Black Knit Beanie", type: "other", color: "black", formality: 2, styles: ["winter", "streetwear"], cut: "beanie, knit", gender: "men" },
+  { id: "M_ACC_023", name: "Brown Fedora", type: "other", color: "brown", formality: 3, styles: ["date", "travel"], cut: "hat, fedora", gender: "men" },
+  { id: "M_ACC_024", name: "Black Rectangular Sunglasses", type: "other", color: "black", formality: 3, styles: ["casual", "beach"], cut: "sunglasses, rectangular", gender: "men" },
+  { id: "M_ACC_025", name: "Gold Aviator Sunglasses", type: "other", color: "gold", formality: 3, styles: ["travel", "beach"], cut: "sunglasses, aviator", gender: "men" },
+  { id: "M_ACC_026", name: "Dark Round Sunglasses", type: "other", color: "black", formality: 3, styles: ["casual", "streetwear"], cut: "sunglasses, round", gender: "men" },
+  { id: "M_ACC_027", name: "Black Optical Glasses", type: "other", color: "black", formality: 3, styles: ["daily", "office"], cut: "glasses, optical", gender: "men" },
+  { id: "M_ACC_028", name: "Gray Winter Scarf", type: "other", color: "gray", formality: 3, styles: ["winter", "casual"], cut: "scarf, winter knit", gender: "men" },
+  { id: "M_ACC_029", name: "Black Leather Wallet", type: "other", color: "black", formality: 4, styles: ["daily", "formal"], cut: "wallet, bifold", gender: "men" },
+  { id: "M_ACC_030", name: "Silver Chain Bracelet", type: "other", color: "silver", formality: 2, styles: ["streetwear", "party"], cut: "bracelet, silver chain", gender: "men" },
 ];
 
 export const OCCASION_IDS = ["job_interview", "campus_day", "coffee_date", "other"] as const;

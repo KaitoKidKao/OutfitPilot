@@ -1,0 +1,572 @@
+[
+  {
+    "id": "M_ACC_001",
+    "name": "White Low-Top Sneakers",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "shoes",
+    "color": "white",
+    "occasions": [
+      "casual",
+      "streetwear"
+    ],
+    "image": "assets/other/male/M_ACC_001_white_low_top_sneakers.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_002",
+    "name": "Black Sport Sneakers",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "shoes",
+    "color": "black",
+    "occasions": [
+      "casual",
+      "streetwear"
+    ],
+    "image": "assets/other/male/M_ACC_002_black_sport_sneakers.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_003",
+    "name": "Gray Running Sneakers",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "shoes",
+    "color": "gray",
+    "occasions": [
+      "sport",
+      "casual"
+    ],
+    "image": "assets/other/male/M_ACC_003_gray_running_sneakers.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "sport",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_004",
+    "name": "Black Leather Loafers",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "shoes",
+    "color": "black",
+    "occasions": [
+      "office",
+      "smart casual"
+    ],
+    "image": "assets/other/male/M_ACC_004_black_leather_loafers.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "office",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_005",
+    "name": "Black Derby Shoes",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "shoes",
+    "color": "black",
+    "occasions": [
+      "formal",
+      "office"
+    ],
+    "image": "assets/other/male/M_ACC_005_black_derby_shoes.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "formal",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_006",
+    "name": "Black Chelsea Boots",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "shoes",
+    "color": "black",
+    "occasions": [
+      "date",
+      "party"
+    ],
+    "image": "assets/other/male/M_ACC_006_black_chelsea_boots.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "date",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_007",
+    "name": "Classic Brown Leather Watch",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "watches",
+    "color": "brown",
+    "occasions": [
+      "office",
+      "smart casual"
+    ],
+    "image": "assets/other/male/M_ACC_007_classic_brown_leather_watch.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "office",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_008",
+    "name": "Minimal Black Dial Watch",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "watches",
+    "color": "black",
+    "occasions": [
+      "date",
+      "office"
+    ],
+    "image": "assets/other/male/M_ACC_008_minimal_black_dial_watch.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "date",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_009",
+    "name": "Silver Chronograph Watch",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "watches",
+    "color": "silver",
+    "occasions": [
+      "sport",
+      "casual"
+    ],
+    "image": "assets/other/male/M_ACC_009_silver_chronograph_watch.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "sport",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_010",
+    "name": "Blue Diver Watch",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "watches",
+    "color": "blue",
+    "occasions": [
+      "casual",
+      "travel"
+    ],
+    "image": "assets/other/male/M_ACC_010_blue_diver_watch.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_011",
+    "name": "Black Leather Belt",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "belts",
+    "color": "black",
+    "occasions": [
+      "office",
+      "formal"
+    ],
+    "image": "assets/other/male/M_ACC_011_black_leather_belt.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "office",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_012",
+    "name": "Brown Leather Belt",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "belts",
+    "color": "brown",
+    "occasions": [
+      "smart casual",
+      "office"
+    ],
+    "image": "assets/other/male/M_ACC_012_brown_leather_belt.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "smart casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_013",
+    "name": "Navy Braided Belt",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "belts",
+    "color": "navy",
+    "occasions": [
+      "casual",
+      "travel"
+    ],
+    "image": "assets/other/male/M_ACC_013_navy_braided_belt.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_014",
+    "name": "Olive Canvas Belt",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "belts",
+    "color": "olive",
+    "occasions": [
+      "streetwear",
+      "outdoor"
+    ],
+    "image": "assets/other/male/M_ACC_014_olive_canvas_belt.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "streetwear",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_015",
+    "name": "Black Crossbody Bag",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "bags",
+    "color": "black",
+    "occasions": [
+      "casual",
+      "travel"
+    ],
+    "image": "assets/other/male/M_ACC_015_black_crossbody_bag.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_016",
+    "name": "Black Sling Bag",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "bags",
+    "color": "black",
+    "occasions": [
+      "streetwear",
+      "travel"
+    ],
+    "image": "assets/other/male/M_ACC_016_black_sling_bag.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "streetwear",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_017",
+    "name": "Brown Messenger Bag",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "bags",
+    "color": "brown",
+    "occasions": [
+      "office",
+      "casual"
+    ],
+    "image": "assets/other/male/M_ACC_017_brown_messenger_bag.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "office",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_018",
+    "name": "Black Travel Backpack",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "bags",
+    "color": "black",
+    "occasions": [
+      "daily",
+      "travel"
+    ],
+    "image": "assets/other/male/M_ACC_018_black_travel_backpack.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "daily",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_019",
+    "name": "Cream Canvas Tote",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "bags",
+    "color": "cream",
+    "occasions": [
+      "casual",
+      "beach"
+    ],
+    "image": "assets/other/male/M_ACC_019_cream_canvas_tote.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_020",
+    "name": "Navy Baseball Cap",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "hats",
+    "color": "navy",
+    "occasions": [
+      "casual",
+      "streetwear"
+    ],
+    "image": "assets/other/male/M_ACC_020_navy_baseball_cap.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_021",
+    "name": "Beige Bucket Hat",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "hats",
+    "color": "beige",
+    "occasions": [
+      "beach",
+      "casual"
+    ],
+    "image": "assets/other/male/M_ACC_021_beige_bucket_hat.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "beach",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_022",
+    "name": "Black Knit Beanie",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "hats",
+    "color": "black",
+    "occasions": [
+      "winter",
+      "streetwear"
+    ],
+    "image": "assets/other/male/M_ACC_022_black_knit_beanie.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "winter",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_023",
+    "name": "Brown Fedora",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "hats",
+    "color": "brown",
+    "occasions": [
+      "date",
+      "travel"
+    ],
+    "image": "assets/other/male/M_ACC_023_brown_fedora.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "date",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_024",
+    "name": "Black Rectangular Sunglasses",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "eyewear",
+    "color": "black",
+    "occasions": [
+      "casual",
+      "beach"
+    ],
+    "image": "assets/other/male/M_ACC_024_black_rectangular_sunglasses.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_025",
+    "name": "Gold Aviator Sunglasses",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "eyewear",
+    "color": "gold",
+    "occasions": [
+      "travel",
+      "beach"
+    ],
+    "image": "assets/other/male/M_ACC_025_gold_aviator_sunglasses.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "travel",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_026",
+    "name": "Dark Round Sunglasses",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "eyewear",
+    "color": "black",
+    "occasions": [
+      "casual",
+      "streetwear"
+    ],
+    "image": "assets/other/male/M_ACC_026_dark_round_sunglasses.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "casual",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_027",
+    "name": "Black Optical Glasses",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "eyewear",
+    "color": "black",
+    "occasions": [
+      "daily",
+      "office"
+    ],
+    "image": "assets/other/male/M_ACC_027_black_optical_glasses.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "daily",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_028",
+    "name": "Gray Winter Scarf",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "scarves",
+    "color": "gray",
+    "occasions": [
+      "winter",
+      "casual"
+    ],
+    "image": "assets/other/male/M_ACC_028_gray_winter_scarf.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "winter",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_029",
+    "name": "Black Leather Wallet",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "wallets",
+    "color": "black",
+    "occasions": [
+      "daily",
+      "formal"
+    ],
+    "image": "assets/other/male/M_ACC_029_black_leather_wallet.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "daily",
+    "vton_tested": false
+  },
+  {
+    "id": "M_ACC_030",
+    "name": "Silver Chain Bracelet",
+    "gender": "men",
+    "category": "other",
+    "subCategory": "jewelry",
+    "color": "silver",
+    "occasions": [
+      "streetwear",
+      "party"
+    ],
+    "image": "assets/other/male/M_ACC_030_silver_chain_bracelet.jpg",
+    "isMock": true,
+    "virtualTryOnValidated": false,
+    "kind": "accessory",
+    "type": "other",
+    "occasion": "streetwear",
+    "vton_tested": false
+  }
+]
