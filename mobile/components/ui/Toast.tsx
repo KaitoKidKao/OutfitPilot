@@ -7,10 +7,10 @@
 import { Check, Sparkles } from "lucide-react-native";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AccessibilityInfo, StyleSheet, View } from "react-native";
-import Animated, { FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import Animated, { FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, motion, radii, shadowDock, shadows, sizes } from "@/lib/theme";
+import { colors, radii, shadowDock, shadows, sizes } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 
