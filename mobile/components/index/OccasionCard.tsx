@@ -8,7 +8,7 @@ import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useShar
 import { AppText, Touchable } from "@/components/ui";
 import { useLocale } from "@/lib/locale";
 import type { OccasionOption } from "@/lib/occasions";
-import { colors, motion, radii } from "@/lib/theme";
+import { colors, motion, radii, shadows } from "@/lib/theme";
 
 export interface OccasionCardProps {
   option: OccasionOption;
@@ -55,8 +55,9 @@ export function OccasionCard({ option, selected, onPress, disabled = false, test
         styles.card,
         {
           borderColor: selected ? colors.ink : colors.line,
-          borderWidth: selected ? 1.5 : 1,
+          borderWidth: selected ? 2 : 1,
         },
+        selected ? shadows.lift : null,
       ]}
     >
       <View style={styles.topRow}>

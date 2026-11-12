@@ -21,7 +21,7 @@ import { tr, useLocale } from "@/lib/locale";
 import { SOURCE_LABEL } from "@/lib/occasions";
 import { reasonWithoutName } from "@/lib/reasonText";
 import type { Slot } from "@/lib/store";
-import { colors, motion, radii, spacing } from "@/lib/theme";
+import { colors, motion, radii, shadows, spacing } from "@/lib/theme";
 
 export interface LookColumnProps {
   slot: Slot;
@@ -34,7 +34,7 @@ export interface LookColumnProps {
   showBadge?: boolean;
 }
 
-const BADGE = 32;
+const BADGE = 36;
 const ROW_PHOTO_WIDTH = 110;
 
 export function LookColumn({ slot, pick, source, saved, layout = "column", showBadge = true }: LookColumnProps) {
@@ -68,7 +68,7 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
       </GarmentImage>
 
       <View style={styles.text}>
-        <AppText variant="section" numberOfLines={1} accessibilityRole="header" accessibilityLabel={`Look ${letter}, ${garment.name}`}>
+        <AppText variant="section" weight={800} numberOfLines={1} accessibilityRole="header" accessibilityLabel={`Look ${letter}, ${garment.name}`}>
           {garment.name}
         </AppText>
 
@@ -186,9 +186,10 @@ const styles = StyleSheet.create({
     bottom: 8,
     width: BADGE,
     height: BADGE,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.lift,
   },
   reasonBlock: {
     gap: 2,
@@ -200,11 +201,13 @@ const styles = StyleSheet.create({
   priceTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.surface,
+    gap: 5,
+    backgroundColor: colors.surfaceDeep,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
     alignSelf: "flex-start",
     maxWidth: "100%",
   },
