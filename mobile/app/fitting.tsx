@@ -17,6 +17,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { AccessibilityInfo, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 
 import { FittingTopBar } from "@/components/fitting/FittingTopBar";
 import { isCapNotice } from "@/components/fitting/status";
@@ -145,6 +146,50 @@ export default function LiveFittingRoom() {
   const wasActiveRef = useRef(false);
   const lastSecondsRef = useRef(tryOn.maxSeconds);
 
+  const baselinePhotoRef = useRef<string | null>(null);
+  const aiPhotoRef = useRef<string | null>(null);
+  const aiVideoRef = useRef<string | null>(null);
+
+  const handleSnapBaseline = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets && result.assets[0]) {
+        baselinePhotoRef.current = result.assets[0].uri;
+        toast.show(
+          tr(
+            locale,
+            "Captured baseline photo for Before comparison!",
+            "Đã chụp ảnh dáng chuẩn Before!"
+          )
+        );
+      }
+    } catch (err) {
+      console.warn("Snap baseline failed", err);
+    }
+  }, [locale, toast]);
+
+  const handleSnapAiLook = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets && result.assets[0]) {
+        aiPhotoRef.current = result.assets[0].uri;
+        toast.show(
+          tr(locale, "Saved AI look snapshot!", "Đã lưu khoảnh khắc đồ AI!")
+        );
+      }
+    } catch (err) {
+      console.warn("Snap AI look failed", err);
+    }
+  }, [locale, toast]);
+
   useEffect(() => {
     if (tryOn.state === "live" && !aiSessionStartRef.current) {
       aiSessionStartRef.current = Date.now();
@@ -163,6 +208,9 @@ export default function LiveFittingRoom() {
       slot: activeLookRef.current,
       durationSeconds: duration,
       recordedAt: new Date().toISOString(),
+      originalPhotoUri: baselinePhotoRef.current,
+      aiPhotoUri: aiPhotoRef.current,
+      aiVideoUri: aiVideoRef.current,
     };
     setLatestRecap(recap);
   }, [activeId, setLatestRecap]);
@@ -520,6 +568,12 @@ export default function LiveFittingRoom() {
                 canPeekOriginal={tryOn.showingAi}
                 peekingOriginal={peekingOriginal}
                 onToggleOriginal={() => setPeekingOriginal((v) => !v)}
+                onSnapPhoto={tryOn.aiLive ? handleSnapAiLook : handleSnapBaseline}
+                snapLabel={
+                  tryOn.aiLive
+                    ? tr(locale, "Capture AI Look", "Chụp khoảnh khắc AI")
+                    : tr(locale, "Capture Baseline", "Chụp dáng chuẩn Before")
+                }
                 onFinish={handleFinish}
               />
               <View pointerEvents="box-none" style={[styles.middle, { paddingBottom: bottomReserve }]}>

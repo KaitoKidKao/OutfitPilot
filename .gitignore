@@ -29,3 +29,6 @@ mobile/ios/
 .playwright-mcp/
 sh.exe.stackdump
 .DS_Store
+
+# Launch video project (Remotion): kept local, not committed
+/video/

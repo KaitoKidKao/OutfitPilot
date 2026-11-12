@@ -39,6 +39,7 @@ export interface TryOnRecap {
   durationSeconds: number;
   recordedAt: string;
   aiVideoUri?: string | null;
+  aiPhotoUri?: string | null;
   originalPhotoUri?: string | null;
 }
 

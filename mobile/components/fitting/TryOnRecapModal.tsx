@@ -1,11 +1,12 @@
-// TryOnRecapModal: Xem lại clip video 30 giây sau khi kết thúc thử đồ
-// Tốn 0 Token Decart, hỗ trợ Before/After so sánh và Quyết định Lưu video vào máy hoặc Chia sẻ.
+// TryOnRecapModal: Xem lại clip video sau khi kết thúc thử đồ
+// Tốn 0 Token Decart, hỗ trợ Before/After so sánh thực tế và Lưu video/ảnh vào Thư viện máy.
 
 import {
   Bookmark,
   Check,
   Download,
   Film,
+  ImagePlus,
   Play,
   Share2,
   User,
@@ -33,6 +34,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as FileSystem from "expo-file-system/legacy";
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
+import { useVideoPlayer, VideoView } from "expo-video";
 
 import { AppText, IconButton, Touchable, useToast } from "@/components/ui";
 import { GarmentImage } from "@/components/ui/GarmentImage";
@@ -69,6 +73,47 @@ export function TryOnRecapModal({
   const [savedToDevice, setSavedToDevice] = useState(false);
   const saveSuccessScale = useSharedValue(1);
 
+  const [localVideoUri, setLocalVideoUri] = useState<string | null>(recap?.aiVideoUri ?? null);
+  const [localAiPhotoUri, setLocalAiPhotoUri] = useState<string | null>(recap?.aiPhotoUri ?? null);
+  const [localOriginalPhotoUri, setLocalOriginalPhotoUri] = useState<string | null>(recap?.originalPhotoUri ?? null);
+
+  useEffect(() => {
+    setLocalVideoUri(recap?.aiVideoUri ?? null);
+    setLocalAiPhotoUri(recap?.aiPhotoUri ?? null);
+    setLocalOriginalPhotoUri(recap?.originalPhotoUri ?? null);
+  }, [recap]);
+
+  const player = useVideoPlayer(localVideoUri, (p) => {
+    p.loop = true;
+    if (isPlaying) {
+      p.play();
+    }
+  });
+
+  useEffect(() => {
+    if (localVideoUri && player) {
+      try {
+        player.replace(localVideoUri);
+        if (isPlaying) player.play();
+      } catch (err) {
+        console.warn("Player replace failed", err);
+      }
+    }
+  }, [localVideoUri, player, isPlaying]);
+
+  useEffect(() => {
+    if (!player) return;
+    try {
+      if (isPlaying) {
+        player.play();
+      } else {
+        player.pause();
+      }
+    } catch {
+      // ignore
+    }
+  }, [isPlaying, player]);
+
   const saveSuccessStyle = useAnimatedStyle(() => ({
     transform: [{ scale: saveSuccessScale.value }],
   }));
@@ -91,6 +136,11 @@ export function TryOnRecapModal({
   const handleClose = () => {
     setProgress(0);
     setIsPlaying(false);
+    try {
+      player.pause();
+    } catch {
+      // ignore
+    }
     setSavedToDevice(false);
     setSaving(false);
     setSharing(false);
@@ -192,12 +242,57 @@ export function TryOnRecapModal({
     setIsPlaying((prev) => !prev);
   };
 
+  const handlePickMedia = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        allowsEditing: false,
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.type === "video") {
+          setLocalVideoUri(asset.uri);
+          setMode("after");
+          setIsPlaying(true);
+          toast.show(tr(locale, "Loaded try-on video clip!", "Đã tải video thử đồ!"));
+        } else {
+          if (mode === "before") {
+            setLocalOriginalPhotoUri(asset.uri);
+            toast.show(tr(locale, "Loaded Before photo!", "Đã tải ảnh Before thực tế!"));
+          } else {
+            setLocalAiPhotoUri(asset.uri);
+            toast.show(tr(locale, "Loaded After photo!", "Đã tải ảnh After!"));
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Pick media failed", err);
+      toast.show(tr(locale, "Could not open gallery.", "Không thể mở bộ sưu tập."));
+    }
+  };
+
   const handleSaveToDevice = async () => {
     if (saving || savedToDevice) return;
     setSaving(true);
     try {
+      let savedToGallery = false;
+      const mediaUri = localVideoUri ?? localAiPhotoUri ?? localOriginalPhotoUri;
+
+      if (mediaUri && Platform.OS !== "web") {
+        try {
+          const { status } = await MediaLibrary.requestPermissionsAsync();
+          if (status === "granted") {
+            await MediaLibrary.createAssetAsync(mediaUri);
+            savedToGallery = true;
+          }
+        } catch (mediaErr) {
+          console.warn("Save to MediaLibrary failed", mediaErr);
+        }
+      }
+
       if (Platform.OS !== "web" && FileSystem.documentDirectory) {
-        const fileName = `outfitpilot_tryon_${recap.garmentId}_30s_${Date.now()}.json`;
+        const fileName = `outfitpilot_tryon_${recap.garmentId}_${Date.now()}.json`;
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(
           fileUri,
@@ -206,13 +301,15 @@ export function TryOnRecapModal({
             garmentName: recap.garmentName,
             durationSeconds: duration,
             recordedAt: recap.recordedAt,
-            videoUri: recap.aiVideoUri ?? null,
-            originalPhotoUri: recap.originalPhotoUri ?? null,
+            videoUri: localVideoUri ?? null,
+            aiPhotoUri: localAiPhotoUri ?? null,
+            originalPhotoUri: localOriginalPhotoUri ?? null,
           })
         );
       }
+
       // Give a tiny moment for realistic UX feel
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setSavedToDevice(true);
       if (!reduced) {
         saveSuccessScale.value = withSequence(
@@ -222,11 +319,17 @@ export function TryOnRecapModal({
         );
       }
       toast.show(
-        tr(
-          locale,
-          "Saved try-on video to your device!",
-          "Đã lưu video thử đồ vào máy!"
-        )
+        savedToGallery
+          ? tr(
+              locale,
+              "Saved try-on media to your Photos Gallery!",
+              "Đã lưu clip/ảnh thử đồ vào Thư viện ảnh của bạn!"
+            )
+          : tr(
+              locale,
+              "Saved try-on recap to your device!",
+              "Đã lưu thông tin thử đồ vào máy!"
+            )
       );
     } catch (e) {
       console.warn("Save video failed", e);
@@ -314,16 +417,35 @@ export function TryOnRecapModal({
               style={[styles.afterStage, afterStyle]}
               pointerEvents={showingOriginal ? "none" : "auto"}
             >
-              <GarmentImage
-                garmentId={recap.garmentId}
-                width="100%"
-                aspectRatio={4 / 5}
-                radius={radii.xl}
-                showSampleTag={false}
-              />
+              {localVideoUri ? (
+                <VideoView
+                  player={player}
+                  style={styles.stageVideo}
+                  contentFit="cover"
+                  nativeControls={false}
+                />
+              ) : localAiPhotoUri ? (
+                <Image
+                  source={{ uri: localAiPhotoUri }}
+                  style={styles.stageImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <GarmentImage
+                  garmentId={recap.garmentId}
+                  width="100%"
+                  aspectRatio={4 / 5}
+                  radius={radii.xl}
+                  showSampleTag={false}
+                />
+              )}
               <View style={styles.afterBadge}>
                 <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "AFTER · AI STYLED", "AFTER · ĐÃ MẶC AI")}
+                  {localVideoUri
+                    ? tr(locale, "AFTER · AI VIDEO", "AFTER · VIDEO AI")
+                    : localAiPhotoUri
+                      ? tr(locale, "AFTER · AI PHOTO", "AFTER · ẢNH AI")
+                      : tr(locale, "AFTER · AI STYLED", "AFTER · ĐÃ MẶC AI")}
                 </AppText>
               </View>
             </Animated.View>
@@ -333,9 +455,9 @@ export function TryOnRecapModal({
               style={[StyleSheet.absoluteFill, beforeStyle]}
               pointerEvents={showingOriginal ? "auto" : "none"}
             >
-              {recap.originalPhotoUri ? (
+              {localOriginalPhotoUri ? (
                 <Image
-                  source={{ uri: recap.originalPhotoUri }}
+                  source={{ uri: localOriginalPhotoUri }}
                   style={styles.stageImage}
                   resizeMode="cover"
                 />
@@ -451,6 +573,18 @@ export function TryOnRecapModal({
                 "Bạn có muốn lưu video vừa thử vào máy không?"
               )}
             </AppText>
+
+            <Touchable
+              onPress={handlePickMedia}
+              style={styles.pickMediaBtn}
+              accessibilityRole="button"
+              accessibilityLabel={tr(locale, "Pick video or photo from device", "Chọn clip hoặc ảnh từ máy")}
+            >
+              <ImagePlus size={14} color={colors.ink} strokeWidth={2.2} />
+              <AppText variant="caption" weight={700} tone="ink">
+                {tr(locale, "Pick try-on clip / photo from phone", "Chọn video / ảnh thử đồ từ máy")}
+              </AppText>
+            </Touchable>
 
             <View style={styles.actionsRow}>
               {/* Primary: Save Video to Device */}
@@ -711,6 +845,23 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 6,
     paddingHorizontal: 8,
+  },
+  stageVideo: {
+    width: "100%",
+    aspectRatio: 4 / 5,
+    borderRadius: radii.xl,
+    backgroundColor: colors.ink,
+  },
+  pickMediaBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
   stageImage: {
     width: "100%",
