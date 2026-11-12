@@ -72,30 +72,34 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
           {garment.name}
         </AppText>
 
-        <View style={styles.reasonBlock}>
-          <AppText variant="bodySm" numberOfLines={expanded ? undefined : 2}>
-            {reason}
-          </AppText>
-          {reason.length > 55 ? (
-            <Touchable
-              onPress={() => setExpanded((prev) => !prev)}
-              style={styles.moreBtn}
-              accessibilityRole="button"
-              accessibilityLabel={expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
-            >
-              <AppText variant="tag" weight={800} tone="limeInk">
-                {expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
-              </AppText>
-            </Touchable>
-          ) : null}
-        </View>
+        {reason ? (
+          <View style={styles.reasonBlock}>
+            <AppText variant="bodySm" numberOfLines={expanded ? undefined : 2}>
+              {reason}
+            </AppText>
+            {reason.length > 55 ? (
+              <Touchable
+                onPress={() => setExpanded((prev) => !prev)}
+                style={styles.moreBtn}
+                accessibilityRole="button"
+                accessibilityLabel={expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
+              >
+                <AppText variant="tag" weight={800} tone="limeInk">
+                  {expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
+                </AppText>
+              </Touchable>
+            ) : null}
+          </View>
+        ) : null}
 
-        <AppText variant="bodySm" tone="muted">
-          <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
-            Pair with:{" "}
+        {pick.pairWith ? (
+          <AppText variant="bodySm" tone="muted">
+            <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
+              Pair with:{" "}
+            </AppText>
+            {pick.pairWith}
           </AppText>
-          {pick.pairWith}
-        </AppText>
+        ) : null}
 
         {closetItem?.price ? (
           <View style={styles.priceTag}>

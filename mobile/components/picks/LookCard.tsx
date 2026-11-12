@@ -123,7 +123,7 @@ export function LookCard({ slot, pick, active, onPress, onTrySingle, onLayout, t
               pressedBg={active ? colors.limePress : colors.surfaceDeep}
               style={styles.singleTryBtn}
               accessibilityRole={Platform.OS === "web" ? undefined : "button"}
-              accessibilityLabel={`Thử riêng Look ${slot.toUpperCase()}`}
+              accessibilityLabel={tr(locale, `Try Look ${slot.toUpperCase()} only`, `Thử riêng Look ${slot.toUpperCase()}`)}
             >
               <Camera size={14} color={colors.ink} strokeWidth={2.4} />
               <AppText variant="caption" weight={800} tone="ink">

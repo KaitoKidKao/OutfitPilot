@@ -63,6 +63,7 @@ export function TryOnRecapModal({
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [savedToDevice, setSavedToDevice] = useState(false);
   const [segmentedWidth, setSegmentedWidth] = useState(0);
 
@@ -82,9 +83,11 @@ export function TryOnRecapModal({
 
   const handleClose = () => {
     setProgress(0);
-    setIsPlaying(true);
+    setIsPlaying(false);
     setSavedToDevice(false);
     setSaving(false);
+    setSharing(false);
+    setHoldingBefore(false);
     setMode("after");
     onClose();
   };
@@ -212,12 +215,11 @@ export function TryOnRecapModal({
       );
     } catch (e) {
       console.warn("Save video failed", e);
-      setSavedToDevice(true);
       toast.show(
         tr(
           locale,
-          "Saved 30s try-on video to your device!",
-          "Đã lưu clip video 30s thử đồ vào máy của bạn!"
+          "Could not save video to device. Please try again.",
+          "Không thể lưu clip video vào máy. Vui lòng thử lại."
         )
       );
     } finally {
@@ -226,6 +228,8 @@ export function TryOnRecapModal({
   };
 
   const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
     try {
       await Share.share({
         title: "OutfitPilot 30s Try-On Recap",
@@ -236,6 +240,8 @@ export function TryOnRecapModal({
       });
     } catch (e) {
       console.warn("Share failed", e);
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -282,7 +288,11 @@ export function TryOnRecapModal({
             onPressOut={() => setHoldingBefore(false)}
             style={styles.videoStage}
             accessibilityRole="button"
-            accessibilityLabel={isPlaying ? "Tạm dừng video" : "Tiếp tục phát video"}
+            accessibilityLabel={tr(
+              locale,
+              isPlaying ? "Pause video" : "Resume video",
+              isPlaying ? "Tạm dừng video" : "Tiếp tục phát video"
+            )}
           >
             {/* After layer */}
             <Animated.View
@@ -436,7 +446,7 @@ export function TryOnRecapModal({
                 pressScale={motion.pressScale}
                 style={styles.saveDeviceBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Lưu video 30s vào máy"
+                accessibilityLabel={tr(locale, "Save video to phone", "Lưu video vào máy")}
               >
                 {saving ? (
                   <ActivityIndicator size="small" color={colors.ink} />
@@ -466,7 +476,7 @@ export function TryOnRecapModal({
                 pressScale={motion.pressScale}
                 style={styles.shareBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Chia sẻ video"
+                accessibilityLabel={tr(locale, "Share video", "Chia sẻ video")}
               >
                 <Share2 size={16} color={colors.ink} strokeWidth={2.2} />
                 <AppText variant="label" weight={700} tone="ink">
@@ -485,7 +495,7 @@ export function TryOnRecapModal({
                   }}
                   style={styles.secondaryBtn}
                   accessibilityRole="button"
-                  accessibilityLabel="Giữ món đồ này vào tủ đồ"
+                  accessibilityLabel={tr(locale, "Keep this look in wardrobe", "Giữ món đồ này vào tủ đồ")}
                 >
                   <Bookmark size={13} color={colors.ink} strokeWidth={2} />
                   <AppText variant="caption" weight={700} tone="ink">
@@ -498,7 +508,7 @@ export function TryOnRecapModal({
                 onPress={handleClose}
                 style={styles.secondaryBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Đóng và tiếp tục"
+                accessibilityLabel={tr(locale, "Close and continue", "Đóng và xem tiếp")}
               >
                 <AppText variant="caption" weight={600} tone="muted">
                   {tr(locale, "Don't save, continue", "Không lưu, xem tiếp")}

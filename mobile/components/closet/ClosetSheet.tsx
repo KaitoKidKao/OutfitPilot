@@ -676,6 +676,8 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                             text: tr(locale, "Delete", "Xoá"),
                             style: "destructive",
                             onPress: () => {
+                              if (hookIds[0] === activeItem.id) assignHook("a", null);
+                              if (hookIds[1] === activeItem.id) assignHook("b", null);
                               deleteItem(activeItem.id);
                               setActiveItem(null);
                             },

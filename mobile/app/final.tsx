@@ -222,7 +222,7 @@ export default function FinalLook() {
             <View style={styles.topRight}>
               <Touchable
                 accessibilityRole="button"
-                accessibilityLabel="Mở tủ đồ cá nhân"
+                accessibilityLabel={tr(locale, "Open personal closet", "Mở tủ đồ cá nhân")}
                 onPress={() => setClosetOpen(true)}
                 bg={colors.surface}
                 pressedBg={colors.surfaceDeep}

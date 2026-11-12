@@ -70,16 +70,21 @@ export default function AiPicks() {
 
   // Preload garment base64 assets early while the user reads the picks so the Fitting Room starts faster.
   useEffect(() => {
-    if (!picks) return;
-    preloadGarmentPhotos([picks.recommendations[0].garmentId, picks.recommendations[1].garmentId]);
+    if (!picks?.recommendations) return;
+    const ids = picks.recommendations.map((r) => r.garmentId).filter(Boolean);
+    if (ids.length > 0) preloadGarmentPhotos(ids);
   }, [picks]);
 
   // Tell screen-reader users when the pair arrives after a wait.
   const prevStatus = useRef(picksStatus);
   useEffect(() => {
-    if (prevStatus.current === "loading" && picksStatus === "ready" && picks) {
+    if (prevStatus.current === "loading" && picksStatus === "ready" && picks?.recommendations?.length) {
       const [a, b] = picks.recommendations;
-      AccessibilityInfo.announceForAccessibility(`Two looks ready: ${getGarment(a.garmentId).name} and ${getGarment(b.garmentId).name}.`);
+      if (a && b) {
+        AccessibilityInfo.announceForAccessibility(`Two looks ready: ${getGarment(a.garmentId).name} and ${getGarment(b.garmentId).name}.`);
+      } else if (a) {
+        AccessibilityInfo.announceForAccessibility(`Look ready: ${getGarment(a.garmentId).name}.`);
+      }
     }
     prevStatus.current = picksStatus;
   }, [picksStatus, picks]);
@@ -179,7 +184,7 @@ export default function AiPicks() {
           right={
             <Touchable
               accessibilityRole="button"
-              accessibilityLabel="Mở tủ đồ cá nhân"
+              accessibilityLabel={tr(locale, "Open personal closet", "Mở tủ đồ cá nhân")}
               onPress={() => setClosetOpen(true)}
               bg={colors.surface}
               pressedBg={colors.surfaceDeep}

@@ -10,6 +10,7 @@ import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { TryOnVideo } from "@/components/TryOnVideo";
 import { AppText, Button, StatusPill } from "@/components/ui";
+import { tr, useLocale } from "@/lib/locale";
 import type { TryOnStream } from "@/lib/tryOnTypes";
 import { colors, radii } from "@/lib/theme";
 
@@ -50,6 +51,7 @@ export interface CameraFrameProps {
 }
 
 export function CameraFrame({ state, stream, mirror, errorDetail, onRetry, aligned: externalAligned, onToggleAligned }: CameraFrameProps) {
+  const locale = useLocale();
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [internalAligned, setInternalAligned] = useState(false);
   const message = state === "denied" || state === "error";
@@ -93,7 +95,11 @@ export function CameraFrame({ state, stream, mirror, errorDetail, onRetry, align
               onToggleAligned?.();
             }}
             accessibilityRole="button"
-            accessibilityLabel={isAligned ? "Khung đã chuẩn xanh, chạm để chỉnh lại" : "Chạm để xác nhận đã đứng vào khung"}
+            accessibilityLabel={
+              isAligned
+                ? tr(locale, "Framing aligned in green, tap to toggle", "Khung đã chuẩn xanh, chạm để chỉnh lại")
+                : tr(locale, "Tap to confirm framed in outline", "Chạm để xác nhận đã đứng vào khung")
+            }
           >
             <BodyGuide aligned={isAligned} />
           </Pressable>
