@@ -998,7 +998,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     price: "1.290.000₫",
     shop: "Levi's 501 Original",
     image: require("../assets/garments/batch1/M15_03_dark_indigo_jeans.jpg"),
-    fitAdvice: "Jeans xanh chàm ống đứng kinh điển, món đồ không thể thiếu trong tủ đồ.",
+    fitAdvice: "Jeans xanh chàm ống đứng kinh điển, bộ đồ không thể thiếu trong tủ đồ.",
   },
 
   // 26 Phụ kiện & Đồ khác (Giày, Mũ, Túi xách, Kính, Trang sức - Category "other")

@@ -9,7 +9,15 @@
 import { Check, Tag } from "lucide-react-native";
 import { useEffect, useState, type ReactNode } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
@@ -46,6 +54,22 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
   const row = layout === "row";
   const reason = reasonWithoutName(pick.reason, garment.name);
   const [expanded, setExpanded] = useState(false);
+  const reduced = useReducedMotion();
+  const badgeScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (saved && !reduced) {
+      badgeScale.value = withSequence(
+        withTiming(0.8, { duration: 90 }),
+        withSpring(1.25, { damping: 9, stiffness: 220 }),
+        withSpring(1, { damping: 12 })
+      );
+    }
+  }, [saved, reduced, badgeScale]);
+
+  const badgeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
+  }));
 
   return (
     <Rise delay={slot === "a" ? 0 : 70} style={row ? styles.row : styles.column}>
@@ -55,15 +79,19 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
         accessibilityLabel={showBadge ? `Look ${letter}: ${garment.name}${garment.sample ? ", sample photo" : ""}` : `${garment.name}${garment.sample ? ", sample photo" : ""}`}
       >
         {showBadge ? (
-          <View
-            style={[styles.badge, { backgroundColor: saved ? colors.lime : colors.ink }]}
+          <Animated.View
+            style={[
+              styles.badge,
+              { backgroundColor: saved ? colors.lime : colors.ink },
+              badgeAnimatedStyle,
+            ]}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
             <AppText variant="section" weight={800} tone={saved ? "ink" : "paper"} maxFontSizeMultiplier={1.15}>
               {letter}
             </AppText>
-          </View>
+          </Animated.View>
         ) : null}
       </GarmentImage>
 

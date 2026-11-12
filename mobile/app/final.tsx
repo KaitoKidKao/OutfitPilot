@@ -137,7 +137,10 @@ export default function FinalLook() {
       return;
     }
     const name = getGarment(look.garmentId).name;
-    toast.show(tr(locale, `Saved Look ${letter}`, `Đã lưu Look ${letter}`), { announcement: `Saved Look ${letter}, ${name}, on this phone` });
+    toast.show(
+      tr(locale, `Saved Look ${letter} to your wardrobe!`, `Đã lưu bộ đồ ${letter} vào máy!`),
+      { announcement: `Saved Look ${letter}, ${name}, on this phone` }
+    );
     setKeeping(slot);
     sheetTimer.current = setTimeout(() => {
       sheetTimer.current = null;
@@ -262,14 +265,14 @@ export default function FinalLook() {
               pressedBg={colors.surfaceDeep}
               style={styles.recapBanner}
               accessibilityRole="button"
-              accessibilityLabel={tr(locale, "Play 30s try-on video", "Phát video 30s thử đồ")}
+              accessibilityLabel={tr(locale, "Play try-on video", "Phát video thử đồ")}
             >
               <View style={styles.recapBannerLeft}>
                 <View style={styles.recapPlayPill}>
                   <Play size={10} color={colors.ink} strokeWidth={2.8} />
                 </View>
                 <AppText variant="caption" weight={800} tone="ink">
-                  {tr(locale, "30s Video", "Video 30s")}
+                  {tr(locale, "Try-on Video", "Video thử đồ")}
                 </AppText>
               </View>
               <AppText variant="tag" weight={800} tone="limeInk">
@@ -282,7 +285,7 @@ export default function FinalLook() {
             <AppText
               variant="title"
               weight={800}
-              helper={isSingleLook ? "Bạn thấy món đồ này thế nào?" : "Bạn giữ món nào?"}
+              helper={isSingleLook ? "Bạn thấy bộ đồ này thế nào?" : "Bạn giữ bộ đồ nào?"}
             >
               {isSingleLook ? "How does it look on you?" : "Which one do you keep?"}
             </AppText>
@@ -292,10 +295,10 @@ export default function FinalLook() {
                 tone="muted"
                 helper={
                   isSingleLook
-                    ? "Nhấn nút 'Giữ' bên dưới để lưu lại món này vào máy."
+                    ? "Nhấn nút 'Giữ' bên dưới để lưu lại bộ đồ này vào máy."
                     : occasion
-                      ? `Cho dịp ${occasion.labelVi.toLowerCase()}. Giữ một món ở dưới để lưu vào máy.`
-                      : "Giữ một món ở dưới để lưu vào máy."
+                      ? `Cho dịp ${occasion.labelVi.toLowerCase()}. Giữ một bộ đồ ở dưới để lưu vào máy.`
+                      : "Giữ một bộ đồ ở dưới để lưu vào máy."
                 }
               >
                 {isSingleLook

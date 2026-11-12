@@ -530,7 +530,7 @@ function SingleKeepButton({
   return (
     <Touchable
       accessibilityRole="button"
-      accessibilityLabel={tr(locale, "Keep this look", "Lưu món đồ vào máy")}
+      accessibilityLabel={tr(locale, "Keep this look", "Lưu bộ đồ vào máy")}
       disabled={disabled}
       onPress={() => onKeep?.(slot)}
       bg={colors.lime}
@@ -552,7 +552,7 @@ function SingleKeepButton({
             numberOfLines={1}
             maxFontSizeMultiplier={DOCK_TEXT_SCALE}
           >
-            {tr(locale, "Keep this look", "Lưu món đồ")}
+            {tr(locale, "Keep this look", "Lưu bộ đồ")}
           </AppText>
           <AppText
             variant="caption"

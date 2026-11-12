@@ -207,10 +207,10 @@ export default function CameraSetup() {
 
         {!hasPicks ? (
           <View style={styles.noPicks}>
-            <AppText variant="bodyStrong" helper="Chưa có món nào trên dock">
+            <AppText variant="bodyStrong" helper="Chưa có bộ đồ nào trên dock">
               No looks on the dock yet
             </AppText>
-            <AppText variant="bodySm" helper="Chọn dịp hoặc chọn món từ tủ đồ để thử.">
+            <AppText variant="bodySm" helper="Chọn dịp hoặc chọn bộ đồ từ tủ đồ để thử.">
               Choose an occasion first or pick a piece from your wardrobe to try on.
             </AppText>
             <Button

@@ -391,9 +391,9 @@ export default function LiveFittingRoom() {
           <ActionPanel
             onLayout={onPanelLayout}
             title="No looks on the hooks yet"
-            helper="Chưa có món nào trên móc"
+            helper="Chưa có bộ đồ nào trên móc"
             body="Choose an occasion first or pick a piece from your closet to try here."
-            bodyVi="Hãy chọn dịp hoặc chọn món từ tủ đồ để thử tại đây."
+            bodyVi="Hãy chọn dịp hoặc chọn bộ đồ từ tủ đồ để thử tại đây."
             primary={{ label: "Choose an occasion", labelVi: "Chọn dịp", icon: ArrowRight, onPress: () => router.replace("/") }}
           />
         );

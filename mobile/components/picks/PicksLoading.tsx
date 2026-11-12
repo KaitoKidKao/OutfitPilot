@@ -26,9 +26,9 @@ export function PicksLoading() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.status} accessible accessibilityLiveRegion="polite" accessibilityRole="progressbar" accessibilityLabel="Choosing your two looks. Đang chọn hai món cho bạn.">
+      <View style={styles.status} accessible accessibilityLiveRegion="polite" accessibilityRole="progressbar" accessibilityLabel="Choosing your two looks. Đang chọn hai bộ đồ cho bạn.">
         <ActivityIndicator color={colors.ink} />
-        <AppText variant="bodyStrong" helper="Đang chọn hai món cho bạn…" containerStyle={styles.flex}>
+        <AppText variant="bodyStrong" helper="Đang chọn hai bộ đồ cho bạn…" containerStyle={styles.flex}>
           Choosing your two looks…
         </AppText>
       </View>

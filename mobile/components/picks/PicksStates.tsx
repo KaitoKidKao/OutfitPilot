@@ -17,7 +17,7 @@ export function PicksEmpty({ onChooseOccasion }: { onChooseOccasion: () => void 
       <AppText variant="title" align="center" helper="Dock của bạn đang trống" containerStyle={styles.center}>
         Nothing on your hooks yet
       </AppText>
-      <AppText variant="body" tone="muted" align="center" helper="Chọn dịp bạn sắp đi, chúng tôi sẽ treo hai món lên dock." containerStyle={styles.center}>
+      <AppText variant="body" tone="muted" align="center" helper="Chọn dịp bạn sắp đi, chúng tôi sẽ treo hai bộ đồ lên dock." containerStyle={styles.center}>
         Pick where you&apos;re going and we&apos;ll hang two looks on your dock.
       </AppText>
       <Button label="Choose an occasion" labelVi="Chọn dịp" variant="next" icon={ArrowLeft} onPress={onChooseOccasion} style={styles.cta} />

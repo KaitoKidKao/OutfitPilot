@@ -13,9 +13,9 @@ interface Tip {
 }
 
 const TIPS: readonly Tip[] = [
-  { icon: Smartphone, title: "Prop it at chest height", titleVi: "Dựng máy ngang ngực, trên giá hoặc kệ chắc chắn" },
-  { icon: MoveHorizontal, title: "Step back about 1.5 m", titleVi: "Lùi lại khoảng 1,5 m, đến khi thấy từ đầu tới hông" },
-  { icon: SunMedium, title: "Face the light", titleVi: "Đứng đối diện cửa sổ hoặc đèn, tránh ngược sáng" },
+  { icon: Smartphone, title: "Prop it at chest height", titleVi: "Đặt máy cao ngang ngực chắc chắn" },
+  { icon: MoveHorizontal, title: "Step back about 1.5 m", titleVi: "Lùi 1,5 m lấy từ đầu tới hông" },
+  { icon: SunMedium, title: "Face the light", titleVi: "Đứng hướng sáng, tránh ngược sáng" },
 ];
 
 export function SetupTips() {

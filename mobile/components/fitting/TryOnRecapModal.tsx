@@ -27,6 +27,8 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSequence,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -65,6 +67,11 @@ export function TryOnRecapModal({
   const [saving, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [savedToDevice, setSavedToDevice] = useState(false);
+  const saveSuccessScale = useSharedValue(1);
+
+  const saveSuccessStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: saveSuccessScale.value }],
+  }));
   const [segmentedWidth, setSegmentedWidth] = useState(0);
 
   const duration = recap?.durationSeconds ? Math.max(recap.durationSeconds, RECAP_DURATION_SEC) : RECAP_DURATION_SEC;
@@ -88,6 +95,7 @@ export function TryOnRecapModal({
     setSaving(false);
     setSharing(false);
     setHoldingBefore(false);
+    saveSuccessScale.value = 1;
     setMode("after");
     onClose();
   };
@@ -206,11 +214,18 @@ export function TryOnRecapModal({
       // Give a tiny moment for realistic UX feel
       await new Promise((resolve) => setTimeout(resolve, 600));
       setSavedToDevice(true);
+      if (!reduced) {
+        saveSuccessScale.value = withSequence(
+          withTiming(0.85, { duration: 80 }),
+          withSpring(1.22, { damping: 9, stiffness: 220 }),
+          withSpring(1, { damping: 12 })
+        );
+      }
       toast.show(
         tr(
           locale,
-          "Saved 30s try-on video to your device!",
-          "Đã lưu clip video 30s thử đồ vào máy của bạn!"
+          "Saved try-on video to your device!",
+          "Đã lưu video thử đồ vào máy!"
         )
       );
     } catch (e) {
@@ -219,7 +234,7 @@ export function TryOnRecapModal({
         tr(
           locale,
           "Could not save video to device. Please try again.",
-          "Không thể lưu clip video vào máy. Vui lòng thử lại."
+          "Không thể lưu video vào máy. Vui lòng thử lại."
         )
       );
     } finally {
@@ -232,11 +247,11 @@ export function TryOnRecapModal({
     setSharing(true);
     try {
       await Share.share({
-        title: "OutfitPilot 30s Try-On Recap",
+        title: "OutfitPilot Try-On Recap",
         message:
           locale === "vi"
-            ? `Xem clip video 30s mình vừa thử đồ AI ${recap.garmentNameVi || recap.garmentName} trên OutfitPilot nè! Bạn thấy form dáng có hợp không?`
-            : `Check out my 30s AI try-on recap for ${recap.garmentName} on OutfitPilot! What do you think?`,
+            ? `Xem clip video mình vừa thử đồ AI ${recap.garmentNameVi || recap.garmentName} trên OutfitPilot nè! Bạn thấy form dáng có hợp không?`
+            : `Check out my AI try-on recap for ${recap.garmentName} on OutfitPilot! What do you think?`,
       });
     } catch (e) {
       console.warn("Share failed", e);
@@ -266,7 +281,7 @@ export function TryOnRecapModal({
               <View style={styles.tagBadge}>
                 <Film size={12} color={colors.ink} strokeWidth={2.4} style={{ marginRight: 4 }} />
                 <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "30S VIDEO", "VIDEO 30S")}
+                  {tr(locale, "VIDEO RECAP", "VIDEO THỬ ĐỒ")}
                 </AppText>
               </View>
               <AppText variant="title">
@@ -448,24 +463,26 @@ export function TryOnRecapModal({
                 accessibilityRole="button"
                 accessibilityLabel={tr(locale, "Save video to phone", "Lưu video vào máy")}
               >
-                {saving ? (
-                  <ActivityIndicator size="small" color={colors.ink} />
-                ) : savedToDevice ? (
-                  <Check size={16} color={colors.limeInk} strokeWidth={2.6} />
-                ) : (
-                  <Download size={16} color={colors.ink} strokeWidth={2.4} />
-                )}
-                <AppText
-                  variant="label"
-                  weight={800}
-                  tone={savedToDevice ? "limeInk" : "ink"}
-                >
-                  {saving
-                    ? tr(locale, "Saving video…", "Đang lưu video…")
-                    : savedToDevice
-                      ? tr(locale, "Saved to Device", "Đã lưu vào máy")
-                      : tr(locale, "Save Video to Phone", "Lưu video vào máy")}
-                </AppText>
+                <Animated.View style={[styles.saveBtnContent, saveSuccessStyle]}>
+                  {saving ? (
+                    <ActivityIndicator size="small" color={colors.ink} />
+                  ) : savedToDevice ? (
+                    <Check size={16} color={colors.limeInk} strokeWidth={2.6} />
+                  ) : (
+                    <Download size={16} color={colors.ink} strokeWidth={2.4} />
+                  )}
+                  <AppText
+                    variant="label"
+                    weight={800}
+                    tone={savedToDevice ? "limeInk" : "ink"}
+                  >
+                    {saving
+                      ? tr(locale, "Saving video…", "Đang lưu video…")
+                      : savedToDevice
+                        ? tr(locale, "Saved to Device", "Đã lưu vào máy")
+                        : tr(locale, "Save Video to Phone", "Lưu video vào máy")}
+                  </AppText>
+                </Animated.View>
               </Touchable>
 
               {/* Share Video */}
@@ -495,11 +512,11 @@ export function TryOnRecapModal({
                   }}
                   style={styles.secondaryBtn}
                   accessibilityRole="button"
-                  accessibilityLabel={tr(locale, "Keep this look in wardrobe", "Giữ món đồ này vào tủ đồ")}
+                  accessibilityLabel={tr(locale, "Keep this look in wardrobe", "Giữ bộ đồ này vào tủ đồ")}
                 >
                   <Bookmark size={13} color={colors.ink} strokeWidth={2} />
                   <AppText variant="caption" weight={700} tone="ink">
-                    {tr(locale, "Keep Look", "Giữ món đồ này")}
+                    {tr(locale, "Keep Look", "Giữ bộ đồ này")}
                   </AppText>
                 </Touchable>
               ) : null}
@@ -658,13 +675,17 @@ const styles = StyleSheet.create({
   },
   saveDeviceBtn: {
     flex: 1.4,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     height: 50,
     borderRadius: radii.lg,
-    gap: 8,
     ...shadows.lift,
+  },
+  saveBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   shareBtn: {
     flex: 1,
