@@ -11,7 +11,7 @@ import { GarmentImage } from "@/components/ui/GarmentImage";
 import { IconButton } from "@/components/ui/IconButton";
 import { getGarment } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
-import { getOccasionOption, SOURCE_LABEL } from "@/lib/occasions";
+import { OCCASION_OPTIONS, SOURCE_LABEL } from "@/lib/occasions";
 import { reasonWithoutName } from "@/lib/reasonText";
 import { useAppStore, type SavedLook } from "@/lib/store";
 import { alpha, colors, radii, sizes, spacing } from "@/lib/theme";
@@ -100,18 +100,19 @@ export function SavedSheet({ visible, onClose, onRemoved }: SavedSheetProps) {
 function SavedRow({ look, onRemove }: { look: SavedLook; onRemove: () => void }) {
   const locale = useLocale();
   const garment = getGarment(look.garmentId);
-  const occasion = getOccasionOption(look.occasionId);
-  const source = SOURCE_LABEL[look.source];
+  const isCloset = look.occasionId === "closet" || !look.occasionId;
+  const occasion = isCloset ? null : OCCASION_OPTIONS.find((o) => o.id === look.occasionId);
+  const source = SOURCE_LABEL[look.source] ?? SOURCE_LABEL.closet;
   const date = formatDate(look.savedAt);
   const reason = reasonWithoutName(look.reason, garment.name);
-  const occasionName = tr(locale, occasion.label, occasion.labelVi);
+  const occasionName = occasion ? tr(locale, occasion.label, occasion.labelVi) : tr(locale, "Personal Closet", "Tự chọn từ tủ đồ");
   const samplePrefix = garment.sample ? tr(locale, "Sample photo · ", "Ảnh mẫu · ") : "";
 
   return (
     <View style={styles.row}>
       <View
         accessible
-        accessibilityLabel={`${garment.name}${garment.sample ? ", sample photo" : ""}, ${occasion.label}, saved ${date}, ${source.label}. ${reason} Pair with ${look.pairWith}.`}
+        accessibilityLabel={`${garment.name}${garment.sample ? ", sample photo" : ""}, ${occasionName}, saved ${date}, ${source.label}. ${reason} Pair with ${look.pairWith}.`}
         style={styles.rowMain}
       >
         {/* The tag does not fit on a 56 pt thumbnail, so "Sample" moves to the meta line. */}

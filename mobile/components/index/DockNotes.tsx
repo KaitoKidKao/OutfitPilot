@@ -42,7 +42,7 @@ export function PendingNote({ occasionLabel, onLayout }: { occasionLabel: string
   return (
     <Rise onLayout={onLayout}>
       <View style={styles.pending} accessible accessibilityLiveRegion="polite" accessibilityLabel={`Picking two pieces for ${occasionLabel}`}>
-        <AppText variant="bodySm" weight={600} align="center" helper="Đang chọn hai món cho bạn" helperInline helperVariant="caption">
+        <AppText variant="bodySm" weight={600} align="center" helper="Đang chọn hai bộ đồ cho bạn" helperInline helperVariant="caption">
           {`Picking two pieces for ${occasionLabel}`}
         </AppText>
       </View>

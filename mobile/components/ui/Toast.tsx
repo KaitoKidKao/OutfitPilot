@@ -4,12 +4,13 @@
 //
 //   const toast = useToast();
 //   toast.show("Saved Look A · Đã lưu Look A");
+import { Check, Sparkles } from "lucide-react-native";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AccessibilityInfo, StyleSheet, View } from "react-native";
-import Animated, { FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, motion, radii, shadowDock, sizes } from "@/lib/theme";
+import { colors, motion, radii, shadowDock, shadows, sizes } from "@/lib/theme";
 
 import { AppText } from "./AppText";
 
@@ -71,20 +72,38 @@ function ToastView({ message }: { message: string }) {
   const progress = useSharedValue(reduced ? 1 : 0);
 
   useEffect(() => {
-    if (!reduced) progress.set(withTiming(1, { duration: motion.duration.rise, easing: motion.easing }));
+    if (!reduced) {
+      progress.value = withSpring(1, {
+        damping: 14,
+        stiffness: 220,
+        mass: 0.8,
+      });
+    }
   }, [reduced, progress]);
 
   const style = useAnimatedStyle(() => ({
-    opacity: progress.get(),
-    transform: [{ translateY: (1 - progress.get()) * -8 }],
+    opacity: progress.value,
+    transform: [
+      { translateY: (1 - progress.value) * -12 },
+      { scale: 0.9 + 0.1 * progress.value },
+    ],
   }));
 
+  const isSaveMessage = message.includes("Đã lưu") || message.includes("Saved") || message.includes("Lưu");
+
   return (
-    <View pointerEvents="none" style={[styles.layer, { top: insets.top + 8 }]}>
+    <View pointerEvents="none" style={[styles.layer, { top: insets.top + sizes.topBar + 6 }]}>
       {/* exiting lives on a wrapper so it never fights the animated opacity below */}
-      <Animated.View exiting={reduced ? undefined : FadeOut.duration(200)} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Animated.View exiting={reduced ? undefined : FadeOut.duration(180)} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Animated.View style={[styles.toast, style]}>
-          <AppText variant="bodySm" weight={500} tone="paper" align="center" style={styles.text}>
+          <View style={styles.iconCircle}>
+            {isSaveMessage ? (
+              <Check size={11} color={colors.ink} strokeWidth={3} />
+            ) : (
+              <Sparkles size={11} color={colors.ink} strokeWidth={2.4} />
+            )}
+          </View>
+          <AppText variant="caption" weight={700} tone="paper" align="center" style={styles.text}>
             {message}
           </AppText>
         </Animated.View>
@@ -104,11 +123,26 @@ const styles = StyleSheet.create({
   layer: { position: "absolute", left: 16, right: 16, alignItems: "center", zIndex: 1000, elevation: 1000 },
   toast: {
     maxWidth: sizes.maxContentWidth,
-    backgroundColor: colors.ink,
+    backgroundColor: "rgba(15, 23, 19, 0.95)",
     borderRadius: radii.full,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingLeft: 8,
+    paddingRight: 14,
+    paddingVertical: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(200, 241, 105, 0.35)",
     ...shadowDock,
+    ...shadows.lift,
   },
-  text: { fontSize: 14, lineHeight: 20 },
+  iconCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: radii.full,
+    backgroundColor: colors.lime,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  text: { fontSize: 13, lineHeight: 18 },
 });

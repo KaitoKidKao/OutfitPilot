@@ -8,7 +8,7 @@ import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion, useShar
 import { AppText, Touchable } from "@/components/ui";
 import { useLocale } from "@/lib/locale";
 import type { OccasionOption } from "@/lib/occasions";
-import { colors, motion, radii } from "@/lib/theme";
+import { colors, motion, radii, shadows } from "@/lib/theme";
 
 export interface OccasionCardProps {
   option: OccasionOption;
@@ -37,14 +37,15 @@ export function OccasionCard({ option, selected, onPress, disabled = false, test
     backgroundColor: interpolateColor(lit.get(), [0, 1], [colors.surface, colors.lime]),
   }));
 
-  const label = locale === "vi" ? option.labelVi : option.label;
-  const descriptor = locale === "vi" ? option.descriptorVi : option.descriptor;
+  const label = (locale === "vi" ? option.labelVi : option.label) || "";
+  const descriptor = (locale === "vi" ? option.descriptorVi : option.descriptor) || "";
+  const a11yLabel = descriptor ? `${label}. ${descriptor}` : label;
 
   return (
     <Touchable
       testID={testID}
       accessibilityRole="radio"
-      accessibilityLabel={`${label}. ${descriptor}`}
+      accessibilityLabel={a11yLabel}
       accessibilityState={{ selected, checked: selected, disabled }}
       aria-checked={selected}
       disabled={disabled}
@@ -55,8 +56,9 @@ export function OccasionCard({ option, selected, onPress, disabled = false, test
         styles.card,
         {
           borderColor: selected ? colors.ink : colors.line,
-          borderWidth: selected ? 1.5 : 1,
+          borderWidth: selected ? 2 : 1,
         },
+        selected ? shadows.lift : null,
       ]}
     >
       <View style={styles.topRow}>
@@ -73,9 +75,11 @@ export function OccasionCard({ option, selected, onPress, disabled = false, test
         <AppText variant="label" weight={800} numberOfLines={1}>
           {label}
         </AppText>
-        <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.descriptor}>
-          {descriptor}
-        </AppText>
+        {descriptor ? (
+          <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.descriptor}>
+            {descriptor}
+          </AppText>
+        ) : null}
       </View>
     </Touchable>
   );

@@ -10,7 +10,7 @@
 //
 // Render it in <Screen overlay={...}>. It positions itself (absolute, bottom inset + 16).
 import { LinearGradient } from "expo-linear-gradient";
-import type { LucideIcon } from "lucide-react-native";
+import { Check, type LucideIcon } from "lucide-react-native";
 import { useEffect, type ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
@@ -65,6 +65,7 @@ export interface FittingDockProps {
   /** Short names for the hooks. Default { a: "Look A", b: "Look B" }. */
   hookLabels?: { a: string; b: string };
   testID?: string;
+  savedSlots?: { a?: boolean; b?: boolean };
 }
 
 /** Height of the dock body (padding 10 + hook 76 + padding 10). */
@@ -107,10 +108,17 @@ export function FittingDock({
   scrim = "light",
   hookLabels = { a: "Look A", b: "Look B" },
   testID,
+  savedSlots,
 }: FittingDockProps) {
   const insets = useSafeAreaInsets();
   const compact = useCompactDock();
   const scrimColors = scrim === "dark" ? ([alpha.studio0, colors.studio] as const) : ([alpha.paper0, colors.paper] as const);
+
+  const hookA = hooks[0];
+  const hookB = hooks[1];
+  const isSingle = (hookA !== null && hookB === null) || (hookA === null && hookB !== null);
+  const singleSlot: DockSlot = hookA !== null ? "a" : "b";
+  const singleGarmentId = hookA ?? hookB;
 
   const hookProps = (slot: DockSlot) => ({
     slot,
@@ -120,6 +128,7 @@ export function FittingDock({
     lit: mode === "keep" ? hooks[slot === "a" ? 0 : 1] !== null : lit === slot,
     disabled: hooksDisabled,
     compact,
+    saved: savedSlots?.[slot] ?? false,
     onPress: mode === "switch" ? onSelect : mode === "keep" ? onKeep : onHookPress,
   });
 
@@ -131,9 +140,38 @@ export function FittingDock({
       <View pointerEvents="box-none" style={styles.column}>
         {above ? <View style={styles.above}>{above}</View> : null}
         <View style={styles.dock}>
-          <Hook {...hookProps("a")} />
-          <CenterButton {...center} compact={compact} />
-          <Hook {...hookProps("b")} />
+          {isSingle && singleGarmentId ? (
+            mode === "keep" ? (
+              <>
+                <CenterButton {...center} compact={compact} />
+                <SingleKeepButton
+                  slot={singleSlot}
+                  saved={savedSlots?.[singleSlot] ?? false}
+                  onKeep={onKeep}
+                  disabled={hooksDisabled}
+                  compact={compact}
+                />
+              </>
+            ) : (
+              <>
+                <SingleHook
+                  slot={singleSlot}
+                  mode={mode}
+                  garmentId={singleGarmentId}
+                  disabled={hooksDisabled}
+                  compact={compact}
+                  onPress={mode === "switch" ? onSelect : onHookPress}
+                />
+                <SingleAction {...center} compact={compact} />
+              </>
+            )
+          ) : (
+            <>
+              <Hook {...hookProps("a")} />
+              <CenterButton {...center} compact={compact} />
+              <Hook {...hookProps("b")} />
+            </>
+          )}
         </View>
       </View>
     </View>
@@ -150,10 +188,11 @@ interface HookProps {
   lit: boolean;
   disabled: boolean;
   compact: boolean;
+  saved?: boolean;
   onPress?: (slot: DockSlot) => void;
 }
 
-function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: HookProps) {
+function Hook({ slot, mode, garmentId, name, lit, disabled, compact, saved = false, onPress }: HookProps) {
   const isSlotB = slot === "b";
   const locale = useLocale();
   const garment = garmentId ? getGarment(garmentId) : null;
@@ -161,7 +200,12 @@ function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: 
   const textTone = lit ? "ink" : "paper";
   const subTone = lit ? "ink" : "mutedDark";
   const interactive = !!onPress && !!garment;
-  const title = mode === "keep" ? tr(locale, `Keep ${letter}`, `Giữ ${letter}`) : name;
+  const title =
+    mode === "keep"
+      ? saved
+        ? tr(locale, `✓ Kept ${letter}`, `✓ Đã giữ ${letter}`)
+        : tr(locale, `Keep ${letter}`, `Giữ ${letter}`)
+      : name;
   const sub = garment ? garment.name : tr(locale, "Empty", "Trống");
 
   const a11yLabel =
@@ -332,6 +376,210 @@ function CenterButton({
   );
 }
 
+// ---------- Single-Item Dock Components ----------
+
+interface SingleHookProps {
+  slot: DockSlot;
+  mode: DockMode;
+  garmentId: GarmentId;
+  disabled: boolean;
+  compact: boolean;
+  onPress?: (slot: DockSlot) => void;
+}
+
+function SingleHook({
+  slot,
+  mode,
+  garmentId,
+  disabled,
+  compact,
+  onPress,
+}: SingleHookProps) {
+  const locale = useLocale();
+  const garment = getGarment(garmentId);
+  const tag = mode === "switch"
+    ? tr(locale, "Fitting now", "Đang thử đồ")
+    : tr(locale, "Selected piece", "Món đang chọn");
+  const garmentName = locale === "vi" ? garment.nameVi ?? garment.name : garment.name;
+  const interactive = !!onPress;
+
+  const content = (
+    <>
+      <View style={[styles.thumbCol, compact && styles.thumbColCompact]}>
+        <View style={[styles.rail, { backgroundColor: colors.lime }]} />
+        <HangingThumb garmentId={garmentId} compact={compact} slot={slot} />
+      </View>
+      <View style={styles.singleHookText}>
+        <AppText
+          variant="tag"
+          weight={800}
+          tone="lime"
+          numberOfLines={1}
+          maxFontSizeMultiplier={DOCK_TEXT_SCALE}
+        >
+          {tag}
+        </AppText>
+        <AppText
+          variant="label"
+          weight={700}
+          tone="paper"
+          numberOfLines={2}
+          maxFontSizeMultiplier={DOCK_TEXT_SCALE}
+        >
+          {garmentName}
+        </AppText>
+      </View>
+    </>
+  );
+
+  const hookStyles = [
+    styles.singleHook,
+    compact && styles.singleHookCompact,
+    disabled && styles.disabled,
+  ];
+
+  if (!interactive) {
+    return (
+      <View
+        style={[hookStyles, { backgroundColor: colors.inkWell }]}
+        accessible
+        accessibilityLabel={`${tag}: ${garment.name}`}
+      >
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Touchable
+      accessibilityRole="button"
+      accessibilityLabel={`${tag}: ${garment.name}`}
+      disabled={disabled}
+      onPress={() => onPress(slot)}
+      bg={colors.inkWell}
+      pressedBg={colors.inkLine}
+      pressScale={motion.pressScale}
+      style={hookStyles}
+    >
+      {content}
+    </Touchable>
+  );
+}
+
+function SingleAction({
+  label,
+  labelVi,
+  accessibilityLabel,
+  accessibilityHint,
+  icon: Icon,
+  tone,
+  onPress,
+  disabled = false,
+  loading = false,
+  compact = false,
+}: DockCenter & { compact?: boolean }) {
+  const t = CENTER_TONE[tone];
+  const inactive = disabled || loading;
+  const locale = useLocale();
+
+  return (
+    <Touchable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: inactive, busy: loading }}
+      disabled={inactive}
+      onPress={onPress}
+      bg={t.bg}
+      pressedBg={t.pressedBg}
+      pressScale={motion.pressScale}
+      style={[
+        styles.singleAction,
+        compact && styles.singleActionCompact,
+        disabled && !loading && styles.disabled,
+      ]}
+    >
+      <View style={styles.singleActionInner}>
+        {loading ? (
+          <ActivityIndicator color={t.fg} />
+        ) : Icon ? (
+          <Icon size={compact ? 20 : 22} color={t.fg} strokeWidth={2.4} />
+        ) : null}
+        {label ? (
+          <View style={styles.singleActionTextCol}>
+            <AppText
+              variant="label"
+              weight={800}
+              tone={t.text}
+              helper={labelVi}
+              numberOfLines={1}
+              maxFontSizeMultiplier={DOCK_TEXT_SCALE}
+            >
+              {label}
+            </AppText>
+          </View>
+        ) : null}
+      </View>
+    </Touchable>
+  );
+}
+
+function SingleKeepButton({
+  slot,
+  saved = false,
+  onKeep,
+  disabled = false,
+  compact = false,
+}: {
+  slot: DockSlot;
+  saved?: boolean;
+  onKeep?: (slot: DockSlot) => void;
+  disabled?: boolean;
+  compact?: boolean;
+}) {
+  const locale = useLocale();
+
+  return (
+    <Touchable
+      accessibilityRole="button"
+      accessibilityLabel={tr(locale, "Keep this look", "Lưu bộ đồ vào máy")}
+      disabled={disabled}
+      onPress={() => onKeep?.(slot)}
+      bg={colors.lime}
+      pressedBg={colors.limePress}
+      pressScale={motion.pressScale}
+      style={[
+        styles.singleAction,
+        compact && styles.singleActionCompact,
+        disabled && styles.disabled,
+      ]}
+    >
+      <View style={styles.singleActionInner}>
+        <Check size={compact ? 20 : 22} color={colors.ink} strokeWidth={2.6} />
+        <View style={styles.singleActionTextCol}>
+          <AppText
+            variant="label"
+            weight={800}
+            tone="ink"
+            numberOfLines={1}
+            maxFontSizeMultiplier={DOCK_TEXT_SCALE}
+          >
+            {saved ? tr(locale, "Look Kept", "Đã lưu bộ đồ") : tr(locale, "Keep this look", "Lưu bộ đồ")}
+          </AppText>
+          <AppText
+            variant="caption"
+            tone="limeInk"
+            numberOfLines={1}
+            maxFontSizeMultiplier={DOCK_TEXT_SCALE}
+          >
+            {tr(locale, "Save to wardrobe", "Lưu vào máy")}
+          </AppText>
+        </View>
+      </View>
+    </Touchable>
+  );
+}
+
 const styles = StyleSheet.create({
   layer: { position: "absolute", left: 0, right: 0, bottom: 0, paddingTop: 40 },
   column: { width: "100%", maxWidth: sizes.maxContentWidth, alignSelf: "center", paddingHorizontal: 16, gap: 10 },
@@ -377,5 +625,45 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   centerCompact: { width: COMPACT.centerWidth },
+  singleHook: {
+    flex: 1.15,
+    height: sizes.dockHook,
+    borderRadius: radii.card,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    gap: 8,
+    overflow: "hidden",
+  },
+  singleHookCompact: {
+    paddingHorizontal: 6,
+    gap: 6,
+  },
+  singleHookText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+    justifyContent: "center",
+  },
+  singleAction: {
+    flex: 1,
+    height: sizes.dockHook,
+    borderRadius: radii.card,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 12,
+  },
+  singleActionCompact: {
+    paddingHorizontal: 8,
+  },
+  singleActionInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  singleActionTextCol: {
+    justifyContent: "center",
+    gap: 1,
+  },
   disabled: { opacity: 0.45 },
 });

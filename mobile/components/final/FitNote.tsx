@@ -6,12 +6,16 @@ import { StyleSheet, View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { colors, radii } from "@/lib/theme";
 
-export function FitNote() {
+export interface FitNoteProps {
+  compact?: boolean;
+}
+
+export function FitNote({ compact }: FitNoteProps = {}) {
   return (
-    <View style={styles.note}>
-      <Info size={18} color={colors.muted} strokeWidth={1.75} style={styles.icon} />
+    <View style={[styles.note, compact ? styles.noteCompact : null]}>
+      <Info size={compact ? 14 : 18} color={colors.muted} strokeWidth={1.75} style={compact ? styles.iconCompact : styles.icon} />
       <AppText
-        variant="bodySm"
+        variant={compact ? "caption" : "bodySm"}
         helper="Đây chỉ là mô phỏng hình ảnh. Ứng dụng không đo size và không cam kết độ vừa vặn."
         containerStyle={styles.text}
       >
@@ -30,6 +34,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     backgroundColor: colors.surface,
   },
+  noteCompact: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: radii.md,
+    gap: 6,
+  },
   icon: { marginTop: 1 },
+  iconCompact: { marginTop: 2 },
   text: { flex: 1 },
 });

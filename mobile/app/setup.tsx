@@ -13,9 +13,8 @@
 //                                      picks exist; giveConsent() then /fitting
 // Nothing leaves the phone on this screen: no Decart session is ever started here.
 import { useFocusEffect, useRouter } from "expo-router";
-import { useKeepAwake } from "expo-keep-awake";
 import { Camera, Play, RotateCcw, Settings } from "lucide-react-native";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Linking, StyleSheet, View } from "react-native";
 
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
@@ -26,6 +25,7 @@ import { AppText, Button, Screen, TopBar } from "@/components/ui";
 import { useAppStore } from "@/lib/store";
 import { colors, radii, spacing } from "@/lib/theme";
 import { useTryOnSession } from "@/lib/tryOnSession";
+import { useSafeKeepAwake } from "@/lib/useSafeKeepAwake";
 
 const CAPTION: Record<FrameState, { text: string; vi: string }> = {
   web: { text: "Web preview: the camera and AI run only in the app.", vi: "Bản xem trước web — camera và AI chỉ chạy trong app." },
@@ -47,7 +47,7 @@ const CAPTION: Record<FrameState, { text: string; vi: string }> = {
 };
 
 export default function CameraSetup() {
-  useKeepAwake();
+  useSafeKeepAwake();
   const router = useRouter();
   const { hookIds, activeLook, setActiveLook, consentGiven, giveConsent, revokeConsent, occasionId } = useAppStore();
   const tryOn = useTryOnSession({ consentGiven });
@@ -83,7 +83,16 @@ export default function CameraSetup() {
     [consentGiven, revokeConsent],
   );
 
-  const hasPicks = hookIds[0] !== null && hookIds[1] !== null;
+  const hasPicks = hookIds[0] !== null || hookIds[1] !== null;
+  const isSingleLook = (hookIds[0] !== null && hookIds[1] === null) || (hookIds[0] === null && hookIds[1] !== null);
+
+  useEffect(() => {
+    if (hookIds[0] !== null && hookIds[1] === null && activeLook !== "a") {
+      setActiveLook("a");
+    } else if (hookIds[0] === null && hookIds[1] !== null && activeLook !== "b") {
+      setActiveLook("b");
+    }
+  }, [hookIds, activeLook, setActiveLook]);
 
   const frameState: FrameState = !isSupported
     ? "web"
@@ -107,10 +116,12 @@ export default function CameraSetup() {
   }, [giveConsent, stopCamera, router]);
 
   const startHint = !hasPicks
-    ? "Get two picks first"
+    ? "Pick a garment first"
     : !agreed
       ? "Turn on the agreement switch above first"
-      : "Opens the fitting room. The AI session starts only when you press start there.";
+      : isSingleLook
+        ? "Opens the fitting room to try on your selected piece."
+        : "Opens the fitting room. The AI session starts only when you press start there.";
 
   const center: DockCenter = (() => {
     switch (frameState) {
@@ -196,11 +207,11 @@ export default function CameraSetup() {
 
         {!hasPicks ? (
           <View style={styles.noPicks}>
-            <AppText variant="bodyStrong" helper="Chưa có gợi ý trên dock">
+            <AppText variant="bodyStrong" helper="Chưa có bộ đồ nào trên dock">
               No looks on the dock yet
             </AppText>
-            <AppText variant="bodySm" helper="Chọn dịp trước để nhận hai gợi ý để thử.">
-              Choose an occasion first to get two picks to try on.
+            <AppText variant="bodySm" helper="Chọn dịp hoặc chọn bộ đồ từ tủ đồ để thử.">
+              Choose an occasion first or pick a piece from your wardrobe to try on.
             </AppText>
             <Button
               label={occasionId ? "Get my picks" : "Choose an occasion"}

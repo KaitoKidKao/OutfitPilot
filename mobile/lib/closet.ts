@@ -998,7 +998,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     price: "1.290.000₫",
     shop: "Levi's 501 Original",
     image: require("../assets/garments/batch1/M15_03_dark_indigo_jeans.jpg"),
-    fitAdvice: "Jeans xanh chàm ống đứng kinh điển, món đồ không thể thiếu trong tủ đồ.",
+    fitAdvice: "Jeans xanh chàm ống đứng kinh điển, bộ đồ không thể thiếu trong tủ đồ.",
   },
 
   // 26 Phụ kiện & Đồ khác (Giày, Mũ, Túi xách, Kính, Trang sức - Category "other")
@@ -1406,7 +1406,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "1.250.000₫",
     shop: "Adidas",
-    image: require("../assets/other/male/M_ACC_001_white_low_top_sneakers.jpg"),
+    image: require("../assets/accessories/M_ACC_001_white_low_top_sneakers.jpg"),
     fitAdvice: "Sneaker trắng cổ thấp thanh lịch, đa năng phối cùng jeans, chinos hay quần short.",
   },
   {
@@ -1421,7 +1421,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "1.490.000₫",
     shop: "Nike",
-    image: require("../assets/other/male/M_ACC_002_black_sport_sneakers.jpg"),
+    image: require("../assets/accessories/M_ACC_002_black_sport_sneakers.jpg"),
     fitAdvice: "Sneaker đen thể thao đế êm, thích hợp phong cách streetwear năng động.",
   },
   {
@@ -1436,7 +1436,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "1.350.000₫",
     shop: "New Balance",
-    image: require("../assets/other/male/M_ACC_003_gray_running_sneakers.jpg"),
+    image: require("../assets/accessories/M_ACC_003_gray_running_sneakers.jpg"),
     fitAdvice: "Tông xám trung tính, đệm êm nâng đỡ bàn chân khi di chuyển nhiều.",
   },
   {
@@ -1451,7 +1451,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "2.100.000₫",
     shop: "Cole Haan",
-    image: require("../assets/other/male/M_ACC_004_black_leather_loafers.jpg"),
+    image: require("../assets/accessories/M_ACC_004_black_leather_loafers.jpg"),
     fitAdvice: "Chất da bò cao cấp, form loafers kinh điển cho trang phục công sở và smart-casual.",
   },
   {
@@ -1466,7 +1466,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "2.450.000₫",
     shop: "Clarks",
-    image: require("../assets/other/male/M_ACC_005_black_derby_shoes.jpg"),
+    image: require("../assets/accessories/M_ACC_005_black_derby_shoes.jpg"),
     fitAdvice: "Giày tây Derby mũi tròn lịch lãm, thích hợp cho sự kiện trang trọng và phỏng vấn.",
   },
   {
@@ -1481,7 +1481,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "2.200.000₫",
     shop: "Zara Man",
-    image: require("../assets/other/male/M_ACC_006_black_chelsea_boots.jpg"),
+    image: require("../assets/accessories/M_ACC_006_black_chelsea_boots.jpg"),
     fitAdvice: "Chelsea boots da đen cá tính, tạo vẻ ngoài cuốn hút khi diện cùng skinny hoặc straight jeans.",
   },
   {
@@ -1496,7 +1496,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "3.200.000₫",
     shop: "Tissot",
-    image: require("../assets/other/male/M_ACC_007_classic_brown_leather_watch.jpg"),
+    image: require("../assets/accessories/M_ACC_007_classic_brown_leather_watch.jpg"),
     fitAdvice: "Dây da nâu cổ điển kết hợp mặt số kim loại, toát lên phong thái quý ông điềm đạm.",
   },
   {
@@ -1511,7 +1511,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "2.800.000₫",
     shop: "Daniel Wellington",
-    image: require("../assets/other/male/M_ACC_008_minimal_black_dial_watch.jpg"),
+    image: require("../assets/accessories/M_ACC_008_minimal_black_dial_watch.jpg"),
     fitAdvice: "Mặt số đen siêu mỏng tối giản, mang lại nét tinh tế hiện đại cho cổ tay.",
   },
   {
@@ -1526,7 +1526,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "4.500.000₫",
     shop: "Seiko",
-    image: require("../assets/other/male/M_ACC_009_silver_chronograph_watch.jpg"),
+    image: require("../assets/accessories/M_ACC_009_silver_chronograph_watch.jpg"),
     fitAdvice: "Bộ máy chronograph thép không gỉ thể thao, mạnh mẽ và sang trọng.",
   },
   {
@@ -1541,7 +1541,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "3.900.000₫",
     shop: "Citizen",
-    image: require("../assets/other/male/M_ACC_010_blue_diver_watch.jpg"),
+    image: require("../assets/accessories/M_ACC_010_blue_diver_watch.jpg"),
     fitAdvice: "Mặt số xanh biển viền xoay nam tính, chống nước tuyệt hảo cho chuyến dạo biển.",
   },
   {
@@ -1556,7 +1556,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "650.000₫",
     shop: "Pedro",
-    image: require("../assets/other/male/M_ACC_011_black_leather_belt.jpg"),
+    image: require("../assets/accessories/M_ACC_011_black_leather_belt.jpg"),
     fitAdvice: "Da thật đen bóng nhẹ, mặt khóa kim loại sáng mờ cho âu phục chuẩn mực.",
   },
   {
@@ -1571,7 +1571,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "680.000₫",
     shop: "Massimo Dutti",
-    image: require("../assets/other/male/M_ACC_012_brown_leather_belt.jpg"),
+    image: require("../assets/accessories/M_ACC_012_brown_leather_belt.jpg"),
     fitAdvice: "Màu nâu hạt dẻ ấm áp, phối ăn ý với giày da nâu và quần chinos.",
   },
   {
@@ -1586,7 +1586,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "450.000₫",
     shop: "Uniqlo",
-    image: require("../assets/other/male/M_ACC_013_navy_braided_belt.jpg"),
+    image: require("../assets/accessories/M_ACC_013_navy_braided_belt.jpg"),
     fitAdvice: "Dây dệt đan co giãn linh hoạt, mang lại cảm giác thoải mái cho trang phục thường ngày.",
   },
   {
@@ -1601,7 +1601,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "320.000₫",
     shop: "H&M Man",
-    image: require("../assets/other/male/M_ACC_014_olive_canvas_belt.jpg"),
+    image: require("../assets/accessories/M_ACC_014_olive_canvas_belt.jpg"),
     fitAdvice: "Chất vải canvas xanh rêu bụi bặm, bền chắc cho phong cách dã ngoại và cargo pants.",
   },
   {
@@ -1616,7 +1616,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "790.000₫",
     shop: "Bellroy",
-    image: require("../assets/other/male/M_ACC_015_black_crossbody_bag.jpg"),
+    image: require("../assets/accessories/M_ACC_015_black_crossbody_bag.jpg"),
     fitAdvice: "Thiết kế đeo chéo nhỏ gọn, kháng nước nhẹ tiện cất điện thoại và ví tiền.",
   },
   {
@@ -1631,7 +1631,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "550.000₫",
     shop: "MLB",
-    image: require("../assets/other/male/M_ACC_016_black_sling_bag.jpg"),
+    image: require("../assets/accessories/M_ACC_016_black_sling_bag.jpg"),
     fitAdvice: "Túi sling đeo ngực cá tính, phong cách đường phố năng động.",
   },
   {
@@ -1646,7 +1646,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "1.850.000₫",
     shop: "Coach",
-    image: require("../assets/other/male/M_ACC_017_brown_messenger_bag.jpg"),
+    image: require("../assets/accessories/M_ACC_017_brown_messenger_bag.jpg"),
     fitAdvice: "Túi messenger da nâu nắp gập, vừa vặn laptop và tài liệu cho ngày làm việc.",
   },
   {
@@ -1661,7 +1661,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "1.150.000₫",
     shop: "The North Face",
-    image: require("../assets/other/male/M_ACC_018_black_travel_backpack.jpg"),
+    image: require("../assets/accessories/M_ACC_018_black_travel_backpack.jpg"),
     fitAdvice: "Balo đen phom cứng cáp nhiều ngăn, lý tưởng cho đi học, đi làm hoặc du lịch.",
   },
   {
@@ -1676,7 +1676,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "390.000₫",
     shop: "Muji",
-    image: require("../assets/other/male/M_ACC_019_cream_canvas_tote.jpg"),
+    image: require("../assets/accessories/M_ACC_019_cream_canvas_tote.jpg"),
     fitAdvice: "Vải canvas tự nhiên dày dặn, phong cách mộc mạc thư thả dạo phố cuối tuần.",
   },
   {
@@ -1691,7 +1691,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "420.000₫",
     shop: "New Era",
-    image: require("../assets/other/male/M_ACC_020_navy_baseball_cap.jpg"),
+    image: require("../assets/accessories/M_ACC_020_navy_baseball_cap.jpg"),
     fitAdvice: "Nón lưỡi trai xanh navy thêu logo tinh gọn, che nắng và tăng vẻ trẻ trung.",
   },
   {
@@ -1706,7 +1706,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "350.000₫",
     shop: "Uniqlo",
-    image: require("../assets/other/male/M_ACC_021_beige_bucket_hat.jpg"),
+    image: require("../assets/accessories/M_ACC_021_beige_bucket_hat.jpg"),
     fitAdvice: "Mũ tai bèo vành mềm tông be mát mắt, che chắn nắng dịu mát khi đi biển.",
   },
   {
@@ -1721,7 +1721,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "280.000₫",
     shop: "Zara Man",
-    image: require("../assets/other/male/M_ACC_022_black_knit_beanie.jpg"),
+    image: require("../assets/accessories/M_ACC_022_black_knit_beanie.jpg"),
     fitAdvice: "Chất len dệt kim co giãn giữ ấm đầu và tai trong những ngày gió lạnh.",
   },
   {
@@ -1736,7 +1736,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "950.000₫",
     shop: "Brixton",
-    image: require("../assets/other/male/M_ACC_023_brown_fedora.jpg"),
+    image: require("../assets/accessories/M_ACC_023_brown_fedora.jpg"),
     fitAdvice: "Mũ phớt fedora nỉ nâu kinh điển, phụ kiện tạo điểm nhấn ấn tượng cho các set đồ nghệ sĩ.",
   },
   {
@@ -1751,7 +1751,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "1.750.000₫",
     shop: "Gentle Monster",
-    image: require("../assets/other/male/M_ACC_024_black_rectangular_sunglasses.jpg"),
+    image: require("../assets/accessories/M_ACC_024_black_rectangular_sunglasses.jpg"),
     fitAdvice: "Gọng vuông góc cạnh thời thượng, bảo vệ mắt và tôn đường nét gương mặt nam tính.",
   },
   {
@@ -1766,7 +1766,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "2.400.000₫",
     shop: "Ray-Ban Aviator",
-    image: require("../assets/other/male/M_ACC_025_gold_aviator_sunglasses.jpg"),
+    image: require("../assets/accessories/M_ACC_025_gold_aviator_sunglasses.jpg"),
     fitAdvice: "Gọng kim loại mạ vàng hình giọt nước huyền thoại, phong thái phi công đầy lôi cuốn.",
   },
   {
@@ -1781,7 +1781,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "1.650.000₫",
     shop: "Ray-Ban Round",
-    image: require("../assets/other/male/M_ACC_026_dark_round_sunglasses.jpg"),
+    image: require("../assets/accessories/M_ACC_026_dark_round_sunglasses.jpg"),
     fitAdvice: "Mắt kính tròn đen cổ điển, đậm chất retro nghệ thuật.",
   },
   {
@@ -1796,7 +1796,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "850.000₫",
     shop: "Owndays",
-    image: require("../assets/other/male/M_ACC_027_black_optical_glasses.jpg"),
+    image: require("../assets/accessories/M_ACC_027_black_optical_glasses.jpg"),
     fitAdvice: "Gọng kính cận mắt vuông đen nhẹ tênh, đem lại vẻ ngoài tri thức nhã nhặn.",
   },
   {
@@ -1811,7 +1811,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "590.000₫",
     shop: "Zara Man",
-    image: require("../assets/other/male/M_ACC_028_gray_winter_scarf.jpg"),
+    image: require("../assets/accessories/M_ACC_028_gray_winter_scarf.jpg"),
     fitAdvice: "Khăn len xám mềm mại giữ ấm cổ, tạo lớp layer tinh tế cho áo khoác ngoài mùa đông.",
   },
   {
@@ -1826,7 +1826,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "owned",
     price: "890.000₫",
     shop: "Montblanc",
-    image: require("../assets/other/male/M_ACC_029_black_leather_wallet.jpg"),
+    image: require("../assets/accessories/M_ACC_029_black_leather_wallet.jpg"),
     fitAdvice: "Ví gập đôi da bò đen dập vân hạt, kích thước nhỏ gọn vừa vặn túi quần âu.",
   },
   {
@@ -1841,7 +1841,7 @@ export const INITIAL_CLOSET_ITEMS: ClosetItem[] = [
     status: "wishlist",
     price: "450.000₫",
     shop: "Thomas Sabo",
-    image: require("../assets/other/male/M_ACC_030_silver_chain_bracelet.jpg"),
+    image: require("../assets/accessories/M_ACC_030_silver_chain_bracelet.jpg"),
     fitAdvice: "Xích bạc mắt xích Cuban sáng bóng, điểm nhấn nam tính tinh tế trên cổ tay.",
   },
 ];

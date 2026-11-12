@@ -35,7 +35,7 @@ export default function AiPicks() {
   const toast = useToast();
   const locale = useLocale();
   const reduced = useReducedMotion();
-  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds } = useAppStore();
+  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds, assignHook } = useAppStore();
 
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const cardY = useRef<Record<Slot, number | null>>({ a: null, b: null });
@@ -70,16 +70,21 @@ export default function AiPicks() {
 
   // Preload garment base64 assets early while the user reads the picks so the Fitting Room starts faster.
   useEffect(() => {
-    if (!picks) return;
-    preloadGarmentPhotos([picks.recommendations[0].garmentId, picks.recommendations[1].garmentId]);
+    if (!picks?.recommendations) return;
+    const ids = picks.recommendations.map((r) => r.garmentId).filter(Boolean);
+    if (ids.length > 0) preloadGarmentPhotos(ids);
   }, [picks]);
 
   // Tell screen-reader users when the pair arrives after a wait.
   const prevStatus = useRef(picksStatus);
   useEffect(() => {
-    if (prevStatus.current === "loading" && picksStatus === "ready" && picks) {
+    if (prevStatus.current === "loading" && picksStatus === "ready" && picks?.recommendations?.length) {
       const [a, b] = picks.recommendations;
-      AccessibilityInfo.announceForAccessibility(`Two looks ready: ${getGarment(a.garmentId).name} and ${getGarment(b.garmentId).name}.`);
+      if (a && b) {
+        AccessibilityInfo.announceForAccessibility(`Two looks ready: ${getGarment(a.garmentId).name} and ${getGarment(b.garmentId).name}.`);
+      } else if (a) {
+        AccessibilityInfo.announceForAccessibility(`Look ready: ${getGarment(a.garmentId).name}.`);
+      }
     }
     prevStatus.current = picksStatus;
   }, [picksStatus, picks]);
@@ -124,6 +129,19 @@ export default function AiPicks() {
     [setActiveLook, reduced, hookIds],
   );
 
+  const handleTrySingle = useCallback(
+    (slot: Slot) => {
+      if (!picks) return;
+      const rec = slot === "a" ? picks.recommendations[0] : picks.recommendations[1];
+      if (!rec) return;
+      assignHook("a", rec.garmentId);
+      assignHook("b", null);
+      setActiveLook("a");
+      router.push("/setup");
+    },
+    [picks, assignHook, setActiveLook, router],
+  );
+
   const loading = !!occasionId && !picks && (picksStatus === "loading" || picksStatus === "idle");
   const failed = !!occasionId && !picks && picksStatus === "error";
   const styleOption = style !== "none" ? STYLE_OPTIONS.find((s) => s.value === style) : undefined;
@@ -166,7 +184,7 @@ export default function AiPicks() {
           right={
             <Touchable
               accessibilityRole="button"
-              accessibilityLabel="Mở tủ đồ cá nhân"
+              accessibilityLabel={tr(locale, "Open personal closet", "Mở tủ đồ cá nhân")}
               onPress={() => setClosetOpen(true)}
               bg={colors.surface}
               pressedBg={colors.surfaceDeep}
@@ -210,10 +228,10 @@ export default function AiPicks() {
               </View>
 
               <View onLayout={onLayoutA} style={styles.firstCard}>
-                <LookCard testID="look-card-a" slot="a" pick={picks.recommendations[0]} active={activeLook === "a"} onPress={setActiveLook} />
+                <LookCard testID="look-card-a" slot="a" pick={picks.recommendations[0]} active={activeLook === "a"} onPress={setActiveLook} onTrySingle={handleTrySingle} />
               </View>
               <View onLayout={onLayoutB} style={styles.nextCard}>
-                <LookCard testID="look-card-b" slot="b" pick={picks.recommendations[1]} active={activeLook === "b"} onPress={setActiveLook} />
+                <LookCard testID="look-card-b" slot="b" pick={picks.recommendations[1]} active={activeLook === "b"} onPress={setActiveLook} onTrySingle={handleTrySingle} />
               </View>
 
               <View style={styles.footnote}>

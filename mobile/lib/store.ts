@@ -16,16 +16,17 @@ import { readPreviewSeed } from "./previewSeed";
 
 export type Slot = "a" | "b";
 export type PicksStatus = "idle" | "loading" | "ready" | "error";
+export type SavedOccasionId = OccasionId | "closet";
 
 export interface SavedLook {
   /** Unique id (garmentId + occasionId + savedAt). */
   id: string;
   garmentId: GarmentId;
-  occasionId: OccasionId;
+  occasionId: SavedOccasionId;
   reason: string;
   pairWith: string;
-  /** "llm" = AI Stylist pick, "fallback" = default suggestion. Keep the label honest. */
-  source: StyleSource;
+  /** "llm" = AI Stylist pick, "fallback" = default suggestion, "closet" = user's self pick. */
+  source: StyleSource | "closet";
   /** ISO 8601. */
   savedAt: string;
 }
@@ -85,6 +86,7 @@ export interface AppActions {
   fetchPicks: (options?: { force?: boolean }) => Promise<StyleResponse | null>;
   setActiveLook: (slot: Slot) => void;
   assignHook: (slot: Slot, id: GarmentId | null) => void;
+  resetHooks: () => void;
   giveConsent: () => void;
   revokeConsent: () => void;
   /** Saves the pick in `slot` (dedupes the same garment + occasion). Returns the saved entry. */
@@ -117,10 +119,10 @@ function isSavedLook(v: unknown): v is SavedLook {
     typeof o.id === "string" &&
     isGarmentId(o.garmentId) &&
     typeof o.occasionId === "string" &&
-    (OCCASION_IDS as readonly string[]).includes(o.occasionId) &&
+    ((OCCASION_IDS as readonly string[]).includes(o.occasionId) || o.occasionId === "closet") &&
     typeof o.reason === "string" &&
     typeof o.pairWith === "string" &&
-    (o.source === "llm" || o.source === "fallback") &&
+    (o.source === "llm" || o.source === "fallback" || o.source === "closet") &&
     typeof o.savedAt === "string"
   );
 }
@@ -206,8 +208,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const resetPicks = (s: AppState): AppState => {
     requestRef.current++;
     picksKeyRef.current = null;
-    return { ...s, picks: null, picksStatus: "idle", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a" };
+    return { ...s, picks: null, picksStatus: "idle", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a", customHooks: null };
   };
+
+  const resetHooks = useCallback(() => {
+    setState((s) => ({ ...s, customHooks: null }));
+  }, []);
 
   const setOccasion = useCallback((id: OccasionId) => {
     setState((s) => (s.occasionId === id ? { ...s, occasionId: null } : { ...resetPicks(s), occasionId: id }));
@@ -312,17 +318,29 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       const s = stateRef.current;
       const hookId = s.customHooks ? s.customHooks[slot === "a" ? 0 : 1] : (s.picks?.recommendations[slot === "a" ? 0 : 1]?.garmentId ?? null);
       if (!hookId) return null;
-      const occasionId = s.occasionId ?? "job_interview";
+      const occasionId: SavedOccasionId = s.occasionId ?? "closet";
       const rec = s.picks?.recommendations.find((r) => r.garmentId === hookId);
       const garment = getGarment(hookId);
       const savedAt = new Date().toISOString();
+
+      let defaultPair: string;
+      if (garment.type === "dress") {
+        defaultPair = "Giày sandal hoặc túi xách phù hợp";
+      } else if (garment.type === "pants" || garment.type === "bottom" || garment.type === "skirt") {
+        defaultPair = "Áo thun hoặc sơ mi phù hợp từ tủ đồ";
+      } else if (garment.type === "other") {
+        defaultPair = "Trang phục phù hợp từ tủ đồ";
+      } else {
+        defaultPair = "Quần hoặc chân váy phù hợp từ tủ đồ";
+      }
+
       const look: SavedLook = {
         id: `${hookId}-${occasionId}-${Date.parse(savedAt)}`,
         garmentId: hookId,
         occasionId,
-        reason: rec?.reason ?? garment.fitAdvice ?? `Món đồ từ Tủ Đồ (${garment.name})`,
-        pairWith: rec?.pairWith ?? "Quần phù hợp từ tủ đồ",
-        source: rec ? s.picks?.source ?? "llm" : "llm",
+        reason: rec?.reason ?? garment.fitAdvice ?? `Món đồ từ Tủ Đồ (${garment.nameVi ?? garment.name})`,
+        pairWith: rec?.pairWith ?? defaultPair,
+        source: rec ? (s.picks?.source ?? "llm") : "closet",
         savedAt,
       };
       const next = [look, ...s.saved.filter((l) => !(l.garmentId === look.garmentId && l.occasionId === look.occasionId))].slice(0, MAX_SAVED);
@@ -369,7 +387,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       if (rec) return rec;
       try {
         const g = getGarment(hookId);
-        return { garmentId: hookId, reason: g.fitAdvice ?? g.name, pairWith: "Quần phối hợp từ tủ đồ" };
+        let defaultPair: string;
+        if (g.type === "dress") {
+          defaultPair = "Giày sandal hoặc túi xách phù hợp";
+        } else if (g.type === "pants" || g.type === "bottom" || g.type === "skirt") {
+          defaultPair = "Áo thun hoặc sơ mi phù hợp từ tủ đồ";
+        } else if (g.type === "other") {
+          defaultPair = "Trang phục phù hợp từ tủ đồ";
+        } else {
+          defaultPair = "Quần hoặc chân váy phù hợp từ tủ đồ";
+        }
+        return { garmentId: hookId, reason: g.fitAdvice ?? g.nameVi ?? g.name, pairWith: defaultPair };
       } catch {
         return null;
       }
@@ -396,6 +424,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       fetchPicks,
       setActiveLook,
       assignHook,
+      resetHooks,
       giveConsent,
       revokeConsent,
       keepLook,
@@ -407,7 +436,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       garmentFor,
       hookIds: [hookA, hookB],
     };
-  }, [state, activeLocale, setOccasion, setStyle, setGender, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
+  }, [state, activeLocale, setOccasion, setStyle, setGender, setLocale, fetchPicks, setActiveLook, assignHook, resetHooks, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

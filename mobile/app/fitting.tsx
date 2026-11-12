@@ -12,26 +12,27 @@
 //     the camera (lib/tryOnSession does blur/background; the handlers here stop explicitly too)
 //   - garment photos go to Decart as base64 via lib/tryOnSession (catalog id -> prompt + photo)
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
-import { useKeepAwake } from "expo-keep-awake";
 import { ArrowRight, Camera, Repeat, RotateCcw, Sparkles, Square, X } from "lucide-react-native";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FittingTopBar } from "@/components/fitting/FittingTopBar";
-import { isCapNotice, statusPillFor } from "@/components/fitting/status";
-import { StudioHud } from "@/components/fitting/StudioHud";
+import { isCapNotice } from "@/components/fitting/status";
 import { ActionPanel, ConnectingPanel, LivePanel, ReadyPanel } from "@/components/fitting/StudioPanels";
 import { SwitchMoment, type SwitchCue } from "@/components/fitting/SwitchMoment";
 import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
 import { useAutoCompare } from "@/components/fitting/useAutoCompare";
 import { StageMessage, VideoLayer } from "@/components/fitting/VideoStage";
 import { DOCK_BODY_HEIGHT, FittingDock, type DockCenter } from "@/components/FittingDock";
-import { Screen } from "@/components/ui";
+import { AppText, Screen, useToast } from "@/components/ui";
 import { getGarment, type GarmentId } from "@/lib/catalog";
+import { tr, useLocale } from "@/lib/locale";
 import { useAppStore, type Slot, type TryOnRecap } from "@/lib/store";
-import { sizes, spacing } from "@/lib/theme";
+import { colors, radii, sizes, spacing } from "@/lib/theme";
 import { useTryOnSession } from "@/lib/tryOnSession";
+import { useSafeKeepAwake } from "@/lib/useSafeKeepAwake";
 
 type Phase = "no-looks" | "resume" | "connecting" | "live" | "lost" | "ended" | "ready";
 
@@ -43,8 +44,10 @@ function announce(message: string) {
 }
 
 export default function LiveFittingRoom() {
-  useKeepAwake();
+  useSafeKeepAwake();
   const router = useRouter();
+  const toast = useToast();
+  const locale = useLocale();
   const insets = useSafeAreaInsets();
   const { hookIds, activeLook, setActiveLook, consentGiven, setLatestRecap, latestRecap } = useAppStore();
   const tryOn = useTryOnSession({ consentGiven, autoStartCamera: consentGiven });
@@ -54,6 +57,9 @@ export default function LiveFittingRoom() {
   const [panelHeight, setPanelHeight] = useState(0);
   const [peekingOriginal, setPeekingOriginal] = useState(false);
   const [recapModalOpen, setRecapModalOpen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const controlsOpacity = useSharedValue(1);
+  const autoHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiSessionStartRef = useRef<number | null>(null);
 
   // Latest values for timers and async callbacks.
@@ -70,8 +76,9 @@ export default function LiveFittingRoom() {
   const userStoppedRef = useRef(false);
 
   const idFor = (slot: Slot): GarmentId | null => hookIds[slot === "a" ? 0 : 1];
-  const hasLooks = hookIds[0] !== null && hookIds[1] !== null;
-  const activeId = idFor(activeLook);
+  const hasLooks = hookIds[0] !== null || hookIds[1] !== null;
+  const isComparing = hookIds[0] !== null && hookIds[1] !== null;
+  const activeId = idFor(activeLook) ?? hookIds[0] ?? hookIds[1];
   const activeName = activeId ? getGarment(activeId).name : null;
   const letter = activeLook.toUpperCase();
 
@@ -103,8 +110,8 @@ export default function LiveFittingRoom() {
   );
 
   const auto = useAutoCompare({
-    available: tryOn.aiLive,
-    canSwitchNow: () => tryOnRef.current.state === "live",
+    available: tryOn.aiLive && isComparing,
+    canSwitchNow: () => tryOnRef.current.state === "live" && isComparing,
     onSwitch: () => showLook(activeLookRef.current === "a" ? "b" : "a"),
   });
   const { stop: stopAuto } = auto;
@@ -145,8 +152,8 @@ export default function LiveFittingRoom() {
   }, [tryOn.state]);
 
   const recordRecap = useCallback(() => {
-    if (!aiSessionStartRef.current || !activeId) return;
-    const duration = Math.max(5, Math.min(60, Math.round((Date.now() - aiSessionStartRef.current) / 1000)));
+    if (!activeId) return;
+    const duration = 30;
     aiSessionStartRef.current = null;
     const garment = getGarment(activeId);
     const recap: TryOnRecap = {
@@ -181,10 +188,69 @@ export default function LiveFittingRoom() {
     const prev = prevStateRef.current;
     prevStateRef.current = tryOn.state;
     if (prev === tryOn.state) return;
-    if (tryOn.state === "live" && prev === "connecting") announce(`AI try-on is live. Showing Look ${activeLookRef.current.toUpperCase()}.`);
+    if (tryOn.state === "live" && prev === "connecting") {
+      if (isComparing) announce(`AI try-on is live. Showing Look ${activeLookRef.current.toUpperCase()}.`);
+      else announce(`AI try-on is live for ${activeName ?? "garment"}.`);
+    }
     if (tryOn.state === "lost") announce(`Connection lost. ${tryOn.error ?? ""}`.trim());
     if (tryOn.state !== "live" && tryOn.state !== "switching") setPeekingOriginal(false);
   }, [tryOn.state, tryOn.error]);
+
+  useEffect(() => {
+    if (tryOn.error && tryOn.state !== "live") {
+      toast.show(tryOn.error);
+    }
+  }, [tryOn.error, tryOn.state, toast]);
+
+  // Control visibility for immersive full-screen camera view
+  const resetAutoHideTimer = useCallback(() => {
+    if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+    if (tryOnRef.current.state === "live") {
+      autoHideTimerRef.current = setTimeout(() => {
+        setControlsVisible(false);
+      }, 4000);
+    }
+  }, []);
+
+  const toggleControls = useCallback(() => {
+    setControlsVisible((prev) => {
+      const next = !prev;
+      if (next) resetAutoHideTimer();
+      return next;
+    });
+  }, [resetAutoHideTimer]);
+
+  useEffect(() => {
+    controlsOpacity.value = withTiming(controlsVisible ? 1 : 0, { duration: 250 });
+  }, [controlsVisible, controlsOpacity]);
+
+  // When AI goes live, show controls initially then schedule auto-hide
+  useEffect(() => {
+    if (tryOn.state === "live") {
+      setControlsVisible(true);
+      resetAutoHideTimer();
+    } else {
+      setControlsVisible(true);
+      if (autoHideTimerRef.current) clearTimeout(autoHideTimerRef.current);
+    }
+  }, [tryOn.state, resetAutoHideTimer]);
+
+  // When session is ending soon (last 5s), bring controls back up
+  useEffect(() => {
+    if (tryOn.state === "live" && tryOn.secondsLeft !== null && tryOn.secondsLeft <= 5) {
+      setControlsVisible(true);
+    }
+  }, [tryOn.state, tryOn.secondsLeft]);
+
+  const topAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: controlsOpacity.value,
+    transform: [{ translateY: (1 - controlsOpacity.value) * -20 }],
+  }));
+
+  const bottomAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: controlsOpacity.value,
+    transform: [{ translateY: (1 - controlsOpacity.value) * 40 }],
+  }));
 
   // ----- actions -----
 
@@ -261,7 +327,7 @@ export default function LiveFittingRoom() {
           labelVi: "Bật AI",
           icon: Sparkles,
           tone: "lime",
-          accessibilityLabel: `Start AI try-on with Look ${letter}`,
+          accessibilityLabel: isComparing ? `Start AI try-on with Look ${letter}` : `Start AI try-on with ${activeName ?? "garment"}`,
           accessibilityHint: "Paid session. Sends your camera to Decart for up to 60 seconds.",
           onPress: handleStart,
           disabled: !canStart,
@@ -270,24 +336,35 @@ export default function LiveFittingRoom() {
       case "connecting":
         return { label: "Cancel", labelVi: "Huỷ", icon: X, tone: "light", accessibilityLabel: "Cancel connecting to AI", onPress: handleCancelConnect };
       case "live":
-        return auto.running
-          ? { label: "Stop", labelVi: "Dừng", icon: Square, tone: "light", accessibilityLabel: "Stop auto compare", onPress: stopAuto }
-          : {
-              label: "Auto compare",
-              labelVi: "Tự đổi A/B",
-              icon: Repeat,
-              tone: "lime",
-              accessibilityLabel: "Auto compare: switch looks every 8 seconds",
-              accessibilityHint: "Tap a hook any time to take over",
-              onPress: auto.start,
-            };
+        if (isComparing) {
+          return auto.running
+            ? { label: "Stop", labelVi: "Dừng", icon: Square, tone: "light", accessibilityLabel: "Stop auto compare", onPress: stopAuto }
+            : {
+                label: "Auto compare",
+                labelVi: "Tự đổi A/B",
+                icon: Repeat,
+                tone: "lime",
+                accessibilityLabel: "Auto compare: switch looks every 8 seconds",
+                accessibilityHint: "Tap a hook any time to take over",
+                onPress: auto.start,
+              };
+        }
+        return {
+          label: "Finish",
+          labelVi: "Xem kết quả",
+          icon: ArrowRight,
+          tone: "lime",
+          accessibilityLabel: "Finish fitting and view result",
+          accessibilityHint: "Opens Final Look to view and keep your fitted garment",
+          onPress: handleFinish,
+        };
       default:
         return {
-          label: "Auto compare",
-          labelVi: "Tự đổi A/B",
-          icon: Repeat,
+          label: isComparing ? "Auto compare" : "Fitting",
+          labelVi: isComparing ? "Tự đổi A/B" : "Đang thử đồ",
+          icon: isComparing ? Repeat : Sparkles,
           tone: "quiet",
-          accessibilityLabel: "Auto compare",
+          accessibilityLabel: isComparing ? "Auto compare" : "Fitting",
           accessibilityHint: "Available while the AI try-on is live",
           onPress: noop,
           disabled: true,
@@ -314,9 +391,9 @@ export default function LiveFittingRoom() {
           <ActionPanel
             onLayout={onPanelLayout}
             title="No looks on the hooks yet"
-            helper="Chưa có look nào trên móc"
-            body="Choose an occasion first. The stylist hangs two looks on the dock for you to try here."
-            bodyVi="Hãy chọn dịp trước. AI Stylist sẽ treo hai gợi ý lên dock để bạn thử tại đây."
+            helper="Chưa có bộ đồ nào trên móc"
+            body="Choose an occasion first or pick a piece from your closet to try here."
+            bodyVi="Hãy chọn dịp hoặc chọn bộ đồ từ tủ đồ để thử tại đây."
             primary={{ label: "Choose an occasion", labelVi: "Chọn dịp", icon: ArrowRight, onPress: () => router.replace("/") }}
           />
         );
@@ -364,8 +441,8 @@ export default function LiveFittingRoom() {
             onLayout={onPanelLayout}
             title="Time's up: 60s"
             helper="Hết 60 giây thử đồ"
-            body="The AI session stopped at its 60-second limit to save tokens. Review your recorded clip or try again."
-            bodyVi="Phiên thử AI đã tự dừng sau 60 giây để tiết kiệm token. Bạn có thể xem lại video clip đã quay, thử lại hoặc chuyển sang Final Look."
+            body="The AI session stopped at its 60-second limit. Review your recorded clip or try again."
+            bodyVi="Phiên thử AI đã tự dừng sau 60 giây. Bạn có thể xem lại video clip đã quay, thử lại hoặc chuyển sang Final Look."
             primary={retry}
             secondary={finish}
           />
@@ -401,19 +478,41 @@ export default function LiveFittingRoom() {
         <>
           <Pressable
             style={StyleSheet.absoluteFill}
-            onPressIn={() => {
+            onPress={toggleControls}
+            onLongPress={() => {
               if (tryOn.showingAi) setPeekingOriginal(true);
             }}
             onPressOut={() => {
               if (tryOn.showingAi) setPeekingOriginal(false);
             }}
+            delayLongPress={220}
           >
             <VideoLayer tryOn={stageSource} />
           </Pressable>
-          <View pointerEvents="box-none" style={[styles.chrome, { paddingTop: insets.top }]}>
+
+          {/* Hint when in full screen clean view */}
+          {!controlsVisible && (
+            <View pointerEvents="none" style={[styles.cleanScreenHint, { top: insets.top + 16 }]}>
+              <View style={styles.hintPill}>
+                <AppText variant="tag" weight={700} tone="paper">
+                  {tr(locale, "Tap screen to show controls", "Chạm màn hình để hiện bảng điều khiển")}
+                </AppText>
+              </View>
+            </View>
+          )}
+
+          <Animated.View
+            pointerEvents={controlsVisible ? "box-none" : "none"}
+            style={[styles.chrome, { paddingTop: insets.top }, topAnimatedStyle]}
+          >
             <View pointerEvents="box-none" style={styles.column}>
               <FittingTopBar
-                pill={statusPillFor(tryOn.state, tryOn.cameraStatus, tryOn.statusLabel, tryOn.statusLabelVi)}
+                isLive={tryOn.aiLive}
+                isConnecting={tryOn.state === "connecting"}
+                secondsLeft={tryOn.aiLive ? tryOn.secondsLeft : null}
+                garmentName={activeName}
+                slot={activeLook}
+                isComparing={isComparing}
                 onExit={handleExit}
                 onFlip={handleFlip}
                 flipDisabled={!tryOn.isSupported || tryOn.cameraStatus === "starting" || cameraBlocked}
@@ -423,22 +522,28 @@ export default function LiveFittingRoom() {
                 onToggleOriginal={() => setPeekingOriginal((v) => !v)}
                 onFinish={handleFinish}
               />
-              {hasLooks ? <StudioHud slot={activeLook} garmentName={activeName} secondsLeft={tryOn.aiLive ? tryOn.secondsLeft : null} /> : null}
               <View pointerEvents="box-none" style={[styles.middle, { paddingBottom: bottomReserve }]}>
                 <StageMessage tryOn={tryOn} />
               </View>
             </View>
-          </View>
-          <FittingDock
-            mode="switch"
-            scrim="dark"
-            hooks={hookIds}
-            lit={hasLooks ? activeLook : null}
-            onSelect={onHookSelect}
-            hooksDisabled={!hasLooks || phase === "connecting" || tryOn.state === "switching"}
-            center={center}
-            above={panel}
-          />
+          </Animated.View>
+
+          <Animated.View
+            pointerEvents={controlsVisible ? "box-none" : "none"}
+            style={[StyleSheet.absoluteFill, bottomAnimatedStyle]}
+          >
+            <FittingDock
+              mode="switch"
+              scrim="dark"
+              hooks={hookIds}
+              lit={hasLooks ? activeLook : null}
+              onSelect={onHookSelect}
+              hooksDisabled={!hasLooks || phase === "connecting" || tryOn.state === "switching"}
+              center={center}
+              above={panel}
+            />
+          </Animated.View>
+
           {/* Last, so the lime cut covers the dock and its scrim too (full screen). */}
           <SwitchMoment cue={cue} />
           <TryOnRecapModal
@@ -457,4 +562,19 @@ const styles = StyleSheet.create({
   chrome: { ...StyleSheet.absoluteFill, alignItems: "center" },
   column: { flex: 1, width: "100%", maxWidth: sizes.maxContentWidth, paddingHorizontal: 16 },
   middle: { flex: 1, justifyContent: "center", minHeight: 0 },
+  cleanScreenHint: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 10,
+  },
+  hintPill: {
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
 });

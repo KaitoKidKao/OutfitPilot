@@ -1,6 +1,7 @@
 export { AppText, textStyle, type AppTextProps, type TextTone } from "./AppText";
 export { BrandMark } from "./BrandMark";
 export { Button, type ButtonProps, type ButtonVariant } from "./Button";
+export { CelebrationBurst, type CelebrationBurstProps } from "./CelebrationBurst";
 export { Chip, ChipGroup, type ChipProps } from "./Chip";
 export { GarmentImage, type GarmentImageProps } from "./GarmentImage";
 export { IconButton, type IconButtonProps, type IconButtonVariant } from "./IconButton";

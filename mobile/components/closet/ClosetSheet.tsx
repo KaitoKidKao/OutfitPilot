@@ -5,7 +5,7 @@
 // - Thanh chọn phân loại (Category) cố định chiều cao, không bị đè hay cắt nửa
 // - Thẻ sản phẩm Hero Photo 4:5 bo góc chuẩn OutfitPilot (không đóng khung viền web)
 // - Chạm mở Action Sheet trượt đáy chuẩn mobile (nút màu sắc rực rỡ, không bị mất nền)
-// - Thêm món mới từ Camera hoặc Thư viện ảnh với form mobile thoáng sạch
+// - Thêm bộ đồ mới từ Camera hoặc Thư viện ảnh với form mobile thoáng sạch
 
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -141,7 +141,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     if (!newImageUri || !newName.trim()) {
       Alert.alert(
         tr(locale, "Missing information", "Thiếu thông tin"),
-        tr(locale, "Please select a photo and enter the item name.", "Vui lòng chọn ảnh và nhập tên món đồ.")
+        tr(locale, "Please select a photo and enter the item name.", "Vui lòng chọn ảnh và nhập tên bộ đồ.")
       );
       return;
     }
@@ -183,7 +183,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     if (!newImageUri || !newName.trim()) {
       Alert.alert(
         tr(locale, "Missing information", "Thiếu thông tin"),
-        tr(locale, "Please select a photo and enter the item name.", "Vui lòng chọn ảnh và nhập tên món đồ.")
+        tr(locale, "Please select a photo and enter the item name.", "Vui lòng chọn ảnh và nhập tên bộ đồ.")
       );
       return;
     }
@@ -227,6 +227,15 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
     router.push("/setup");
   };
 
+  const handleTryOnSingle = (item: ClosetItem) => {
+    assignHook("a", item.id);
+    assignHook("b", null);
+    setActiveLook("a");
+    setActiveItem(null);
+    onClose();
+    router.push("/setup");
+  };
+
   const handleHangOnHook = (slot: Slot, item: ClosetItem) => {
     assignHook(slot, item.id);
     setActiveLook(slot);
@@ -254,7 +263,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             {tr(locale, "My Closet", "Tủ đồ cá nhân")}
           </AppText>
           <AppText variant="caption" tone="muted">
-            {filteredItems.length} {tr(locale, "pieces · Tap to hang or inspect", "món đồ · Chạm để thử hoặc xem phối")}
+            {filteredItems.length} {tr(locale, "pieces · Tap to hang or inspect", "bộ đồ · Chạm để thử hoặc xem phối")}
           </AppText>
         </View>
         <View style={styles.headerActions}>
@@ -263,7 +272,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             bg={colors.lime}
             pressedBg={colors.limePress}
             style={styles.addBtn}
-            accessibilityLabel={tr(locale, "Add piece", "Thêm món mới")}
+            accessibilityLabel={tr(locale, "Add piece", "Thêm bộ đồ mới")}
           >
             <Plus size={16} color={colors.ink} strokeWidth={2.5} />
             <AppText variant="caption" weight={700}>
@@ -466,11 +475,11 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
             bg={colors.lime}
             pressedBg={colors.limePress}
             style={styles.floatingTryOnBtn}
-            accessibilityLabel={tr(locale, "Ready with 2 pieces, start fitting now", "Đã chọn đủ 2 món, vào thử đồ ngay")}
+            accessibilityLabel={tr(locale, "Ready with 2 pieces, start fitting now", "Đã chọn đủ 2 bộ đồ, vào thử đồ ngay")}
           >
             <Camera size={18} color={colors.ink} strokeWidth={2.2} />
             <AppText variant="label" weight={800} tone="ink">
-              {tr(locale, "Ready with 2 pieces · Start fitting", "Đã đủ 2 món · Vào thử đồ ngay")}
+              {tr(locale, "Ready with 2 pieces · Start fitting", "Đã đủ 2 bộ đồ · Vào thử đồ ngay")}
             </AppText>
           </Touchable>
         </View>
@@ -539,33 +548,59 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                 <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setActiveItem(null)} variant="quiet" />
               </View>
 
-              {/* Primary Actions: Hang on Hook A / Hook B with vibrant solid backgrounds */}
+              {/* Primary Action: Direct 1-Tap Single Item Try-On (Wearable garments) */}
+              {activeItem.category !== "other" ? (
+                <Touchable
+                  onPress={() => handleTryOnSingle(activeItem)}
+                  bg={colors.lime}
+                  pressedBg={colors.limePress}
+                  style={styles.instantTryBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Thử ngay bộ đồ này qua camera không cần so sánh"
+                >
+                  <View style={styles.instantTryContent}>
+                    <View style={styles.instantTryIconCircle}>
+                      <Camera size={20} color={colors.ink} strokeWidth={2.4} />
+                    </View>
+                    <View style={styles.instantTryTextCol}>
+                      <AppText variant="label" weight={800} tone="ink">
+                        {tr(locale, "Try on now via camera", "Thử ngay bộ đồ này qua camera")}
+                      </AppText>
+                      <AppText variant="caption" tone="ink">
+                        {tr(locale, "Direct 1-item fitting · No comparison needed", "Thử 1 chạm trực tiếp · Không cần so sánh")}
+                      </AppText>
+                    </View>
+                  </View>
+                </Touchable>
+              ) : null}
+
+              {/* Secondary Actions: Hang on Hook A / Hook B for comparison */}
               <View style={styles.hangActionsRow}>
                 <Touchable
                   onPress={() => handleHangOnHook("a", activeItem)}
-                  bg={colors.lime}
-                  pressedBg={colors.limePress}
+                  bg={activeItem.category === "other" ? colors.lime : colors.surface}
+                  pressedBg={activeItem.category === "other" ? colors.limePress : colors.surfaceDeep}
                   style={styles.hangActionBtnA}
                 >
                   <AppText variant="label" weight={800} tone="ink">
                     {tr(locale, "Hang on Look A", "Treo vào Look A")}
                   </AppText>
-                  <AppText variant="caption" tone="ink">
-                    {hookIds[0] === activeItem.id ? tr(locale, "Currently on A", "Đang treo ở Móc A") : tr(locale, "Try on via camera", "Thử đồ qua camera")}
+                  <AppText variant="caption" tone={activeItem.category === "other" ? "ink" : "muted"}>
+                    {hookIds[0] === activeItem.id ? tr(locale, "Currently on A", "Đang treo ở Móc A") : tr(locale, "Slot A", "Vị trí A")}
                   </AppText>
                 </Touchable>
 
                 <Touchable
                   onPress={() => handleHangOnHook("b", activeItem)}
-                  bg={colors.ink}
-                  pressedBg={colors.inkWell}
+                  bg={activeItem.category === "other" ? colors.ink : colors.surface}
+                  pressedBg={activeItem.category === "other" ? colors.inkWell : colors.surfaceDeep}
                   style={styles.hangActionBtnB}
                 >
-                  <AppText variant="label" weight={800} tone="paper">
+                  <AppText variant="label" weight={800} tone={activeItem.category === "other" ? "paper" : "ink"}>
                     {tr(locale, "Hang on Look B", "Treo vào Look B")}
                   </AppText>
-                  <AppText variant="caption" tone="mutedDark">
-                    {hookIds[1] === activeItem.id ? tr(locale, "Currently on B", "Đang treo ở Móc B") : tr(locale, "Compare with A", "So sánh với Look A")}
+                  <AppText variant="caption" tone={activeItem.category === "other" ? "mutedDark" : "muted"}>
+                    {hookIds[1] === activeItem.id ? tr(locale, "Currently on B", "Đang treo ở Móc B") : tr(locale, "Compare with Look A", "So sánh với Look A")}
                   </AppText>
                 </Touchable>
               </View>
@@ -633,14 +668,16 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
                   <Touchable
                     onPress={() => {
                       Alert.alert(
-                        tr(locale, "Delete item", "Xoá món đồ"),
-                        tr(locale, "Are you sure you want to remove this item?", "Bạn có chắc muốn xoá món đồ này?"),
+                        tr(locale, "Delete item", "Xoá bộ đồ"),
+                        tr(locale, "Are you sure you want to remove this item?", "Bạn có chắc muốn xoá bộ đồ này?"),
                         [
                           { text: tr(locale, "Cancel", "Huỷ"), style: "cancel" },
                           {
                             text: tr(locale, "Delete", "Xoá"),
                             style: "destructive",
                             onPress: () => {
+                              if (hookIds[0] === activeItem.id) assignHook("a", null);
+                              if (hookIds[1] === activeItem.id) assignHook("b", null);
                               deleteItem(activeItem.id);
                               setActiveItem(null);
                             },
@@ -673,7 +710,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
 
               <View style={styles.addSheetHead}>
                 <AppText variant="title">
-                  {tr(locale, "Add New Piece", "Thêm món đồ mới")}
+                  {tr(locale, "Add New Piece", "Thêm bộ đồ mới")}
                 </AppText>
                 <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={() => setAddSheetOpen(false)} variant="quiet" />
               </View>
@@ -745,7 +782,7 @@ export function ClosetSheet({ visible, onClose }: ClosetSheetProps) {
 
                 {/* Form Fields */}
                 <View style={styles.fieldGroup}>
-                  <AppText variant="label">{tr(locale, "Item Name", "Tên món đồ")}</AppText>
+                  <AppText variant="label">{tr(locale, "Item Name", "Tên bộ đồ")}</AppText>
                   <TextInput
                     value={newName}
                     onChangeText={setNewName}
@@ -1149,6 +1186,30 @@ const styles = StyleSheet.create({
   actionHeadMeta: {
     flex: 1,
     gap: 4,
+  },
+  instantTryBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    borderColor: colors.limePress,
+  },
+  instantTryContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  instantTryIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.full,
+    backgroundColor: colors.paper,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  instantTryTextCol: {
+    flex: 1,
+    gap: 2,
   },
   hangActionsRow: {
     flexDirection: "row",

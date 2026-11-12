@@ -6,93 +6,137 @@
 // layout "column" = the default two-up comparison. layout "row" is used when the text
 // is scaled up (font scale >= 1.35) or the screen is very narrow: photo left, text right,
 // so long reasons never squeeze into a 150 pt column.
-import { Check, ShieldCheck, Tag } from "lucide-react-native";
-import { useEffect, type ReactNode } from "react";
-import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { Check, Tag } from "lucide-react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
+import { Touchable } from "@/components/ui/Touchable";
 import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment } from "@/lib/catalog";
-import { getInitialClosetItem, getInitialMatchingPants } from "@/lib/closet";
+import { getInitialClosetItem } from "@/lib/closet";
 import { tr, useLocale } from "@/lib/locale";
 import { SOURCE_LABEL } from "@/lib/occasions";
 import { reasonWithoutName } from "@/lib/reasonText";
 import type { Slot } from "@/lib/store";
-import { colors, motion, radii, spacing } from "@/lib/theme";
+import { colors, motion, radii, shadows, spacing } from "@/lib/theme";
 
 export interface LookColumnProps {
   slot: Slot;
   pick: Recommendation;
-  source: StyleSource;
+  source: StyleSource | "closet";
   /** This garment is already saved for the current occasion. */
   saved: boolean;
   layout?: "column" | "row";
+  /** When false (e.g. single item try-on), hides the slot letter badge. Default true. */
+  showBadge?: boolean;
 }
 
-const BADGE = 32;
-const ROW_PHOTO_WIDTH = 128;
+const BADGE = 36;
+const ROW_PHOTO_WIDTH = 110;
 
-export function LookColumn({ slot, pick, source, saved, layout = "column" }: LookColumnProps) {
+export function LookColumn({ slot, pick, source, saved, layout = "column", showBadge = true }: LookColumnProps) {
   const locale = useLocale();
   const garment = getGarment(pick.garmentId);
   const closetItem = getInitialClosetItem(pick.garmentId);
-  const matchingPants = getInitialMatchingPants(pick.garmentId);
   const letter = slot.toUpperCase();
   const label = SOURCE_LABEL[source];
   const row = layout === "row";
   const reason = reasonWithoutName(pick.reason, garment.name);
+  const [expanded, setExpanded] = useState(false);
+  const reduced = useReducedMotion();
+  const badgeScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (saved && !reduced) {
+      badgeScale.value = withSequence(
+        withTiming(0.8, { duration: 90 }),
+        withSpring(1.25, { damping: 9, stiffness: 220 }),
+        withSpring(1, { damping: 12 })
+      );
+    }
+  }, [saved, reduced, badgeScale]);
+
+  const badgeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
+  }));
 
   return (
     <Rise delay={slot === "a" ? 0 : 70} style={row ? styles.row : styles.column}>
       <GarmentImage
         garmentId={pick.garmentId}
         width={row ? ROW_PHOTO_WIDTH : "100%"}
-        accessibilityLabel={`Look ${letter}: ${garment.name}${garment.sample ? ", sample photo" : ""}`}
+        accessibilityLabel={showBadge ? `Look ${letter}: ${garment.name}${garment.sample ? ", sample photo" : ""}` : `${garment.name}${garment.sample ? ", sample photo" : ""}`}
       >
-        <View
-          style={[styles.badge, { backgroundColor: saved ? colors.lime : colors.ink }]}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <AppText variant="section" weight={800} tone={saved ? "ink" : "paper"} maxFontSizeMultiplier={1.15}>
-            {letter}
-          </AppText>
-        </View>
+        {showBadge ? (
+          <Animated.View
+            style={[
+              styles.badge,
+              { backgroundColor: saved ? colors.lime : colors.ink },
+              badgeAnimatedStyle,
+            ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <AppText variant="section" weight={800} tone={saved ? "ink" : "paper"} maxFontSizeMultiplier={1.15}>
+              {letter}
+            </AppText>
+          </Animated.View>
+        ) : null}
       </GarmentImage>
 
       <View style={styles.text}>
-        <AppText variant="section" accessibilityRole="header" accessibilityLabel={`Look ${letter}, ${garment.name}`}>
+        <AppText variant="section" weight={800} numberOfLines={1} accessibilityRole="header" accessibilityLabel={`Look ${letter}, ${garment.name}`}>
           {garment.name}
         </AppText>
 
-        <AppText variant="bodySm">{reason}</AppText>
-
-        <AppText variant="bodySm" tone="muted">
-          <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
-            Pair with:{" "}
-          </AppText>
-          {pick.pairWith}
-        </AppText>
-
-        {closetItem?.fitAdvice ? (
-          <View style={styles.fitAdviceBox}>
-            <ShieldCheck size={12} color={colors.limeInk} strokeWidth={2.2} />
-            <AppText variant="caption" tone="muted" style={styles.fitAdviceText}>
-              {closetItem.fitAdvice}
+        {reason ? (
+          <View style={styles.reasonBlock}>
+            <AppText variant="bodySm" numberOfLines={expanded ? undefined : 2}>
+              {reason}
             </AppText>
+            {reason.length > 55 ? (
+              <Touchable
+                onPress={() => setExpanded((prev) => !prev)}
+                style={styles.moreBtn}
+                accessibilityRole="button"
+                accessibilityLabel={expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
+              >
+                <AppText variant="tag" weight={800} tone="limeInk">
+                  {expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
+                </AppText>
+              </Touchable>
+            ) : null}
           </View>
         ) : null}
 
+        {pick.pairWith ? (
+          <AppText variant="bodySm" tone="muted">
+            <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
+              Pair with:{" "}
+            </AppText>
+            {pick.pairWith}
+          </AppText>
+        ) : null}
+
         {closetItem?.price ? (
-          <View style={styles.priceRow}>
-            <Tag size={12} color={colors.muted} />
-            <AppText variant="caption" weight={700} tone="ink">
+          <View style={styles.priceTag}>
+            <Tag size={10} color={colors.ink} strokeWidth={2.2} />
+            <AppText variant="caption" weight={800} tone="ink" tabular>
               {closetItem.price}
             </AppText>
             {closetItem.shop ? (
-              <AppText variant="caption" tone="muted">
+              <AppText variant="tag" tone="muted" numberOfLines={1} style={styles.shopText}>
                 · {closetItem.shop}
               </AppText>
             ) : null}
@@ -111,10 +155,10 @@ export function LookColumn({ slot, pick, source, saved, layout = "column" }: Loo
         </AppText>
 
         {saved ? (
-          <View style={styles.saved} accessible accessibilityLabel={`Look ${letter} is saved on this phone`}>
-            <Check size={14} color={colors.limeInk} strokeWidth={2.25} />
-            <AppText variant="caption" weight={600} tone="limeInk" helper="Đã lưu trên máy này" style={styles.savedText}>
-              Saved on this phone
+          <View style={styles.savedPill} accessible accessibilityLabel={`Look ${letter} is saved on this phone`}>
+            <Check size={11} color={colors.limeInk} strokeWidth={2.8} />
+            <AppText variant="tag" weight={800} tone="limeInk">
+              {tr(locale, "SAVED TO PHONE", "ĐÃ LƯU TRÊN MÁY")}
             </AppText>
           </View>
         ) : null}
@@ -165,39 +209,55 @@ function Rise({ delay, style, children }: { delay: number; style: StyleProp<View
 }
 
 const styles = StyleSheet.create({
-  column: { flex: 1, minWidth: 0, gap: 12 },
+  column: { flex: 1, minWidth: 0, gap: 6 },
   row: { flexDirection: "row", alignItems: "flex-start", gap: spacing.stack },
-  text: { flex: 1, minWidth: 0, gap: 8 },
+  text: { flex: 1, minWidth: 0, gap: 4 },
   badge: {
     position: "absolute",
     left: 8,
     bottom: 8,
     width: BADGE,
     height: BADGE,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.lift,
   },
-  saved: { flexDirection: "row", alignItems: "center", gap: 4 },
-  savedText: { flexShrink: 1 },
-  fitAdviceBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    backgroundColor: colors.surface,
-    padding: 8,
-    borderRadius: radii.sm,
-    marginTop: 2,
+  reasonBlock: {
+    gap: 2,
   },
-  fitAdviceText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 16,
+  moreBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 1,
   },
-  priceRow: {
+  priceTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 5,
+    backgroundColor: colors.surfaceDeep,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+  },
+  shopText: {
+    flexShrink: 1,
+    fontSize: 10,
+  },
+  savedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(200, 241, 105, 0.18)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: "rgba(200, 241, 105, 0.45)",
+    alignSelf: "flex-start",
     marginTop: 2,
   },
   skelPhoto: { width: "100%", aspectRatio: 4 / 5, borderRadius: radii.xxl, backgroundColor: colors.surface },

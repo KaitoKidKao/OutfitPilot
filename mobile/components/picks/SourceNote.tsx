@@ -37,7 +37,7 @@ export function SourceNote({ source, onRetry, retrying = false }: SourceNoteProp
           <AppText variant="bodyStrong" helper={SOURCE_LABEL.fallback.labelVi} helperInline>
             {SOURCE_LABEL.fallback.label}
           </AppText>
-          <AppText variant="bodySm" tone="muted" helper="AI Stylist đang ngoại tuyến; hai món theo quy tắc trang phục." containerStyle={styles.copy}>
+          <AppText variant="bodySm" tone="muted" helper="AI Stylist đang ngoại tuyến; hai bộ đồ theo quy tắc trang phục." containerStyle={styles.copy}>
             AI Stylist is offline. These two follow the dress-code rules.
           </AppText>
         </View>

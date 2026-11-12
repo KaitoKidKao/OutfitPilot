@@ -82,4 +82,19 @@ describe("POST /api/realtime-token", () => {
     expect((await postJson(makeApp({ env, fetchImpl }), "/api/realtime-token", "{oops")).status).toBe(200);
     expect((await postJson(makeApp(), "/api/realtime-token", "{oops")).status).toBe(503);
   });
+
+  it("transparently falls back to backup Decart keys if the primary key fails", async () => {
+    const multiEnv = () => ({ DECART_API_KEY: "dct_broken_1, dct_broken_2, dct_valid_3" });
+    const fetchImpl = vi.fn<typeof fetch>(async (url, init) => {
+      const key = (init?.headers as Record<string, string>)["X-API-KEY"];
+      if (key === "dct_broken_1") return new Response("credits exhausted", { status: 402 });
+      if (key === "dct_broken_2") return new Response("rate limited", { status: 429 });
+      return jsonResponse({ apiKey: "ek_success_from_backup", expiresAt: "2026-11-14T04:02:00Z" });
+    });
+    const res = await postJson(makeApp({ env: multiEnv, fetchImpl }), "/api/realtime-token", {});
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as RealtimeTokenResponse;
+    expect(data.token).toBe("ek_success_from_backup");
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
 });

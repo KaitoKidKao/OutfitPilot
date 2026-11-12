@@ -5,8 +5,8 @@
 // Keeping saves to the device (store.keepLook -> AsyncStorage), toasts, then opens the
 // Saved looks sheet. Secondary: "Saved N" (top bar, same as Choose Occasion) and "Start over" (end of page).
 import { useFocusEffect, useRouter } from "expo-router";
-import { Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { ClosetSheet } from "@/components/closet/ClosetSheet";
@@ -17,13 +17,13 @@ import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
 import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
-import { AppText, Button, Screen, TopBar, Touchable, useToast } from "@/components/ui";
-import type { StyleResponse } from "@/lib/api";
+import { AppText, CelebrationBurst, IconButton, Screen, TopBar, Touchable, useToast } from "@/components/ui";
+import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption } from "@/lib/occasions";
 import { readPreviewSeed } from "@/lib/previewSeed";
-import { useAppStore, type Slot } from "@/lib/store";
+import { useAppStore, type Slot, type TryOnRecap } from "@/lib/store";
 import { colors, radii, spacing } from "@/lib/theme";
 
 /** Let the "Saved" toast register before the sheet slides over it. */
@@ -32,8 +32,13 @@ const SHEET_DELAY_MS = 650;
 const STACK_FONT_SCALE = 1.35;
 const STACK_MIN_WIDTH = 340;
 
+interface ShownPicks {
+  recommendations: Recommendation[];
+  source: StyleSource | "closet";
+}
+
 interface ShownPair {
-  picks: StyleResponse | null;
+  picks: ShownPicks | null;
   occasionId: OccasionId | null;
 }
 
@@ -50,38 +55,55 @@ export default function FinalLook() {
   const [recapOpen, setRecapOpen] = useState(false);
   const hasAutoOpenedRef = useRef(false);
   const [keeping, setKeeping] = useState<Slot | null>(null);
+  const [celebratingSlot, setCelebratingSlot] = useState<Slot | null>(null);
   // "Start over" clears the store while this screen animates away; keep showing the
   // pair the user was looking at instead of flashing the empty state.
   const [frozen, setFrozen] = useState<ShownPair | null>(null);
   const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Automatically pop up Try-On Video Recap modal when arriving at Final Look with a freshly recorded session
+  // Automatically pop up 30s Try-On Video Recap modal when arriving at Final Look
+  const fallbackGarmentId = hookIds[0] ?? hookIds[1];
+  const effectiveRecap: TryOnRecap | null = useMemo(() => {
+    if (latestRecap) return latestRecap;
+    if (!fallbackGarmentId) return null;
+    const g = getGarment(fallbackGarmentId);
+    return {
+      garmentId: fallbackGarmentId,
+      garmentName: g.name,
+      garmentNameVi: g.nameVi,
+      slot: hookIds[0] ? "a" : "b",
+      durationSeconds: 30,
+      recordedAt: new Date().toISOString(),
+    };
+  }, [latestRecap, fallbackGarmentId, hookIds]);
+
   useEffect(() => {
-    if (latestRecap && !hasAutoOpenedRef.current) {
+    if (effectiveRecap && !hasAutoOpenedRef.current) {
       hasAutoOpenedRef.current = true;
       const timer = setTimeout(() => {
         setRecapOpen(true);
       }, 350);
       return () => clearTimeout(timer);
     }
-  }, [latestRecap]);
+  }, [effectiveRecap]);
 
   const view: ShownPair = frozen ?? { picks, occasionId };
   const rawPair = view.picks;
-  const pickA = pickFor("a");
-  const pickB = pickFor("b");
-  const fallbackPair: StyleResponse | null =
-    !rawPair && pickA && pickB
+  const pickA = hookIds[0] ? pickFor("a") : null;
+  const pickB = hookIds[1] ? pickFor("b") : null;
+  const activePicks = [pickA, pickB].filter((p): p is NonNullable<typeof p> => p !== null);
+  const isSingleLook = activePicks.length === 1;
+  const singleSlot: Slot = pickA ? "a" : "b";
+
+  const fallbackPair: ShownPicks | null =
+    activePicks.length > 0
       ? {
-          recommendations: [pickA, pickB],
-          source: "llm",
+          recommendations: activePicks,
+          source: rawPair?.source ?? (occasionId ? "llm" : "closet"),
         }
       : null;
-  const pair = rawPair ?? fallbackPair;
-  const hooks: [GarmentId | null, GarmentId | null] = [
-    pair?.recommendations[0]?.garmentId ?? hookIds[0],
-    pair?.recommendations[1]?.garmentId ?? hookIds[1],
-  ];
+  const pair = isSingleLook ? fallbackPair : (rawPair ?? fallbackPair);
+  const hooks: [GarmentId | null, GarmentId | null] = [hookIds[0], hookIds[1]];
   const occasion = view.occasionId ? getOccasionOption(view.occasionId) : null;
   const stacked = fontScale >= STACK_FONT_SCALE || width < STACK_MIN_WIDTH;
 
@@ -105,7 +127,7 @@ export default function FinalLook() {
     }, [cancelSheetTimer]),
   );
 
-  const isSaved = (garmentId: GarmentId) => !!view.occasionId && saved.some((l) => l.garmentId === garmentId && l.occasionId === view.occasionId);
+  const isSaved = (garmentId: GarmentId) => saved.some((l) => l.garmentId === garmentId && (!view.occasionId || l.occasionId === view.occasionId));
 
   const handleKeep = (slot: Slot) => {
     if (keeping) return;
@@ -116,7 +138,11 @@ export default function FinalLook() {
       return;
     }
     const name = getGarment(look.garmentId).name;
-    toast.show(tr(locale, `Saved Look ${letter}`, `Đã lưu Look ${letter}`), { announcement: `Saved Look ${letter}, ${name}, on this phone` });
+    toast.show(
+      tr(locale, `Saved Look ${letter} to your wardrobe!`, `Đã lưu bộ đồ ${letter} vào máy!`),
+      { announcement: `Saved Look ${letter}, ${name}, on this phone` }
+    );
+    setCelebratingSlot(slot);
     setKeeping(slot);
     sheetTimer.current = setTimeout(() => {
       sheetTimer.current = null;
@@ -168,14 +194,40 @@ export default function FinalLook() {
 
   return (
     <Screen
+      dockClearance={false}
+      contentStyle={styles.screenContent}
       header={
         <TopBar
+          left={
+            <View style={styles.topLeft}>
+              <IconButton
+                icon={ChevronLeft}
+                accessibilityLabel={tr(locale, "Back", "Quay lại")}
+                onPress={() => router.back()}
+              />
+              <Touchable
+                accessibilityRole="button"
+                accessibilityLabel={tr(locale, "Start over", "Chọn lại từ đầu")}
+                accessibilityHint={tr(locale, "Clears occasion and picks", "Xóa dịp và look đã chọn để làm lại")}
+                onPress={startOver}
+                bg={colors.surface}
+                pressedBg={colors.surfaceDeep}
+                style={styles.startOverTopBtn}
+                testID="final-start-over-btn"
+              >
+                <RotateCcw size={13} color={colors.ink} strokeWidth={2.2} />
+                <AppText variant="caption" weight={700}>
+                  {tr(locale, "Start over", "Bắt đầu lại")}
+                </AppText>
+              </Touchable>
+            </View>
+          }
           // Same entry point and count format as Choose Occasion ("Saved N").
           right={
             <View style={styles.topRight}>
               <Touchable
                 accessibilityRole="button"
-                accessibilityLabel="Mở tủ đồ cá nhân"
+                accessibilityLabel={tr(locale, "Open personal closet", "Mở tủ đồ cá nhân")}
                 onPress={() => setClosetOpen(true)}
                 bg={colors.surface}
                 pressedBg={colors.surfaceDeep}
@@ -194,90 +246,114 @@ export default function FinalLook() {
       }
       overlay={
         <>
-          <FittingDock mode="keep" hooks={hooks} onKeep={handleKeep} hooksDisabled={!!keeping} center={center} />
+          <FittingDock
+            mode="keep"
+            hooks={hooks}
+            onKeep={handleKeep}
+            hooksDisabled={!!keeping}
+            center={center}
+            savedSlots={{
+              a: hookIds[0] ? isSaved(hookIds[0]) : false,
+              b: hookIds[1] ? isSaved(hookIds[1]) : false,
+            }}
+          />
           <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"))} />
           <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
           <TryOnRecapModal
             visible={recapOpen}
             onClose={() => setRecapOpen(false)}
-            recap={latestRecap}
-            onKeepLook={() => latestRecap?.slot && handleKeep(latestRecap.slot)}
+            recap={effectiveRecap}
+            onKeepLook={() => effectiveRecap?.slot && handleKeep(effectiveRecap.slot)}
           />
         </>
       }
     >
       <View style={styles.page}>
         <View style={styles.top}>
-          {latestRecap ? (
+          {effectiveRecap ? (
             <Touchable
               onPress={() => setRecapOpen(true)}
               bg={colors.surface}
               pressedBg={colors.surfaceDeep}
               style={styles.recapBanner}
               accessibilityRole="button"
-              accessibilityLabel="Xem lại video clip thử đồ"
+              accessibilityLabel={tr(locale, "Play try-on video", "Phát video thử đồ")}
             >
               <View style={styles.recapBannerLeft}>
                 <View style={styles.recapPlayPill}>
-                  <Play size={14} color={colors.ink} strokeWidth={2.8} />
+                  <Play size={10} color={colors.ink} strokeWidth={2.8} />
                 </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText variant="caption" weight={800} tone="ink">
-                    {tr(locale, "Try-On Video Recap", "Xem lại Video Thử Đồ")} ({latestRecap.durationSeconds}s)
-                  </AppText>
-                  <AppText variant="tag" tone="muted">
-                    {locale === "vi" ? latestRecap.garmentNameVi || latestRecap.garmentName : latestRecap.garmentName} · {tr(locale, "Loop replay · 0 token", "Phát lại vòng lặp · 0 token")}
-                  </AppText>
-                </View>
+                <AppText variant="caption" weight={800} tone="ink">
+                  {tr(locale, "Try-on Video", "Video thử đồ")}
+                </AppText>
+                <View style={styles.livePulseDot} />
               </View>
-              <View style={styles.recapBannerBadge}>
+              <View style={styles.playPill}>
                 <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "REPLAY", "XEM CLIP")}
+                  {tr(locale, "PLAY", "PHÁT")}
                 </AppText>
               </View>
             </Touchable>
           ) : null}
 
           <View style={styles.intro}>
-            <AppText variant="headline" helper="Bạn giữ món nào?">
-              Which one do you keep?
+            <AppText
+              variant="title"
+              weight={800}
+              helper={isSingleLook ? "Bạn thấy bộ đồ này thế nào?" : "Bạn giữ bộ đồ nào?"}
+            >
+              {isSingleLook ? "How does it look on you?" : "Which one do you keep?"}
             </AppText>
             {pair ? (
               <AppText
-                variant="body"
+                variant="caption"
                 tone="muted"
-                helper={occasion ? `Cho dịp ${occasion.labelVi.toLowerCase()}. Giữ một món ở dưới để lưu vào máy.` : "Giữ một món ở dưới để lưu vào máy."}
+                helper={
+                  isSingleLook
+                    ? "Nhấn nút 'Giữ' bên dưới để lưu lại bộ đồ này vào máy."
+                    : occasion
+                      ? `Cho dịp ${occasion.labelVi.toLowerCase()}. Giữ một bộ đồ ở dưới để lưu vào máy.`
+                      : "Giữ một bộ đồ ở dưới để lưu vào máy."
+                }
               >
-                {occasion ? `For your ${occasion.label.toLowerCase()}. ` : ""}Keep one below to save it on this phone.
+                {isSingleLook
+                  ? "Tap 'Keep' below to save this look on this phone."
+                  : `${occasion ? `For your ${occasion.label.toLowerCase()}. ` : ""}Keep one below to save it on this phone.`}
               </AppText>
             ) : null}
           </View>
-
-          {/* Honest-claims note before the pair, so it reads without scrolling (§6.5). */}
-          {pair ? <FitNote /> : null}
         </View>
 
-        {pair ? (
+        {pair && pair.recommendations.length > 0 ? (
           <>
-            <View style={stacked ? styles.stackedPair : styles.pair}>
-              <LookColumn slot="a" pick={pair.recommendations[0]} source={pair.source} saved={isSaved(pair.recommendations[0].garmentId)} layout={stacked ? "row" : "column"} />
-              {stacked ? <View style={styles.divider} /> : null}
-              <LookColumn slot="b" pick={pair.recommendations[1]} source={pair.source} saved={isSaved(pair.recommendations[1].garmentId)} layout={stacked ? "row" : "column"} />
-            </View>
+            {isSingleLook ? (
+              <View style={styles.singleLookWrap}>
+                <LookColumn
+                  slot={singleSlot}
+                  pick={pair.recommendations[0]!}
+                  source={pair.source}
+                  saved={isSaved(pair.recommendations[0]!.garmentId)}
+                  layout="row"
+                  showBadge={false}
+                />
+                <CelebrationBurst active={celebratingSlot === singleSlot} onComplete={() => setCelebratingSlot(null)} />
+              </View>
+            ) : pair.recommendations.length >= 2 ? (
+              <View style={stacked ? styles.stackedPair : styles.pair}>
+                <View style={styles.columnWrap}>
+                  <LookColumn slot="a" pick={pair.recommendations[0]!} source={pair.source} saved={isSaved(pair.recommendations[0]!.garmentId)} layout={stacked ? "row" : "column"} />
+                  <CelebrationBurst active={celebratingSlot === "a"} onComplete={() => setCelebratingSlot(null)} />
+                </View>
+                {stacked ? <View style={styles.divider} /> : null}
+                <View style={styles.columnWrap}>
+                  <LookColumn slot="b" pick={pair.recommendations[1]!} source={pair.source} saved={isSaved(pair.recommendations[1]!.garmentId)} layout={stacked ? "row" : "column"} />
+                  <CelebrationBurst active={celebratingSlot === "b"} onComplete={() => setCelebratingSlot(null)} />
+                </View>
+              </View>
+            ) : null}
 
-            <View style={styles.startOver}>
-              <Button
-                label="Start over"
-                labelVi="Chọn lại từ đầu"
-                variant="ghost"
-                icon={RotateCcw}
-                onPress={startOver}
-                accessibilityHint="Clears this occasion and both picks. Saved looks stay on this phone."
-                style={styles.startOverButton}
-              />
-              <AppText variant="caption" tone="muted" helper="Look đã lưu vẫn còn trên máy." helperVariant="caption">
-                Clears the occasion and picks. Saved looks stay.
-              </AppText>
+            <View style={styles.bottomNoteWrap}>
+              <FitNote compact />
             </View>
           </>
         ) : picksStatus === "loading" ? (
@@ -293,58 +369,91 @@ export default function FinalLook() {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: 98,
+  },
+  topLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  startOverTopBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    height: 36,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   topRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   closetBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
-    height: 38,
+    paddingHorizontal: 10,
+    height: 36,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,
   },
-  page: { gap: spacing.section, paddingTop: 8 },
-  top: { gap: spacing.stack },
+  page: { gap: 6, paddingTop: 2 },
+  top: { gap: 4 },
   recapBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 12,
-    borderRadius: radii.lg,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,
   },
   recapBannerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    flex: 1,
+    gap: 8,
   },
   recapPlayPill: {
-    width: 32,
-    height: 32,
+    width: 20,
+    height: 20,
     borderRadius: radii.full,
     backgroundColor: colors.lime,
     alignItems: "center",
     justifyContent: "center",
   },
-  recapBannerBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-    backgroundColor: colors.paper,
-    borderWidth: 1,
-    borderColor: colors.line,
+  livePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.lime,
   },
-  intro: { gap: 10 },
+  playPill: {
+    backgroundColor: colors.lime,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  intro: { gap: 2 },
+  singleLookWrap: {
+    maxWidth: 420,
+    width: "100%",
+    alignSelf: "center",
+    position: "relative",
+  },
+  columnWrap: {
+    flex: 1,
+    position: "relative",
+  },
   pair: { flexDirection: "row", alignItems: "flex-start", gap: spacing.gap },
   stackedPair: { gap: spacing.stack },
   divider: { height: 1, backgroundColor: colors.line },
-  startOver: { gap: 6, alignItems: "flex-start" },
-  startOverButton: { marginLeft: -14 },
+  bottomNoteWrap: {
+    marginTop: 2,
+  },
 });
