@@ -65,6 +65,7 @@ export interface FittingDockProps {
   /** Short names for the hooks. Default { a: "Look A", b: "Look B" }. */
   hookLabels?: { a: string; b: string };
   testID?: string;
+  savedSlots?: { a?: boolean; b?: boolean };
 }
 
 /** Height of the dock body (padding 10 + hook 76 + padding 10). */
@@ -107,6 +108,7 @@ export function FittingDock({
   scrim = "light",
   hookLabels = { a: "Look A", b: "Look B" },
   testID,
+  savedSlots,
 }: FittingDockProps) {
   const insets = useSafeAreaInsets();
   const compact = useCompactDock();
@@ -126,6 +128,7 @@ export function FittingDock({
     lit: mode === "keep" ? hooks[slot === "a" ? 0 : 1] !== null : lit === slot,
     disabled: hooksDisabled,
     compact,
+    saved: savedSlots?.[slot] ?? false,
     onPress: mode === "switch" ? onSelect : mode === "keep" ? onKeep : onHookPress,
   });
 
@@ -143,6 +146,7 @@ export function FittingDock({
                 <CenterButton {...center} compact={compact} />
                 <SingleKeepButton
                   slot={singleSlot}
+                  saved={savedSlots?.[singleSlot] ?? false}
                   onKeep={onKeep}
                   disabled={hooksDisabled}
                   compact={compact}
@@ -184,10 +188,11 @@ interface HookProps {
   lit: boolean;
   disabled: boolean;
   compact: boolean;
+  saved?: boolean;
   onPress?: (slot: DockSlot) => void;
 }
 
-function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: HookProps) {
+function Hook({ slot, mode, garmentId, name, lit, disabled, compact, saved = false, onPress }: HookProps) {
   const isSlotB = slot === "b";
   const locale = useLocale();
   const garment = garmentId ? getGarment(garmentId) : null;
@@ -195,7 +200,12 @@ function Hook({ slot, mode, garmentId, name, lit, disabled, compact, onPress }: 
   const textTone = lit ? "ink" : "paper";
   const subTone = lit ? "ink" : "mutedDark";
   const interactive = !!onPress && !!garment;
-  const title = mode === "keep" ? tr(locale, `Keep ${letter}`, `Giữ ${letter}`) : name;
+  const title =
+    mode === "keep"
+      ? saved
+        ? tr(locale, `✓ Kept ${letter}`, `✓ Đã giữ ${letter}`)
+        : tr(locale, `Keep ${letter}`, `Giữ ${letter}`)
+      : name;
   const sub = garment ? garment.name : tr(locale, "Empty", "Trống");
 
   const a11yLabel =
@@ -516,11 +526,13 @@ function SingleAction({
 
 function SingleKeepButton({
   slot,
+  saved = false,
   onKeep,
   disabled = false,
   compact = false,
 }: {
   slot: DockSlot;
+  saved?: boolean;
   onKeep?: (slot: DockSlot) => void;
   disabled?: boolean;
   compact?: boolean;
@@ -552,7 +564,7 @@ function SingleKeepButton({
             numberOfLines={1}
             maxFontSizeMultiplier={DOCK_TEXT_SCALE}
           >
-            {tr(locale, "Keep this look", "Lưu bộ đồ")}
+            {saved ? tr(locale, "Look Kept", "Đã lưu bộ đồ") : tr(locale, "Keep this look", "Lưu bộ đồ")}
           </AppText>
           <AppText
             variant="caption"

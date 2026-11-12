@@ -17,7 +17,7 @@ import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
 import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
-import { AppText, IconButton, Screen, TopBar, Touchable, useToast } from "@/components/ui";
+import { AppText, CelebrationBurst, IconButton, Screen, TopBar, Touchable, useToast } from "@/components/ui";
 import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
@@ -55,6 +55,7 @@ export default function FinalLook() {
   const [recapOpen, setRecapOpen] = useState(false);
   const hasAutoOpenedRef = useRef(false);
   const [keeping, setKeeping] = useState<Slot | null>(null);
+  const [celebratingSlot, setCelebratingSlot] = useState<Slot | null>(null);
   // "Start over" clears the store while this screen animates away; keep showing the
   // pair the user was looking at instead of flashing the empty state.
   const [frozen, setFrozen] = useState<ShownPair | null>(null);
@@ -141,6 +142,7 @@ export default function FinalLook() {
       tr(locale, `Saved Look ${letter} to your wardrobe!`, `Đã lưu bộ đồ ${letter} vào máy!`),
       { announcement: `Saved Look ${letter}, ${name}, on this phone` }
     );
+    setCelebratingSlot(slot);
     setKeeping(slot);
     sheetTimer.current = setTimeout(() => {
       sheetTimer.current = null;
@@ -244,7 +246,17 @@ export default function FinalLook() {
       }
       overlay={
         <>
-          <FittingDock mode="keep" hooks={hooks} onKeep={handleKeep} hooksDisabled={!!keeping} center={center} />
+          <FittingDock
+            mode="keep"
+            hooks={hooks}
+            onKeep={handleKeep}
+            hooksDisabled={!!keeping}
+            center={center}
+            savedSlots={{
+              a: hookIds[0] ? isSaved(hookIds[0]) : false,
+              b: hookIds[1] ? isSaved(hookIds[1]) : false,
+            }}
+          />
           <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"))} />
           <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
           <TryOnRecapModal
@@ -274,10 +286,13 @@ export default function FinalLook() {
                 <AppText variant="caption" weight={800} tone="ink">
                   {tr(locale, "Try-on Video", "Video thử đồ")}
                 </AppText>
+                <View style={styles.livePulseDot} />
               </View>
-              <AppText variant="tag" weight={800} tone="limeInk">
-                {tr(locale, "PLAY", "PHÁT")}
-              </AppText>
+              <View style={styles.playPill}>
+                <AppText variant="tag" weight={800} tone="ink">
+                  {tr(locale, "PLAY", "PHÁT")}
+                </AppText>
+              </View>
             </Touchable>
           ) : null}
 
@@ -321,12 +336,19 @@ export default function FinalLook() {
                   layout="row"
                   showBadge={false}
                 />
+                <CelebrationBurst active={celebratingSlot === singleSlot} onComplete={() => setCelebratingSlot(null)} />
               </View>
             ) : pair.recommendations.length >= 2 ? (
               <View style={stacked ? styles.stackedPair : styles.pair}>
-                <LookColumn slot="a" pick={pair.recommendations[0]!} source={pair.source} saved={isSaved(pair.recommendations[0]!.garmentId)} layout={stacked ? "row" : "column"} />
+                <View style={styles.columnWrap}>
+                  <LookColumn slot="a" pick={pair.recommendations[0]!} source={pair.source} saved={isSaved(pair.recommendations[0]!.garmentId)} layout={stacked ? "row" : "column"} />
+                  <CelebrationBurst active={celebratingSlot === "a"} onComplete={() => setCelebratingSlot(null)} />
+                </View>
                 {stacked ? <View style={styles.divider} /> : null}
-                <LookColumn slot="b" pick={pair.recommendations[1]!} source={pair.source} saved={isSaved(pair.recommendations[1]!.garmentId)} layout={stacked ? "row" : "column"} />
+                <View style={styles.columnWrap}>
+                  <LookColumn slot="b" pick={pair.recommendations[1]!} source={pair.source} saved={isSaved(pair.recommendations[1]!.garmentId)} layout={stacked ? "row" : "column"} />
+                  <CelebrationBurst active={celebratingSlot === "b"} onComplete={() => setCelebratingSlot(null)} />
+                </View>
               </View>
             ) : null}
 
@@ -405,11 +427,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  livePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.lime,
+  },
+  playPill: {
+    backgroundColor: colors.lime,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
   intro: { gap: 2 },
   singleLookWrap: {
     maxWidth: 420,
     width: "100%",
     alignSelf: "center",
+    position: "relative",
+  },
+  columnWrap: {
+    flex: 1,
+    position: "relative",
   },
   pair: { flexDirection: "row", alignItems: "flex-start", gap: spacing.gap },
   stackedPair: { gap: spacing.stack },

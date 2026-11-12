@@ -155,10 +155,10 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
         </AppText>
 
         {saved ? (
-          <View style={styles.saved} accessible accessibilityLabel={`Look ${letter} is saved on this phone`}>
-            <Check size={14} color={colors.limeInk} strokeWidth={2.25} />
-            <AppText variant="caption" weight={600} tone="limeInk" helper="Đã lưu trên máy này" style={styles.savedText}>
-              Saved on this phone
+          <View style={styles.savedPill} accessible accessibilityLabel={`Look ${letter} is saved on this phone`}>
+            <Check size={11} color={colors.limeInk} strokeWidth={2.8} />
+            <AppText variant="tag" weight={800} tone="limeInk">
+              {tr(locale, "SAVED TO PHONE", "ĐÃ LƯU TRÊN MÁY")}
             </AppText>
           </View>
         ) : null}
@@ -247,8 +247,19 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 10,
   },
-  saved: { flexDirection: "row", alignItems: "center", gap: 4 },
-  savedText: { flexShrink: 1 },
+  savedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(200, 241, 105, 0.18)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: "rgba(200, 241, 105, 0.45)",
+    alignSelf: "flex-start",
+    marginTop: 2,
+  },
   skelPhoto: { width: "100%", aspectRatio: 4 / 5, borderRadius: radii.xxl, backgroundColor: colors.surface },
   skelLine: { height: 12, borderRadius: 6, backgroundColor: colors.surface },
 });
