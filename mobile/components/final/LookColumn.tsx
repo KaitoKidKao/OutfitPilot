@@ -25,7 +25,7 @@ import { colors, motion, radii, spacing } from "@/lib/theme";
 export interface LookColumnProps {
   slot: Slot;
   pick: Recommendation;
-  source: StyleSource;
+  source: StyleSource | "closet";
   /** This garment is already saved for the current occasion. */
   saved: boolean;
   layout?: "column" | "row";

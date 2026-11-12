@@ -34,7 +34,7 @@ const STACK_MIN_WIDTH = 340;
 
 interface ShownPicks {
   recommendations: Recommendation[];
-  source: StyleSource;
+  source: StyleSource | "closet";
 }
 
 interface ShownPair {
@@ -83,7 +83,7 @@ export default function FinalLook() {
     activePicks.length > 0
       ? {
           recommendations: activePicks,
-          source: rawPair?.source ?? "llm",
+          source: rawPair?.source ?? (occasionId ? "llm" : "closet"),
         }
       : null;
   const pair = isSingleLook ? fallbackPair : (rawPair ?? fallbackPair);

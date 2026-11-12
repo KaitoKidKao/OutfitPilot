@@ -382,7 +382,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       if (rec) return rec;
       try {
         const g = getGarment(hookId);
-        return { garmentId: hookId, reason: g.fitAdvice ?? g.name, pairWith: "Quần phối hợp từ tủ đồ" };
+        let defaultPair: string;
+        if (g.type === "dress") {
+          defaultPair = "Giày sandal hoặc túi xách phù hợp";
+        } else if (g.type === "pants" || g.type === "bottom" || g.type === "skirt") {
+          defaultPair = "Áo thun hoặc sơ mi phù hợp từ tủ đồ";
+        } else if (g.type === "other") {
+          defaultPair = "Trang phục phù hợp từ tủ đồ";
+        } else {
+          defaultPair = "Quần hoặc chân váy phù hợp từ tủ đồ";
+        }
+        return { garmentId: hookId, reason: g.fitAdvice ?? g.nameVi ?? g.name, pairWith: defaultPair };
       } catch {
         return null;
       }
