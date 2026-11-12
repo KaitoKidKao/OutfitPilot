@@ -1,9 +1,10 @@
 // TryOnRecapModal: Xem lại video clip vòng lặp (10-15s) sau khi phiên AI tắt
 // Tốn 0 Token Decart, hỗ trợ Before/After so sánh và Chia sẻ/Lưu video với bạn bè.
 
-import { Eye, EyeOff, Play, RotateCcw, Share2, X } from "lucide-react-native";
+import { Eye, EyeOff, Play, RotateCcw, Share2, User, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -111,13 +112,51 @@ export function TryOnRecapModal({
             onPressOut={() => setHoldingBefore(false)}
             style={styles.videoStage}
           >
-            <GarmentImage
-              garmentId={recap.garmentId}
-              width="100%"
-              aspectRatio={4 / 5}
-              radius={radii.xl}
-              showSampleTag={false}
-            />
+            {showingOriginal ? (
+              recap.originalPhotoUri ? (
+                <Image
+                  source={{ uri: recap.originalPhotoUri }}
+                  style={styles.stageImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.beforeBaseline}>
+                  <View style={styles.beforeIconBox}>
+                    <User size={44} color={colors.ink} strokeWidth={1.75} />
+                  </View>
+                  <AppText variant="title" weight={800} tone="ink" align="center">
+                    {tr(locale, "Your Real Clothes", "Trang phục thực tế của bạn")}
+                  </AppText>
+                  <AppText variant="bodySm" tone="muted" align="center" style={styles.beforeDesc}>
+                    {tr(
+                      locale,
+                      "Your baseline outfit before AI try-on. Release to see AI outfit.",
+                      "Bộ đồ bạn đang mặc lúc bắt đầu thử. Thả tay hoặc bấm After để ngắm lại đồ AI."
+                    )}
+                  </AppText>
+                  <View style={styles.beforePill}>
+                    <AppText variant="tag" weight={800} tone="muted">
+                      {tr(locale, "BEFORE · ORIGINAL", "BEFORE · ĐỒ THỰC TẾ")}
+                    </AppText>
+                  </View>
+                </View>
+              )
+            ) : (
+              <View style={styles.afterStage}>
+                <GarmentImage
+                  garmentId={recap.garmentId}
+                  width="100%"
+                  aspectRatio={4 / 5}
+                  radius={radii.xl}
+                  showSampleTag={false}
+                />
+                <View style={styles.afterBadge}>
+                  <AppText variant="tag" weight={800} tone="ink">
+                    {tr(locale, "AFTER · AI STYLED", "AFTER · ĐÃ MẶC AI")}
+                  </AppText>
+                </View>
+              </View>
+            )}
 
             {/* Hold to Peek Hint Overlay */}
             <View style={styles.peekHintOverlay}>
@@ -332,5 +371,57 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.line,
+  },
+  stageImage: {
+    width: "100%",
+    aspectRatio: 4 / 5,
+    borderRadius: radii.xl,
+  },
+  beforeBaseline: {
+    width: "100%",
+    aspectRatio: 4 / 5,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 10,
+    borderWidth: 2,
+    borderColor: colors.line,
+  },
+  beforeIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceDeep,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  beforeDesc: {
+    maxWidth: 260,
+    lineHeight: 18,
+  },
+  beforePill: {
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceDeep,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  afterStage: {
+    position: "relative",
+  },
+  afterBadge: {
+    position: "absolute",
+    bottom: 32,
+    alignSelf: "center",
+    backgroundColor: colors.lime,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radii.full,
+    ...shadows.lift,
   },
 });
