@@ -16,16 +16,17 @@ import { readPreviewSeed } from "./previewSeed";
 
 export type Slot = "a" | "b";
 export type PicksStatus = "idle" | "loading" | "ready" | "error";
+export type SavedOccasionId = OccasionId | "closet";
 
 export interface SavedLook {
   /** Unique id (garmentId + occasionId + savedAt). */
   id: string;
   garmentId: GarmentId;
-  occasionId: OccasionId;
+  occasionId: SavedOccasionId;
   reason: string;
   pairWith: string;
-  /** "llm" = AI Stylist pick, "fallback" = default suggestion. Keep the label honest. */
-  source: StyleSource;
+  /** "llm" = AI Stylist pick, "fallback" = default suggestion, "closet" = user's self pick. */
+  source: StyleSource | "closet";
   /** ISO 8601. */
   savedAt: string;
 }
@@ -117,10 +118,10 @@ function isSavedLook(v: unknown): v is SavedLook {
     typeof o.id === "string" &&
     isGarmentId(o.garmentId) &&
     typeof o.occasionId === "string" &&
-    (OCCASION_IDS as readonly string[]).includes(o.occasionId) &&
+    ((OCCASION_IDS as readonly string[]).includes(o.occasionId) || o.occasionId === "closet") &&
     typeof o.reason === "string" &&
     typeof o.pairWith === "string" &&
-    (o.source === "llm" || o.source === "fallback") &&
+    (o.source === "llm" || o.source === "fallback" || o.source === "closet") &&
     typeof o.savedAt === "string"
   );
 }
@@ -312,17 +313,29 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       const s = stateRef.current;
       const hookId = s.customHooks ? s.customHooks[slot === "a" ? 0 : 1] : (s.picks?.recommendations[slot === "a" ? 0 : 1]?.garmentId ?? null);
       if (!hookId) return null;
-      const occasionId = s.occasionId ?? "job_interview";
+      const occasionId: SavedOccasionId = s.occasionId ?? "closet";
       const rec = s.picks?.recommendations.find((r) => r.garmentId === hookId);
       const garment = getGarment(hookId);
       const savedAt = new Date().toISOString();
+
+      let defaultPair: string;
+      if (garment.type === "dress") {
+        defaultPair = "Giày sandal hoặc túi xách phù hợp";
+      } else if (garment.type === "pants" || garment.type === "bottom" || garment.type === "skirt") {
+        defaultPair = "Áo thun hoặc sơ mi phù hợp từ tủ đồ";
+      } else if (garment.type === "other") {
+        defaultPair = "Trang phục phù hợp từ tủ đồ";
+      } else {
+        defaultPair = "Quần hoặc chân váy phù hợp từ tủ đồ";
+      }
+
       const look: SavedLook = {
         id: `${hookId}-${occasionId}-${Date.parse(savedAt)}`,
         garmentId: hookId,
         occasionId,
-        reason: rec?.reason ?? garment.fitAdvice ?? `Món đồ từ Tủ Đồ (${garment.name})`,
-        pairWith: rec?.pairWith ?? "Quần phù hợp từ tủ đồ",
-        source: rec ? s.picks?.source ?? "llm" : "llm",
+        reason: rec?.reason ?? garment.fitAdvice ?? `Món đồ từ Tủ Đồ (${garment.nameVi ?? garment.name})`,
+        pairWith: rec?.pairWith ?? defaultPair,
+        source: rec ? (s.picks?.source ?? "llm") : "closet",
         savedAt,
       };
       const next = [look, ...s.saved.filter((l) => !(l.garmentId === look.garmentId && l.occasionId === look.occasionId))].slice(0, MAX_SAVED);

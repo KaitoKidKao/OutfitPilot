@@ -88,4 +88,5 @@ export function isStyleChoice(value: unknown): value is StyleChoice {
 export const SOURCE_LABEL = {
   llm: { label: "AI Stylist pick", labelVi: "Gợi ý từ AI Stylist" },
   fallback: { label: "Default suggestion", labelVi: "Gợi ý mặc định" },
+  closet: { label: "Personal closet pick", labelVi: "Món tự chọn từ tủ đồ" },
 } as const;
