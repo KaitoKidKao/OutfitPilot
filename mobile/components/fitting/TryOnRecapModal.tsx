@@ -83,6 +83,17 @@ export function TryOnRecapModal({
     setLocalOriginalPhotoUri(recap?.originalPhotoUri ?? null);
   }, [recap]);
 
+  useEffect(() => {
+    if (visible) {
+      setIsPlaying(true);
+      setProgress(0);
+      setMode("after");
+      setSavedToDevice(false);
+      setSaving(false);
+      setSharing(false);
+    }
+  }, [visible]);
+
   const player = useVideoPlayer(localVideoUri, (p) => {
     p.loop = true;
     if (isPlaying) {
@@ -99,7 +110,7 @@ export function TryOnRecapModal({
         console.warn("Player replace failed", err);
       }
     }
-  }, [localVideoUri, player, isPlaying]);
+  }, [localVideoUri, player]);
 
   useEffect(() => {
     if (!player) return;
@@ -278,12 +289,16 @@ export function TryOnRecapModal({
     try {
       let savedToGallery = false;
       const mediaUri = localVideoUri ?? localAiPhotoUri ?? localOriginalPhotoUri;
+      let targetUri = mediaUri;
+      if (targetUri && !targetUri.startsWith("file://") && !targetUri.startsWith("content://") && !targetUri.startsWith("ph://")) {
+        targetUri = `file://${targetUri}`;
+      }
 
-      if (mediaUri && Platform.OS !== "web") {
+      if (targetUri && Platform.OS !== "web") {
         try {
           const { status } = await MediaLibrary.requestPermissionsAsync();
           if (status === "granted") {
-            await MediaLibrary.createAssetAsync(mediaUri);
+            await MediaLibrary.createAssetAsync(targetUri);
             savedToGallery = true;
           }
         } catch (mediaErr) {
@@ -850,6 +865,7 @@ const styles = StyleSheet.create({
     width: "100%",
     aspectRatio: 4 / 5,
     borderRadius: radii.xl,
+    overflow: "hidden",
     backgroundColor: colors.ink,
   },
   pickMediaBtn: {

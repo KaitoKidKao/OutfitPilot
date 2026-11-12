@@ -32,6 +32,8 @@
       "permissions": [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.CAMERA",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.READ_MEDIA_IMAGES",
@@ -87,7 +89,8 @@
           "photosPermission": "OutfitPilot lets you save your try-on photos and videos to your gallery.",
           "savePhotosPermission": "OutfitPilot lets you save your try-on photos and videos to your gallery."
         }
-      ]
+      ],
+      "./plugins/withRecordScreen"
     ],
     "experiments": {
       "typedRoutes": true,
