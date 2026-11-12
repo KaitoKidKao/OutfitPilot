@@ -67,13 +67,13 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
       </GarmentImage>
 
       <View style={styles.text}>
-        <AppText variant="section" accessibilityRole="header" accessibilityLabel={`Look ${letter}, ${garment.name}`}>
+        <AppText variant="section" numberOfLines={1} accessibilityRole="header" accessibilityLabel={`Look ${letter}, ${garment.name}`}>
           {garment.name}
         </AppText>
 
-        <AppText variant="bodySm">{reason}</AppText>
+        <AppText variant="bodySm" numberOfLines={3}>{reason}</AppText>
 
-        <AppText variant="bodySm" tone="muted">
+        <AppText variant="bodySm" tone="muted" numberOfLines={2}>
           <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
             Pair with:{" "}
           </AppText>
@@ -169,9 +169,9 @@ function Rise({ delay, style, children }: { delay: number; style: StyleProp<View
 }
 
 const styles = StyleSheet.create({
-  column: { flex: 1, minWidth: 0, gap: 12 },
+  column: { flex: 1, minWidth: 0, gap: 8 },
   row: { flexDirection: "row", alignItems: "flex-start", gap: spacing.stack },
-  text: { flex: 1, minWidth: 0, gap: 8 },
+  text: { flex: 1, minWidth: 0, gap: 5 },
   badge: {
     position: "absolute",
     left: 8,

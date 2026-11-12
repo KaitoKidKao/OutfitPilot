@@ -5,8 +5,8 @@
 // Keeping saves to the device (store.keepLook -> AsyncStorage), toasts, then opens the
 // Saved looks sheet. Secondary: "Saved N" (top bar, same as Choose Occasion) and "Start over" (end of page).
 import { useFocusEffect, useRouter } from "expo-router";
-import { Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { ClosetSheet } from "@/components/closet/ClosetSheet";
@@ -17,8 +17,8 @@ import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
 import { SavedButton } from "@/components/index/SavedButton";
 import { FittingDock, type DockCenter } from "@/components/FittingDock";
 import { SavedSheet } from "@/components/SavedSheet";
-import { AppText, Button, Screen, TopBar, Touchable, useToast } from "@/components/ui";
-import type { Recommendation, StyleResponse, StyleSource } from "@/lib/api";
+import { AppText, IconButton, Screen, TopBar, Touchable, useToast } from "@/components/ui";
+import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption } from "@/lib/occasions";
@@ -61,14 +61,20 @@ export default function FinalLook() {
   const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Automatically pop up 30s Try-On Video Recap modal when arriving at Final Look
-  const effectiveRecap: TryOnRecap | null = latestRecap ?? (hookIds[0] || hookIds[1] ? {
-    garmentId: (hookIds[0] ?? hookIds[1])!,
-    garmentName: getGarment((hookIds[0] ?? hookIds[1])!).name,
-    garmentNameVi: getGarment((hookIds[0] ?? hookIds[1])!).nameVi,
-    slot: hookIds[0] ? "a" : "b",
-    durationSeconds: 30,
-    recordedAt: new Date().toISOString(),
-  } : null);
+  const fallbackGarmentId = hookIds[0] ?? hookIds[1];
+  const effectiveRecap: TryOnRecap | null = useMemo(() => {
+    if (latestRecap) return latestRecap;
+    if (!fallbackGarmentId) return null;
+    const g = getGarment(fallbackGarmentId);
+    return {
+      garmentId: fallbackGarmentId,
+      garmentName: g.name,
+      garmentNameVi: g.nameVi,
+      slot: hookIds[0] ? "a" : "b",
+      durationSeconds: 30,
+      recordedAt: new Date().toISOString(),
+    };
+  }, [latestRecap, fallbackGarmentId, hookIds]);
 
   useEffect(() => {
     if (effectiveRecap && !hasAutoOpenedRef.current) {
@@ -183,8 +189,33 @@ export default function FinalLook() {
 
   return (
     <Screen
+      contentStyle={styles.screenContent}
       header={
         <TopBar
+          left={
+            <View style={styles.topLeft}>
+              <IconButton
+                icon={ChevronLeft}
+                accessibilityLabel={tr(locale, "Back", "Quay lại")}
+                onPress={() => router.back()}
+              />
+              <Touchable
+                accessibilityRole="button"
+                accessibilityLabel={tr(locale, "Start over", "Chọn lại từ đầu")}
+                accessibilityHint={tr(locale, "Clears occasion and picks", "Xóa dịp và look đã chọn để làm lại")}
+                onPress={startOver}
+                bg={colors.surface}
+                pressedBg={colors.surfaceDeep}
+                style={styles.startOverTopBtn}
+                testID="final-start-over-btn"
+              >
+                <RotateCcw size={13} color={colors.ink} strokeWidth={2.2} />
+                <AppText variant="caption" weight={700}>
+                  {tr(locale, "Start over", "Bắt đầu lại")}
+                </AppText>
+              </Touchable>
+            </View>
+          }
           // Same entry point and count format as Choose Occasion ("Saved N").
           right={
             <View style={styles.topRight}>
@@ -230,32 +261,33 @@ export default function FinalLook() {
               pressedBg={colors.surfaceDeep}
               style={styles.recapBanner}
               accessibilityRole="button"
-              accessibilityLabel="Xem lại video clip 30s thử đồ"
+              accessibilityLabel={tr(locale, "Play 30s try-on video", "Phát video 30s thử đồ")}
             >
               <View style={styles.recapBannerLeft}>
                 <View style={styles.recapPlayPill}>
-                  <Play size={11} color={colors.ink} strokeWidth={2.8} />
+                  <Play size={10} color={colors.ink} strokeWidth={2.8} />
                 </View>
-                <AppText variant="caption" weight={700} tone="ink" numberOfLines={1}>
-                  {tr(locale, "Replay 30s video", "Xem lại clip 30s")} · {effectiveRecap.garmentNameVi || effectiveRecap.garmentName}
+                <AppText variant="caption" weight={800} tone="ink">
+                  {tr(locale, "30s Video", "Video 30s")}
                 </AppText>
               </View>
               <AppText variant="tag" weight={800} tone="limeInk">
-                {tr(locale, "REPLAY", "XEM LẠI")}
+                {tr(locale, "PLAY", "PHÁT")}
               </AppText>
             </Touchable>
           ) : null}
 
           <View style={styles.intro}>
             <AppText
-              variant="headline"
+              variant="title"
+              weight={800}
               helper={isSingleLook ? "Bạn thấy món đồ này thế nào?" : "Bạn giữ món nào?"}
             >
               {isSingleLook ? "How does it look on you?" : "Which one do you keep?"}
             </AppText>
             {pair ? (
               <AppText
-                variant="body"
+                variant="caption"
                 tone="muted"
                 helper={
                   isSingleLook
@@ -271,9 +303,6 @@ export default function FinalLook() {
               </AppText>
             ) : null}
           </View>
-
-          {/* Honest-claims note before the pair, so it reads without scrolling (§6.5). */}
-          {pair ? <FitNote /> : null}
         </View>
 
         {pair && pair.recommendations.length > 0 ? (
@@ -285,7 +314,7 @@ export default function FinalLook() {
                   pick={pair.recommendations[0]!}
                   source={pair.source}
                   saved={isSaved(pair.recommendations[0]!.garmentId)}
-                  layout="column"
+                  layout="row"
                   showBadge={false}
                 />
               </View>
@@ -297,19 +326,8 @@ export default function FinalLook() {
               </View>
             ) : null}
 
-            <View style={styles.startOver}>
-              <Button
-                label="Start over"
-                labelVi="Chọn lại từ đầu"
-                variant="ghost"
-                icon={RotateCcw}
-                onPress={startOver}
-                accessibilityHint="Clears this occasion and both picks. Saved looks stay on this phone."
-                style={styles.startOverButton}
-              />
-              <AppText variant="caption" tone="muted" helper="Look đã lưu vẫn còn trên máy." helperVariant="caption">
-                Clears the occasion and picks. Saved looks stay.
-              </AppText>
+            <View style={styles.bottomNoteWrap}>
+              <FitNote compact />
             </View>
           </>
         ) : picksStatus === "loading" ? (
@@ -325,28 +343,46 @@ export default function FinalLook() {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: 112,
+  },
+  topLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  startOverTopBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    height: 36,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   topRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   closetBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
-    height: 38,
+    paddingHorizontal: 10,
+    height: 36,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,
   },
-  page: { gap: spacing.section, paddingTop: 8 },
-  top: { gap: spacing.stack },
+  page: { gap: 10, paddingTop: 4 },
+  top: { gap: 6 },
   recapBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 7,
+    paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: radii.full,
     borderWidth: 1,
@@ -356,26 +392,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    flex: 1,
-    marginRight: 8,
   },
   recapPlayPill: {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     borderRadius: radii.full,
     backgroundColor: colors.lime,
     alignItems: "center",
     justifyContent: "center",
   },
-  recapBannerBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-    backgroundColor: colors.paper,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  intro: { gap: 10 },
+  intro: { gap: 2 },
   singleLookWrap: {
     maxWidth: 420,
     width: "100%",
@@ -384,6 +410,7 @@ const styles = StyleSheet.create({
   pair: { flexDirection: "row", alignItems: "flex-start", gap: spacing.gap },
   stackedPair: { gap: spacing.stack },
   divider: { height: 1, backgroundColor: colors.line },
-  startOver: { gap: 6, alignItems: "flex-start" },
-  startOverButton: { marginLeft: -14 },
+  bottomNoteWrap: {
+    marginTop: 4,
+  },
 });

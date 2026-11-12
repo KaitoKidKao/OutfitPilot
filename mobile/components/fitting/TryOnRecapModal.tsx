@@ -174,7 +174,7 @@ export function TryOnRecapModal({
               <View style={styles.tagBadge}>
                 <Film size={12} color={colors.ink} strokeWidth={2.4} style={{ marginRight: 4 }} />
                 <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "30S VIDEO RECAP", "VIDEO 30S XEM LẠI")}
+                  {tr(locale, "30S VIDEO", "VIDEO 30S")}
                 </AppText>
               </View>
               <AppText variant="title">
