@@ -35,10 +35,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   noteCompact: {
-    paddingVertical: 7,
-    paddingHorizontal: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: radii.md,
-    gap: 8,
+    gap: 6,
   },
   icon: { marginTop: 1 },
   iconCompact: { marginTop: 2 },

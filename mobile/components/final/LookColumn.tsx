@@ -6,16 +6,17 @@
 // layout "column" = the default two-up comparison. layout "row" is used when the text
 // is scaled up (font scale >= 1.35) or the screen is very narrow: photo left, text right,
 // so long reasons never squeeze into a 150 pt column.
-import { Check, ShieldCheck, Tag } from "lucide-react-native";
-import { useEffect, type ReactNode } from "react";
-import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { Check, Tag } from "lucide-react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 
 import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
+import { Touchable } from "@/components/ui/Touchable";
 import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment } from "@/lib/catalog";
-import { getInitialClosetItem, getInitialMatchingPants } from "@/lib/closet";
+import { getInitialClosetItem } from "@/lib/closet";
 import { tr, useLocale } from "@/lib/locale";
 import { SOURCE_LABEL } from "@/lib/occasions";
 import { reasonWithoutName } from "@/lib/reasonText";
@@ -34,17 +35,17 @@ export interface LookColumnProps {
 }
 
 const BADGE = 32;
-const ROW_PHOTO_WIDTH = 128;
+const ROW_PHOTO_WIDTH = 110;
 
 export function LookColumn({ slot, pick, source, saved, layout = "column", showBadge = true }: LookColumnProps) {
   const locale = useLocale();
   const garment = getGarment(pick.garmentId);
   const closetItem = getInitialClosetItem(pick.garmentId);
-  const matchingPants = getInitialMatchingPants(pick.garmentId);
   const letter = slot.toUpperCase();
   const label = SOURCE_LABEL[source];
   const row = layout === "row";
   const reason = reasonWithoutName(pick.reason, garment.name);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <Rise delay={slot === "a" ? 0 : 70} style={row ? styles.row : styles.column}>
@@ -71,32 +72,39 @@ export function LookColumn({ slot, pick, source, saved, layout = "column", showB
           {garment.name}
         </AppText>
 
-        <AppText variant="bodySm" numberOfLines={3}>{reason}</AppText>
+        <View style={styles.reasonBlock}>
+          <AppText variant="bodySm" numberOfLines={expanded ? undefined : 2}>
+            {reason}
+          </AppText>
+          {reason.length > 55 ? (
+            <Touchable
+              onPress={() => setExpanded((prev) => !prev)}
+              style={styles.moreBtn}
+              accessibilityRole="button"
+              accessibilityLabel={expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
+            >
+              <AppText variant="tag" weight={800} tone="limeInk">
+                {expanded ? tr(locale, "Show less", "Thu gọn") : tr(locale, "Read more", "Xem thêm")}
+              </AppText>
+            </Touchable>
+          ) : null}
+        </View>
 
-        <AppText variant="bodySm" tone="muted" numberOfLines={2}>
+        <AppText variant="bodySm" tone="muted">
           <AppText variant="bodySm" weight={600} tone="ink" helper="Phối cùng: ">
             Pair with:{" "}
           </AppText>
           {pick.pairWith}
         </AppText>
 
-        {closetItem?.fitAdvice ? (
-          <View style={styles.fitAdviceBox}>
-            <ShieldCheck size={12} color={colors.limeInk} strokeWidth={2.2} />
-            <AppText variant="caption" tone="muted" style={styles.fitAdviceText}>
-              {closetItem.fitAdvice}
-            </AppText>
-          </View>
-        ) : null}
-
         {closetItem?.price ? (
-          <View style={styles.priceRow}>
-            <Tag size={12} color={colors.muted} />
-            <AppText variant="caption" weight={700} tone="ink">
+          <View style={styles.priceTag}>
+            <Tag size={10} color={colors.ink} strokeWidth={2.2} />
+            <AppText variant="caption" weight={800} tone="ink" tabular>
               {closetItem.price}
             </AppText>
             {closetItem.shop ? (
-              <AppText variant="caption" tone="muted">
+              <AppText variant="tag" tone="muted" numberOfLines={1} style={styles.shopText}>
                 · {closetItem.shop}
               </AppText>
             ) : null}
@@ -169,9 +177,9 @@ function Rise({ delay, style, children }: { delay: number; style: StyleProp<View
 }
 
 const styles = StyleSheet.create({
-  column: { flex: 1, minWidth: 0, gap: 8 },
+  column: { flex: 1, minWidth: 0, gap: 6 },
   row: { flexDirection: "row", alignItems: "flex-start", gap: spacing.stack },
-  text: { flex: 1, minWidth: 0, gap: 5 },
+  text: { flex: 1, minWidth: 0, gap: 4 },
   badge: {
     position: "absolute",
     left: 8,
@@ -182,28 +190,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  saved: { flexDirection: "row", alignItems: "center", gap: 4 },
-  savedText: { flexShrink: 1 },
-  fitAdviceBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    backgroundColor: colors.surface,
-    padding: 8,
-    borderRadius: radii.sm,
-    marginTop: 2,
+  reasonBlock: {
+    gap: 2,
   },
-  fitAdviceText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 16,
+  moreBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 1,
   },
-  priceRow: {
+  priceTag: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginTop: 2,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    alignSelf: "flex-start",
+    maxWidth: "100%",
   },
+  shopText: {
+    flexShrink: 1,
+    fontSize: 10,
+  },
+  saved: { flexDirection: "row", alignItems: "center", gap: 4 },
+  savedText: { flexShrink: 1 },
   skelPhoto: { width: "100%", aspectRatio: 4 / 5, borderRadius: radii.xxl, backgroundColor: colors.surface },
   skelLine: { height: 12, borderRadius: 6, backgroundColor: colors.surface },
 });

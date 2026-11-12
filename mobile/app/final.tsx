@@ -189,6 +189,7 @@ export default function FinalLook() {
 
   return (
     <Screen
+      dockClearance={false}
       contentStyle={styles.screenContent}
       header={
         <TopBar
@@ -344,7 +345,7 @@ export default function FinalLook() {
 
 const styles = StyleSheet.create({
   screenContent: {
-    paddingBottom: 112,
+    paddingBottom: 98,
   },
   topLeft: {
     flexDirection: "row",
@@ -376,13 +377,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
   },
-  page: { gap: 10, paddingTop: 4 },
-  top: { gap: 6 },
+  page: { gap: 6, paddingTop: 2 },
+  top: { gap: 4 },
   recapBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: radii.full,
     borderWidth: 1,
@@ -411,6 +412,6 @@ const styles = StyleSheet.create({
   stackedPair: { gap: spacing.stack },
   divider: { height: 1, backgroundColor: colors.line },
   bottomNoteWrap: {
-    marginTop: 4,
+    marginTop: 2,
   },
 });
