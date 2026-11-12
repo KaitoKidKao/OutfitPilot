@@ -60,6 +60,7 @@ export default function ChooseOccasion() {
     hookIds,
     saved,
     savedLoaded,
+    resetHooks,
   } = useAppStore();
 
   const [savedOpen, setSavedOpen] = useState(false);
@@ -82,10 +83,12 @@ export default function ChooseOccasion() {
     useCallback(() => {
       focusedRef.current = true;
       navigatingRef.current = false;
+      // Reset any custom single garment hooks when returning to home so selecting an occasion defaults to recommendations
+      resetHooks();
       return () => {
         focusedRef.current = false;
       };
-    }, []),
+    }, [resetHooks]),
   );
 
   // Delayed pending note: a quick (or cached) response never flashes it.
@@ -337,11 +340,11 @@ export default function ChooseOccasion() {
               (Optional)
             </AppText>
           </View>
-          <AppText variant="caption" tone={style === "none" ? "muted" : "ink"} weight={style === "none" ? 500 : 700}>
-            {style === "none"
-              ? (locale === "vi" ? "Mọi phong cách" : "All vibes")
-              : (locale === "vi" ? STYLE_OPTIONS.find((s) => s.value === style)?.labelVi : STYLE_OPTIONS.find((s) => s.value === style)?.label)}
-          </AppText>
+          {style !== "none" ? (
+            <AppText variant="caption" tone="ink" weight={700}>
+              {locale === "vi" ? STYLE_OPTIONS.find((s) => s.value === style)?.labelVi : STYLE_OPTIONS.find((s) => s.value === style)?.label}
+            </AppText>
+          ) : null}
         </View>
         <View style={styles.styleRow} accessibilityRole="radiogroup" accessibilityLabel="Style vibe">
           {STYLE_OPTIONS.map((s) => {

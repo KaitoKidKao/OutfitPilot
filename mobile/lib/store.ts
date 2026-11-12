@@ -86,6 +86,7 @@ export interface AppActions {
   fetchPicks: (options?: { force?: boolean }) => Promise<StyleResponse | null>;
   setActiveLook: (slot: Slot) => void;
   assignHook: (slot: Slot, id: GarmentId | null) => void;
+  resetHooks: () => void;
   giveConsent: () => void;
   revokeConsent: () => void;
   /** Saves the pick in `slot` (dedupes the same garment + occasion). Returns the saved entry. */
@@ -207,8 +208,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const resetPicks = (s: AppState): AppState => {
     requestRef.current++;
     picksKeyRef.current = null;
-    return { ...s, picks: null, picksStatus: "idle", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a" };
+    return { ...s, picks: null, picksStatus: "idle", picksError: null, picksErrorCode: null, picksErrorStatus: 0, activeLook: "a", customHooks: null };
   };
+
+  const resetHooks = useCallback(() => {
+    setState((s) => ({ ...s, customHooks: null }));
+  }, []);
 
   const setOccasion = useCallback((id: OccasionId) => {
     setState((s) => (s.occasionId === id ? { ...s, occasionId: null } : { ...resetPicks(s), occasionId: id }));
@@ -419,6 +424,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       fetchPicks,
       setActiveLook,
       assignHook,
+      resetHooks,
       giveConsent,
       revokeConsent,
       keepLook,
@@ -430,7 +436,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       garmentFor,
       hookIds: [hookA, hookB],
     };
-  }, [state, activeLocale, setOccasion, setStyle, setGender, setLocale, fetchPicks, setActiveLook, assignHook, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
+  }, [state, activeLocale, setOccasion, setStyle, setGender, setLocale, fetchPicks, setActiveLook, assignHook, resetHooks, giveConsent, revokeConsent, keepLook, removeSaved, clear, clearSaved, setLatestRecap]);
 
   return createElement(StoreContext.Provider, { value: store }, children);
 }

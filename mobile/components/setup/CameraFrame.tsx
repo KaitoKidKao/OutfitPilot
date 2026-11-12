@@ -5,8 +5,8 @@
 //                                     streamed from this screen)
 //   denied / error                 -> recovery copy inside the same frame
 import { CameraOff, RotateCcw } from "lucide-react-native";
-import { useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { TryOnVideo } from "@/components/TryOnVideo";
 import { AppText, Button, StatusPill } from "@/components/ui";
@@ -45,12 +45,28 @@ export interface CameraFrameProps {
   errorDetail?: string | null;
   /** Ask for the camera again (Android can re-prompt after a plain "Deny"). */
   onRetry: () => void;
+  aligned?: boolean;
+  onToggleAligned?: () => void;
 }
 
-export function CameraFrame({ state, stream, mirror, errorDetail, onRetry }: CameraFrameProps) {
+export function CameraFrame({ state, stream, mirror, errorDetail, onRetry, aligned: externalAligned, onToggleAligned }: CameraFrameProps) {
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const [internalAligned, setInternalAligned] = useState(false);
   const message = state === "denied" || state === "error";
   const showVideo = state === "on" && stream !== null;
+
+  useEffect(() => {
+    if (state === "on") {
+      const timer = setTimeout(() => {
+        setInternalAligned(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    } else {
+      setInternalAligned(false);
+    }
+  }, [state]);
+
+  const isAligned = externalAligned ?? internalAligned;
 
   return (
     <View
@@ -70,7 +86,17 @@ export function CameraFrame({ state, stream, mirror, errorDetail, onRetry }: Cam
           accessibilityLabel="Your camera preview, mirrored. Fit your head to hips inside the dashed outline."
         >
           <TryOnVideo stream={stream} mirror={mirror} objectFit="cover" style={StyleSheet.absoluteFill} />
-          <BodyGuide />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => {
+              setInternalAligned((prev) => !prev);
+              onToggleAligned?.();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={isAligned ? "Khung đã chuẩn xanh, chạm để chỉnh lại" : "Chạm để xác nhận đã đứng vào khung"}
+          >
+            <BodyGuide aligned={isAligned} />
+          </Pressable>
           {Platform.OS !== "web" ? <CornerMask width={size.width} height={size.height} radius={radii.hero} /> : null}
         </View>
       ) : (
@@ -82,9 +108,9 @@ export function CameraFrame({ state, stream, mirror, errorDetail, onRetry }: Cam
       {!message ? (
         <StatusPill
           style={styles.pill}
-          label={state === "on" ? "Camera preview" : PILL[state]}
-          labelVi={state === "on" ? "Xem trước camera" : PILL_VI[state]}
-          dot={state === "on" ? "on" : "off"}
+          label={state === "on" ? (isAligned ? "In frame · Ready" : "Align in frame") : PILL[state]}
+          labelVi={state === "on" ? (isAligned ? "Đã vào khung hình" : "Căn người vào khung") : PILL_VI[state]}
+          dot={state === "on" ? (isAligned ? "live" : "on") : "off"}
           ai={state === "on" ? "off" : null}
         />
       ) : null}

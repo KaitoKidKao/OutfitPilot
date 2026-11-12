@@ -6,7 +6,7 @@
 // hook (a tap on the hook does the same, plus scrolls here). The active card carries a 2 pt ink
 // ring and a lime slot badge; the other card's badge is ink (DESIGN.md Chips).
 import type { LayoutChangeEvent } from "react-native";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { Camera } from "lucide-react-native";
 
@@ -47,7 +47,7 @@ export function LookCard({ slot, pick, active, onPress, onTrySingle, onLayout, t
       testID={testID}
       onLayout={onLayout}
       onPress={() => onPress(slot)}
-      accessibilityRole="button"
+      accessibilityRole={Platform.OS === "web" ? undefined : "button"}
       accessibilityState={{ selected: active }}
       aria-selected={active}
       accessibilityLabel={`${name}, ${role.en}: ${garment.name}${garment.sample ? ", sample photo" : ""}. ${reason} Pair with ${pick.pairWith}.`}
@@ -122,7 +122,7 @@ export function LookCard({ slot, pick, active, onPress, onTrySingle, onLayout, t
               bg={active ? colors.lime : colors.surface}
               pressedBg={active ? colors.limePress : colors.surfaceDeep}
               style={styles.singleTryBtn}
-              accessibilityRole="button"
+              accessibilityRole={Platform.OS === "web" ? undefined : "button"}
               accessibilityLabel={`Thử riêng Look ${slot.toUpperCase()}`}
             >
               <Camera size={14} color={colors.ink} strokeWidth={2.4} />

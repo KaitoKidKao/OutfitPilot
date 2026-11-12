@@ -234,22 +234,15 @@ export default function FinalLook() {
             >
               <View style={styles.recapBannerLeft}>
                 <View style={styles.recapPlayPill}>
-                  <Play size={14} color={colors.ink} strokeWidth={2.8} />
+                  <Play size={11} color={colors.ink} strokeWidth={2.8} />
                 </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText variant="caption" weight={800} tone="ink">
-                    {tr(locale, "30s Try-On Video Recap", "Xem lại Video 30s Thử Đồ")}
-                  </AppText>
-                  <AppText variant="tag" tone="muted">
-                    {locale === "vi" ? effectiveRecap.garmentNameVi || effectiveRecap.garmentName : effectiveRecap.garmentName} · {tr(locale, "30s loop video replay", "Clip video 30 giây phát lại")}
-                  </AppText>
-                </View>
-              </View>
-              <View style={styles.recapBannerBadge}>
-                <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "30S REPLAY", "XEM CLIP 30S")}
+                <AppText variant="caption" weight={700} tone="ink" numberOfLines={1}>
+                  {tr(locale, "Replay 30s video", "Xem lại clip 30s")} · {effectiveRecap.garmentNameVi || effectiveRecap.garmentName}
                 </AppText>
               </View>
+              <AppText variant="tag" weight={800} tone="limeInk">
+                {tr(locale, "REPLAY", "XEM LẠI")}
+              </AppText>
             </Touchable>
           ) : null}
 
@@ -353,20 +346,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 12,
-    borderRadius: radii.lg,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.line,
   },
   recapBannerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     flex: 1,
+    marginRight: 8,
   },
   recapPlayPill: {
-    width: 32,
-    height: 32,
+    width: 22,
+    height: 22,
     borderRadius: radii.full,
     backgroundColor: colors.lime,
     alignItems: "center",

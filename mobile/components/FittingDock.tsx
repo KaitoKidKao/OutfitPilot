@@ -507,16 +507,6 @@ function SingleAction({
             >
               {label}
             </AppText>
-            {tone === "lime" ? (
-              <AppText
-                variant="caption"
-                tone="limeInk"
-                numberOfLines={1}
-                maxFontSizeMultiplier={DOCK_TEXT_SCALE}
-              >
-                {tr(locale, "1-tap fitting", "1 chạm thử ngay")}
-              </AppText>
-            ) : null}
           </View>
         ) : null}
       </View>
