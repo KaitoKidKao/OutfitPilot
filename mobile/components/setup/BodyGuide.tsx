@@ -1,10 +1,12 @@
 // Dashed lime body outline over the live camera preview (DESIGN.md: on photo/video the
 // dashed lime body frame is the only guide shape). A soft ink underlay keeps the dashes
 // readable on bright walls. Decorative: the frame's own label describes it.
+import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 
-import { colors } from "@/lib/theme";
+import { colors, motion } from "@/lib/theme";
 
 // viewBox 300 x 255 = 4:3.4, same as the preview frame. Head, then shoulders to hips.
 const OUTLINE =
@@ -17,13 +19,38 @@ export interface BodyGuideProps {
 }
 
 export function BodyGuide({ aligned = false }: BodyGuideProps) {
-  const guideColor = aligned ? colors.lime : "rgba(255, 255, 255, 0.45)";
+  const reduced = useReducedMotion();
+  const limeProgress = useSharedValue(aligned ? 1 : 0);
+
+  useEffect(() => {
+    if (reduced) {
+      limeProgress.value = aligned ? 1 : 0;
+    } else {
+      limeProgress.value = withTiming(aligned ? 1 : 0, {
+        duration: 320,
+        easing: motion.easing,
+      });
+    }
+  }, [aligned, reduced, limeProgress]);
+
+  const limeOverlayStyle = useAnimatedStyle(() => ({
+    opacity: limeProgress.value,
+  }));
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-      <Svg width="100%" height="100%" viewBox="0 0 300 255">
+      {/* Base Layer: ink shadow + muted/white guide */}
+      <Svg width="100%" height="100%" viewBox="0 0 300 255" style={StyleSheet.absoluteFill}>
         <Path d={OUTLINE} fill="none" stroke={colors.ink} strokeOpacity={0.35} strokeWidth={4.5} strokeLinejoin="round" />
-        <Path d={OUTLINE} fill="none" stroke={guideColor} strokeWidth={2.5} strokeDasharray="7 6" strokeLinejoin="round" />
+        <Path d={OUTLINE} fill="none" stroke="rgba(255, 255, 255, 0.45)" strokeWidth={2.5} strokeDasharray="7 6" strokeLinejoin="round" />
       </Svg>
+
+      {/* Animated Bloom Layer: vibrant lime guide */}
+      <Animated.View style={[StyleSheet.absoluteFill, limeOverlayStyle]}>
+        <Svg width="100%" height="100%" viewBox="0 0 300 255">
+          <Path d={OUTLINE} fill="none" stroke={colors.lime} strokeWidth={2.5} strokeDasharray="7 6" strokeLinejoin="round" />
+        </Svg>
+      </Animated.View>
     </View>
   );
 }

@@ -5,16 +5,13 @@ import {
   Bookmark,
   Check,
   Download,
-  Eye,
   Film,
-  Pause,
   Play,
-  RotateCcw,
   Share2,
   User,
   X,
 } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -25,6 +22,13 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as FileSystem from "expo-file-system/legacy";
 
@@ -32,7 +36,7 @@ import { AppText, IconButton, Touchable, useToast } from "@/components/ui";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import { tr, useLocale } from "@/lib/locale";
 import type { TryOnRecap } from "@/lib/store";
-import { colors, radii, shadows, sizes, spacing } from "@/lib/theme";
+import { colors, motion, radii, shadows, spacing } from "@/lib/theme";
 
 export interface TryOnRecapModalProps {
   visible: boolean;
@@ -52,6 +56,7 @@ export function TryOnRecapModal({
   const insets = useSafeAreaInsets();
   const locale = useLocale();
   const toast = useToast();
+  const reduced = useReducedMotion();
 
   const [mode, setMode] = useState<"after" | "before">("after");
   const [holdingBefore, setHoldingBefore] = useState(false);
@@ -59,6 +64,7 @@ export function TryOnRecapModal({
   const [progress, setProgress] = useState(0);
   const [saving, setSaving] = useState(false);
   const [savedToDevice, setSavedToDevice] = useState(false);
+  const [segmentedWidth, setSegmentedWidth] = useState(0);
 
   const duration = recap?.durationSeconds ? Math.max(recap.durationSeconds, RECAP_DURATION_SEC) : RECAP_DURATION_SEC;
 
@@ -74,22 +80,102 @@ export function TryOnRecapModal({
     return () => clearInterval(interval);
   }, [visible, isPlaying, duration]);
 
-  // Reset states on modal open
-  useEffect(() => {
-    if (visible) {
-      setProgress(0);
-      setIsPlaying(true);
-      setSavedToDevice(false);
-      setSaving(false);
-      setMode("after");
-    }
-  }, [visible]);
-
-  if (!recap) return null;
+  const handleClose = () => {
+    setProgress(0);
+    setIsPlaying(true);
+    setSavedToDevice(false);
+    setSaving(false);
+    setMode("after");
+    onClose();
+  };
 
   const showingOriginal = mode === "before" || holdingBefore;
   const currentSec = Math.floor(progress);
   const displaySec = currentSec < 10 ? `0${currentSec}` : `${currentSec}`;
+
+  // ----- Motion Shared Values -----
+  // Optical Crossfade between Before and After
+  const originalProgress = useSharedValue(showingOriginal ? 1 : 0);
+  useEffect(() => {
+    if (reduced) {
+      originalProgress.value = showingOriginal ? 1 : 0;
+    } else {
+      originalProgress.value = withTiming(showingOriginal ? 1 : 0, {
+        duration: 220,
+        easing: motion.easing,
+      });
+    }
+  }, [showingOriginal, reduced, originalProgress]);
+
+  const afterStyle = useAnimatedStyle(() => ({
+    opacity: 1 - originalProgress.value,
+    transform: [{ scale: reduced ? 1 : 1 - 0.02 * originalProgress.value }],
+  }));
+
+  const beforeStyle = useAnimatedStyle(() => ({
+    opacity: originalProgress.value,
+    transform: [{ scale: reduced ? 1 : 0.98 + 0.02 * originalProgress.value }],
+  }));
+
+  // Smooth continuous video scrubber
+  const targetPct = Math.min(100, (progress / duration) * 100);
+  const animProgressPct = useSharedValue(0);
+  useEffect(() => {
+    if (progress === 0) {
+      animProgressPct.value = 0;
+    } else if (reduced) {
+      animProgressPct.value = targetPct;
+    } else {
+      animProgressPct.value = withTiming(targetPct, {
+        duration: 480,
+        easing: Easing.linear,
+      });
+    }
+  }, [progress, targetPct, reduced, animProgressPct]);
+
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${animProgressPct.value}%`,
+  }));
+
+  // Play / Pause Indicator
+  const playOverlayProgress = useSharedValue(isPlaying ? 0 : 1);
+  useEffect(() => {
+    if (reduced) {
+      playOverlayProgress.value = isPlaying ? 0 : 1;
+    } else {
+      playOverlayProgress.value = withTiming(isPlaying ? 0 : 1, {
+        duration: isPlaying ? 160 : 220,
+        easing: motion.easing,
+      });
+    }
+  }, [isPlaying, reduced, playOverlayProgress]);
+
+  const playOverlayStyle = useAnimatedStyle(() => ({
+    opacity: playOverlayProgress.value,
+    transform: [{ scale: reduced ? 1 : 0.85 + 0.15 * playOverlayProgress.value }],
+  }));
+
+  // Segmented Control Pill
+  const halfWidth = segmentedWidth > 0 ? (segmentedWidth - 6) / 2 : 0;
+  const pillOffset = useSharedValue(0);
+  useEffect(() => {
+    if (halfWidth <= 0) return;
+    const targetX = mode === "after" ? 0 : halfWidth;
+    if (reduced) {
+      pillOffset.value = targetX;
+    } else {
+      pillOffset.value = withTiming(targetX, {
+        duration: 220,
+        easing: motion.easing,
+      });
+    }
+  }, [mode, halfWidth, reduced, pillOffset]);
+
+  const pillAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: pillOffset.value }],
+  }));
+
+  if (!recap) return null;
 
   const handleTogglePlay = () => {
     setIsPlaying((prev) => !prev);
@@ -158,10 +244,10 @@ export function TryOnRecapModal({
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
           <View style={[StyleSheet.absoluteFill, styles.backdropDim]} />
         </Pressable>
 
@@ -191,7 +277,7 @@ export function TryOnRecapModal({
             <IconButton
               icon={X}
               accessibilityLabel={tr(locale, "Close", "Đóng")}
-              onPress={onClose}
+              onPress={handleClose}
               variant="quiet"
             />
           </View>
@@ -205,8 +291,31 @@ export function TryOnRecapModal({
             accessibilityRole="button"
             accessibilityLabel={isPlaying ? "Tạm dừng video" : "Tiếp tục phát video"}
           >
-            {showingOriginal ? (
-              recap.originalPhotoUri ? (
+            {/* After layer */}
+            <Animated.View
+              style={[styles.afterStage, afterStyle]}
+              pointerEvents={showingOriginal ? "none" : "auto"}
+            >
+              <GarmentImage
+                garmentId={recap.garmentId}
+                width="100%"
+                aspectRatio={4 / 5}
+                radius={radii.xl}
+                showSampleTag={false}
+              />
+              <View style={styles.afterBadge}>
+                <AppText variant="tag" weight={800} tone="ink">
+                  {tr(locale, "AFTER · AI STYLED", "AFTER · ĐÃ MẶC AI")}
+                </AppText>
+              </View>
+            </Animated.View>
+
+            {/* Before layer */}
+            <Animated.View
+              style={[StyleSheet.absoluteFill, beforeStyle]}
+              pointerEvents={showingOriginal ? "auto" : "none"}
+            >
+              {recap.originalPhotoUri ? (
                 <Image
                   source={{ uri: recap.originalPhotoUri }}
                   style={styles.stageImage}
@@ -233,32 +342,18 @@ export function TryOnRecapModal({
                     </AppText>
                   </View>
                 </View>
-              )
-            ) : (
-              <View style={styles.afterStage}>
-                <GarmentImage
-                  garmentId={recap.garmentId}
-                  width="100%"
-                  aspectRatio={4 / 5}
-                  radius={radii.xl}
-                  showSampleTag={false}
-                />
-                <View style={styles.afterBadge}>
-                  <AppText variant="tag" weight={800} tone="ink">
-                    {tr(locale, "AFTER · AI STYLED", "AFTER · ĐÃ MẶC AI")}
-                  </AppText>
-                </View>
-              </View>
-            )}
+              )}
+            </Animated.View>
 
-            {/* Play / Pause Center Overlay indicator when paused */}
-            {!isPlaying && (
-              <View style={styles.centerPlayOverlay}>
-                <View style={styles.centerPlayCircle}>
-                  <Play size={26} color={colors.paper} fill={colors.paper} />
-                </View>
+            {/* Play / Pause Center Overlay indicator */}
+            <Animated.View
+              pointerEvents={isPlaying ? "none" : "auto"}
+              style={[styles.centerPlayOverlay, playOverlayStyle]}
+            >
+              <View style={styles.centerPlayCircle}>
+                <Play size={26} color={colors.paper} fill={colors.paper} />
               </View>
-            )}
+            </Animated.View>
 
             {/* Hold to Peek Hint Overlay */}
             <View style={styles.peekHintOverlay}>
@@ -272,12 +367,7 @@ export function TryOnRecapModal({
             {/* Video Progress Scrubber */}
             <View style={styles.progressWrap}>
               <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${Math.min(100, (progress / duration) * 100)}%` },
-                  ]}
-                />
+                <Animated.View style={[styles.progressFill, progressBarStyle]} />
               </View>
               <View style={styles.timeRow}>
                 <AppText variant="tag" tone="paper" weight={700} style={{ fontSize: 10 }}>
@@ -291,11 +381,24 @@ export function TryOnRecapModal({
           </Pressable>
 
           {/* Before / After Selector */}
-          <View style={styles.segmentedControl}>
+          <View
+            style={styles.segmentedControl}
+            onLayout={(e) => setSegmentedWidth(e.nativeEvent.layout.width)}
+          >
+            {halfWidth > 0 ? (
+              <Animated.View
+                style={[
+                  styles.segmentIndicator,
+                  { width: halfWidth },
+                  pillAnimatedStyle,
+                ]}
+              />
+            ) : null}
             <Touchable
               onPress={() => setMode("after")}
-              bg={mode === "after" ? colors.ink : "transparent"}
-              style={[styles.segmentBtn, mode === "after" && styles.segmentBtnActive]}
+              style={styles.segmentBtn}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: mode === "after" }}
             >
               <AppText
                 variant="caption"
@@ -307,8 +410,9 @@ export function TryOnRecapModal({
             </Touchable>
             <Touchable
               onPress={() => setMode("before")}
-              bg={mode === "before" ? colors.ink : "transparent"}
-              style={[styles.segmentBtn, mode === "before" && styles.segmentBtnActive]}
+              style={styles.segmentBtn}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: mode === "before" }}
             >
               <AppText
                 variant="caption"
@@ -336,6 +440,7 @@ export function TryOnRecapModal({
                 onPress={handleSaveToDevice}
                 bg={savedToDevice ? colors.surfaceDeep : colors.lime}
                 pressedBg={colors.limePress}
+                pressScale={motion.pressScale}
                 style={styles.saveDeviceBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Lưu video 30s vào máy"
@@ -365,6 +470,7 @@ export function TryOnRecapModal({
                 onPress={handleShare}
                 bg={colors.surface}
                 pressedBg={colors.surfaceDeep}
+                pressScale={motion.pressScale}
                 style={styles.shareBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Chia sẻ video"
@@ -382,7 +488,7 @@ export function TryOnRecapModal({
                 <Touchable
                   onPress={() => {
                     onKeepLook();
-                    onClose();
+                    handleClose();
                   }}
                   style={styles.secondaryBtn}
                   accessibilityRole="button"
@@ -396,7 +502,7 @@ export function TryOnRecapModal({
               ) : null}
 
               <Touchable
-                onPress={onClose}
+                onPress={handleClose}
                 style={styles.secondaryBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Đóng và tiếp tục"
@@ -516,10 +622,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   segmentedControl: {
+    position: "relative",
     flexDirection: "row",
     backgroundColor: colors.surface,
     borderRadius: radii.full,
     padding: 3,
+  },
+  segmentIndicator: {
+    position: "absolute",
+    top: 3,
+    bottom: 3,
+    left: 3,
+    borderRadius: radii.full,
+    backgroundColor: colors.ink,
+    ...shadows.lift,
   },
   segmentBtn: {
     flex: 1,
@@ -527,9 +643,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     alignItems: "center",
     justifyContent: "center",
-  },
-  segmentBtnActive: {
-    ...shadows.lift,
+    zIndex: 1,
   },
   decisionSection: {
     gap: 8,
