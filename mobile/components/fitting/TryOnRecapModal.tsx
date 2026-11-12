@@ -266,13 +266,6 @@ export function TryOnRecapModal({
               <AppText variant="title">
                 {locale === "vi" ? recap.garmentNameVi || recap.garmentName : recap.garmentName}
               </AppText>
-              <AppText variant="caption" tone="muted">
-                {tr(
-                  locale,
-                  `Recorded 30s clip · Auto loop replay`,
-                  `Clip video 30 giây · Tự động phát lại`
-                )}
-              </AppText>
             </View>
             <IconButton
               icon={X}
@@ -429,8 +422,8 @@ export function TryOnRecapModal({
             <AppText variant="caption" tone="muted" align="center" style={{ marginBottom: 4 }}>
               {tr(
                 locale,
-                "Do you want to save this 30s try-on video to your device?",
-                "Bạn có muốn lưu video 30 giây vừa thử vào máy không?"
+                "Do you want to save this try-on video to your device?",
+                "Bạn có muốn lưu video vừa thử vào máy không?"
               )}
             </AppText>
 
