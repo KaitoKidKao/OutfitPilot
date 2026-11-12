@@ -130,9 +130,26 @@ export function TryOnRecapModal({
   }));
   const [segmentedWidth, setSegmentedWidth] = useState(0);
 
-  const duration = recap?.durationSeconds ? Math.max(recap.durationSeconds, RECAP_DURATION_SEC) : RECAP_DURATION_SEC;
+  const [actualDuration, setActualDuration] = useState<number>(() => {
+    return recap?.durationSeconds && recap.durationSeconds > 0 ? recap.durationSeconds : 30;
+  });
 
-  // 30s playback scrubber loop
+  useEffect(() => {
+    if (recap?.durationSeconds && recap.durationSeconds > 0) {
+      setActualDuration(recap.durationSeconds);
+    }
+  }, [recap?.durationSeconds]);
+
+  useEffect(() => {
+    if (player && player.duration && player.duration > 0) {
+      const pDur = Math.round(player.duration);
+      if (pDur > 0) setActualDuration(pDur);
+    }
+  }, [player, player?.duration]);
+
+  const duration = actualDuration;
+
+  // Exact playback scrubber loop
   useEffect(() => {
     if (!visible || !isPlaying) return;
     const interval = setInterval(() => {
@@ -164,6 +181,12 @@ export function TryOnRecapModal({
   const showingOriginal = mode === "before" || holdingBefore;
   const currentSec = Math.floor(progress);
   const displaySec = currentSec < 10 ? `0${currentSec}` : `${currentSec}`;
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? `0${s}` : s}`;
+  };
 
   // ----- Motion Shared Values -----
   // Optical Crossfade between Before and After
@@ -526,10 +549,10 @@ export function TryOnRecapModal({
               </View>
               <View style={styles.timeRow}>
                 <AppText variant="tag" tone="paper" weight={700} style={{ fontSize: 10 }}>
-                  0:{displaySec} / 0:{duration}
+                  {formatTime(currentSec)} / {formatTime(duration)}
                 </AppText>
                 <AppText variant="tag" tone="paper" weight={700} style={{ fontSize: 10 }}>
-                  {isPlaying ? "30S LOOPING" : "PAUSED"}
+                  {isPlaying ? `${duration}S LOOPING` : "PAUSED"}
                 </AppText>
               </View>
             </View>

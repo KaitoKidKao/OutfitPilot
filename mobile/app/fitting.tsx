@@ -133,11 +133,18 @@ export default function LiveFittingRoom() {
   // keeps the screen's own state honest when it comes back into focus.
   const { stopCamera } = tryOn;
   const isRecordingRef = useRef(false);
+  const recordingStartTimeRef = useRef<number | null>(null);
+  const actualDurationRef = useRef<number>(30);
   const baselinePhotoRef = useRef<string | null>(null);
   const aiPhotoRef = useRef<string | null>(null);
   const aiVideoRef = useRef<string | null>(null);
 
   const stopScreenRecording = useCallback(async (): Promise<string | null> => {
+    if (recordingStartTimeRef.current) {
+      const elapsed = Math.round((Date.now() - recordingStartTimeRef.current) / 1000);
+      actualDurationRef.current = Math.max(1, Math.min(60, elapsed));
+      recordingStartTimeRef.current = null;
+    }
     if (!isRecordingRef.current || Platform.OS === "web") {
       return aiVideoRef.current;
     }
@@ -170,34 +177,46 @@ export default function LiveFittingRoom() {
     ),
   );
 
-  // Automatically start recording when live AI stream starts
+  // Start recording ONLY when AI stream has successfully connected and is actively showing on screen
   useEffect(() => {
     let active = true;
-    if (tryOn.state === "live" && !isRecordingRef.current && Platform.OS !== "web") {
-      isRecordingRef.current = true;
-      (async () => {
-        try {
-          const res = await RecordScreen.startRecording({
-            mic: false,
-            fps: 30,
-            bitrate: 2500000,
-          });
-          if (!active) return;
-          if (res === RecordingResult.PermissionError) {
-            console.warn("Screen recording permission denied by user");
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    if (tryOn.showingAi && !isRecordingRef.current && Platform.OS !== "web") {
+      // Small 400ms grace period so connecting overlay finishes fading away cleanly
+      timer = setTimeout(() => {
+        if (!active || !tryOn.showingAi || isRecordingRef.current) return;
+        isRecordingRef.current = true;
+        (async () => {
+          try {
+            const res = await RecordScreen.startRecording({
+              mic: false,
+              fps: 30,
+              bitrate: 2500000,
+            });
+            if (!active) return;
+            if (res === RecordingResult.PermissionError) {
+              console.warn("Screen recording permission denied by user");
+              isRecordingRef.current = false;
+              recordingStartTimeRef.current = null;
+            } else {
+              recordingStartTimeRef.current = Date.now();
+            }
+          } catch (err) {
+            if (!active) return;
+            console.warn("RecordScreen.startRecording error", err);
             isRecordingRef.current = false;
+            recordingStartTimeRef.current = null;
           }
-        } catch (err) {
-          if (!active) return;
-          console.warn("RecordScreen.startRecording error", err);
-          isRecordingRef.current = false;
-        }
-      })();
+        })();
+      }, 400);
     }
+
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
-  }, [tryOn.state]);
+  }, [tryOn.showingAi]);
 
   // Detect the 60 s cap: an active session ended without the user stopping it.
   const wasActiveRef = useRef(false);
@@ -250,9 +269,9 @@ export default function LiveFittingRoom() {
   }, [tryOn.state]);
 
   const recordRecap = useCallback(
-    (overrideVideoUri?: string | null) => {
+    (overrideVideoUri?: string | null, overrideDuration?: number) => {
       if (!activeId) return;
-      const duration = 30;
+      const duration = overrideDuration ?? actualDurationRef.current ?? 30;
       aiSessionStartRef.current = null;
       const garment = getGarment(activeId);
       const videoUri = overrideVideoUri ?? aiVideoRef.current;
@@ -282,7 +301,7 @@ export default function LiveFittingRoom() {
     if (wasActive && tryOn.state === "preview" && !userStoppedRef.current && (isCapNotice(tryOn.notice) || lastSecondsRef.current <= 1)) {
       void (async () => {
         const videoUri = await stopScreenRecording();
-        recordRecap(videoUri);
+        recordRecap(videoUri, actualDurationRef.current);
         setCapEnded(true);
         announce("Time's up. The AI session stopped at the 60-second limit.");
         setRecapModalOpen(true);
@@ -375,7 +394,7 @@ export default function LiveFittingRoom() {
     userStoppedRef.current = true;
     stopAuto();
     const videoUri = await stopScreenRecording();
-    recordRecap(videoUri);
+    recordRecap(videoUri, actualDurationRef.current);
     tryOn.stop("AI session ended. The camera preview stays on.");
     setRecapModalOpen(true);
   };
@@ -405,7 +424,7 @@ export default function LiveFittingRoom() {
   const handleFinish = async () => {
     stopAuto();
     const videoUri = await stopScreenRecording();
-    recordRecap(videoUri);
+    recordRecap(videoUri, actualDurationRef.current);
     tryOn.stopCamera();
     router.push("/final");
   };
