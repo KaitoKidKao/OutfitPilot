@@ -241,7 +241,7 @@ export default function FinalLook() {
                     {tr(locale, "30s Try-On Video Recap", "Xem lại Video 30s Thử Đồ")}
                   </AppText>
                   <AppText variant="tag" tone="muted">
-                    {locale === "vi" ? effectiveRecap.garmentNameVi || effectiveRecap.garmentName : effectiveRecap.garmentName} · {tr(locale, "30s loop replay · 0 token", "Clip 30 giây phát lại · 0 token")}
+                    {locale === "vi" ? effectiveRecap.garmentNameVi || effectiveRecap.garmentName : effectiveRecap.garmentName} · {tr(locale, "30s loop video replay", "Clip video 30 giây phát lại")}
                   </AppText>
                 </View>
               </View>
