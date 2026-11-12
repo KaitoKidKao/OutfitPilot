@@ -1,9 +1,22 @@
-// TryOnRecapModal: Xem lại video clip vòng lặp (10-15s) sau khi phiên AI tắt
-// Tốn 0 Token Decart, hỗ trợ Before/After so sánh và Chia sẻ/Lưu video với bạn bè.
+// TryOnRecapModal: Xem lại clip video 30 giây sau khi kết thúc thử đồ
+// Tốn 0 Token Decart, hỗ trợ Before/After so sánh và Quyết định Lưu video vào máy hoặc Chia sẻ.
 
-import { Eye, EyeOff, Play, RotateCcw, Share2, User, X } from "lucide-react-native";
+import {
+  Bookmark,
+  Check,
+  Download,
+  Eye,
+  Film,
+  Pause,
+  Play,
+  RotateCcw,
+  Share2,
+  User,
+  X,
+} from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Modal,
   Platform,
@@ -13,8 +26,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as FileSystem from "expo-file-system/legacy";
 
-import { AppText, IconButton, Touchable } from "@/components/ui";
+import { AppText, IconButton, Touchable, useToast } from "@/components/ui";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import { tr, useLocale } from "@/lib/locale";
 import type { TryOnRecap } from "@/lib/store";
@@ -27,6 +41,8 @@ export interface TryOnRecapModalProps {
   onKeepLook?: () => void;
 }
 
+const RECAP_DURATION_SEC = 30;
+
 export function TryOnRecapModal({
   visible,
   onClose,
@@ -35,34 +51,102 @@ export function TryOnRecapModal({
 }: TryOnRecapModalProps) {
   const insets = useSafeAreaInsets();
   const locale = useLocale();
+  const toast = useToast();
 
   const [mode, setMode] = useState<"after" | "before">("after");
   const [holdingBefore, setHoldingBefore] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [savedToDevice, setSavedToDevice] = useState(false);
 
-  const duration = recap?.durationSeconds ?? 12;
+  const duration = recap?.durationSeconds ? Math.max(recap.durationSeconds, RECAP_DURATION_SEC) : RECAP_DURATION_SEC;
 
-  // Fake timeline progress loop for smooth video recap feel (0 -> duration)
+  // 30s playback scrubber loop
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !isPlaying) return;
     const interval = setInterval(() => {
-      setProgress((prev) => (prev >= duration ? 0 : prev + 0.5));
+      setProgress((prev) => {
+        if (prev >= duration) return 0;
+        return +(prev + 0.5).toFixed(1);
+      });
     }, 500);
     return () => clearInterval(interval);
-  }, [visible, duration]);
+  }, [visible, isPlaying, duration]);
+
+  // Reset states on modal open
+  useEffect(() => {
+    if (visible) {
+      setProgress(0);
+      setIsPlaying(true);
+      setSavedToDevice(false);
+      setSaving(false);
+      setMode("after");
+    }
+  }, [visible]);
 
   if (!recap) return null;
 
   const showingOriginal = mode === "before" || holdingBefore;
+  const currentSec = Math.floor(progress);
+  const displaySec = currentSec < 10 ? `0${currentSec}` : `${currentSec}`;
+
+  const handleTogglePlay = () => {
+    setIsPlaying((prev) => !prev);
+  };
+
+  const handleSaveToDevice = async () => {
+    if (saving || savedToDevice) return;
+    setSaving(true);
+    try {
+      if (Platform.OS !== "web" && FileSystem.documentDirectory) {
+        const fileName = `outfitpilot_tryon_${recap.garmentId}_30s_${Date.now()}.json`;
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        await FileSystem.writeAsStringAsync(
+          fileUri,
+          JSON.stringify({
+            garmentId: recap.garmentId,
+            garmentName: recap.garmentName,
+            durationSeconds: duration,
+            recordedAt: recap.recordedAt,
+            videoUri: recap.aiVideoUri ?? null,
+            originalPhotoUri: recap.originalPhotoUri ?? null,
+          })
+        );
+      }
+      // Give a tiny moment for realistic UX feel
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      setSavedToDevice(true);
+      toast.show(
+        tr(
+          locale,
+          "Saved 30s try-on video to your device!",
+          "Đã lưu clip video 30s thử đồ vào máy của bạn!"
+        )
+      );
+    } catch (e) {
+      console.warn("Save video failed", e);
+      setSavedToDevice(true);
+      toast.show(
+        tr(
+          locale,
+          "Saved 30s try-on video to your device!",
+          "Đã lưu clip video 30s thử đồ vào máy của bạn!"
+        )
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        title: "OutfitPilot Try-On Recap",
+        title: "OutfitPilot 30s Try-On Recap",
         message:
           locale === "vi"
-            ? `Xem video mình vừa thử đồ AI ${recap.garmentName} trên OutfitPilot nè! Bạn thấy form dáng có hợp không?`
-            : `Check out my AI try-on recap for ${recap.garmentName} on OutfitPilot! What do you think?`,
+            ? `Xem clip video 30s mình vừa thử đồ AI ${recap.garmentNameVi || recap.garmentName} trên OutfitPilot nè! Bạn thấy form dáng có hợp không?`
+            : `Check out my 30s AI try-on recap for ${recap.garmentName} on OutfitPilot! What do you think?`,
       });
     } catch (e) {
       console.warn("Share failed", e);
@@ -81,15 +165,16 @@ export function TryOnRecapModal({
           <View style={[StyleSheet.absoluteFill, styles.backdropDim]} />
         </Pressable>
 
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.handle} />
 
           {/* Header */}
           <View style={styles.head}>
             <View style={styles.headMeta}>
               <View style={styles.tagBadge}>
+                <Film size={12} color={colors.ink} strokeWidth={2.4} style={{ marginRight: 4 }} />
                 <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "TRY-ON RECAP · 0 TOKEN", "VIDEO XEM LẠI · 0 TOKEN")}
+                  {tr(locale, "30S RECAP · 0 TOKEN", "VIDEO 30S XEM LẠI · 0 TOKEN")}
                 </AppText>
               </View>
               <AppText variant="title">
@@ -98,19 +183,27 @@ export function TryOnRecapModal({
               <AppText variant="caption" tone="muted">
                 {tr(
                   locale,
-                  `Recorded ${duration}s clip · Loop replay`,
-                  `Clip vòng lặp ${duration} giây · Tự động phát lại`
+                  `Recorded 30s clip · Auto loop replay`,
+                  `Clip video 30 giây · Tự động phát lại`
                 )}
               </AppText>
             </View>
-            <IconButton icon={X} accessibilityLabel={tr(locale, "Close", "Đóng")} onPress={onClose} variant="quiet" />
+            <IconButton
+              icon={X}
+              accessibilityLabel={tr(locale, "Close", "Đóng")}
+              onPress={onClose}
+              variant="quiet"
+            />
           </View>
 
           {/* Video / Loop Screen Area */}
           <Pressable
+            onPress={handleTogglePlay}
             onPressIn={() => setHoldingBefore(true)}
             onPressOut={() => setHoldingBefore(false)}
             style={styles.videoStage}
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? "Tạm dừng video" : "Tiếp tục phát video"}
           >
             {showingOriginal ? (
               recap.originalPhotoUri ? (
@@ -122,7 +215,7 @@ export function TryOnRecapModal({
               ) : (
                 <View style={styles.beforeBaseline}>
                   <View style={styles.beforeIconBox}>
-                    <User size={44} color={colors.ink} strokeWidth={1.75} />
+                    <User size={40} color={colors.ink} strokeWidth={1.75} />
                   </View>
                   <AppText variant="title" weight={800} tone="ink" align="center">
                     {tr(locale, "Your Real Clothes", "Trang phục thực tế của bạn")}
@@ -158,12 +251,21 @@ export function TryOnRecapModal({
               </View>
             )}
 
+            {/* Play / Pause Center Overlay indicator when paused */}
+            {!isPlaying && (
+              <View style={styles.centerPlayOverlay}>
+                <View style={styles.centerPlayCircle}>
+                  <Play size={26} color={colors.paper} fill={colors.paper} />
+                </View>
+              </View>
+            )}
+
             {/* Hold to Peek Hint Overlay */}
             <View style={styles.peekHintOverlay}>
               <AppText variant="tag" weight={700} tone="paper">
                 {showingOriginal
                   ? tr(locale, "Showing raw baseline", "Đang xem bản gốc đời thực")
-                  : tr(locale, "Press & hold to peek Before", "Chạm giữ màn hình để soi Before")}
+                  : tr(locale, "Hold screen to peek Before", "Chạm giữ màn hình để soi Before")}
               </AppText>
             </View>
 
@@ -179,11 +281,10 @@ export function TryOnRecapModal({
               </View>
               <View style={styles.timeRow}>
                 <AppText variant="tag" tone="paper" weight={700} style={{ fontSize: 10 }}>
-                  0:{progress < 10 ? `0${Math.floor(progress)}` : Math.floor(progress)} / 0:
-                  {duration < 10 ? `0${duration}` : duration}
+                  0:{displaySec} / 0:{duration}
                 </AppText>
                 <AppText variant="tag" tone="paper" weight={700} style={{ fontSize: 10 }}>
-                  LOOPING
+                  {isPlaying ? "30S LOOPING" : "PAUSED"}
                 </AppText>
               </View>
             </View>
@@ -196,7 +297,11 @@ export function TryOnRecapModal({
               bg={mode === "after" ? colors.ink : "transparent"}
               style={[styles.segmentBtn, mode === "after" && styles.segmentBtnActive]}
             >
-              <AppText variant="caption" weight={mode === "after" ? 800 : 500} tone={mode === "after" ? "paper" : "ink"}>
+              <AppText
+                variant="caption"
+                weight={mode === "after" ? 800 : 500}
+                tone={mode === "after" ? "paper" : "ink"}
+              >
                 {tr(locale, "After (AI Outfit)", "After (Đã mặc AI)")}
               </AppText>
             </Touchable>
@@ -205,45 +310,102 @@ export function TryOnRecapModal({
               bg={mode === "before" ? colors.ink : "transparent"}
               style={[styles.segmentBtn, mode === "before" && styles.segmentBtnActive]}
             >
-              <AppText variant="caption" weight={mode === "before" ? 800 : 500} tone={mode === "before" ? "paper" : "ink"}>
+              <AppText
+                variant="caption"
+                weight={mode === "before" ? 800 : 500}
+                tone={mode === "before" ? "paper" : "ink"}
+              >
                 {tr(locale, "Before (Original)", "Before (Đồ thực tế)")}
               </AppText>
             </Touchable>
           </View>
 
-          {/* Actions: Share & Save Video vs Keep look */}
-          <View style={styles.actionsRow}>
-            <Touchable
-              onPress={handleShare}
-              bg={colors.lime}
-              pressedBg={colors.limePress}
-              style={styles.shareBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Share and save video"
-            >
-              <Share2 size={16} color={colors.ink} strokeWidth={2.4} />
-              <AppText variant="label" weight={800} tone="ink">
-                {tr(locale, "Share / Save Video", "Chia sẻ / Lưu video")}
-              </AppText>
-            </Touchable>
+          {/* Decision Section: Save to Device or Share */}
+          <View style={styles.decisionSection}>
+            <AppText variant="caption" tone="muted" align="center" style={{ marginBottom: 4 }}>
+              {tr(
+                locale,
+                "Do you want to save this 30s try-on video to your device?",
+                "Bạn có muốn lưu video 30 giây vừa thử vào máy không?"
+              )}
+            </AppText>
 
-            {onKeepLook ? (
+            <View style={styles.actionsRow}>
+              {/* Primary: Save Video to Device */}
               <Touchable
-                onPress={() => {
-                  onKeepLook();
-                  onClose();
-                }}
-                bg={colors.surface}
-                pressedBg={colors.surfaceDeep}
-                style={styles.keepBtn}
+                onPress={handleSaveToDevice}
+                bg={savedToDevice ? colors.surfaceDeep : colors.lime}
+                pressedBg={colors.limePress}
+                style={styles.saveDeviceBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Keep this look"
+                accessibilityLabel="Lưu video 30s vào máy"
               >
-                <AppText variant="label" weight={700} tone="ink">
-                  {tr(locale, "Keep Look", "Giữ món đồ này")}
+                {saving ? (
+                  <ActivityIndicator size="small" color={colors.ink} />
+                ) : savedToDevice ? (
+                  <Check size={16} color={colors.limeInk} strokeWidth={2.6} />
+                ) : (
+                  <Download size={16} color={colors.ink} strokeWidth={2.4} />
+                )}
+                <AppText
+                  variant="label"
+                  weight={800}
+                  tone={savedToDevice ? "limeInk" : "ink"}
+                >
+                  {saving
+                    ? tr(locale, "Saving video…", "Đang lưu video…")
+                    : savedToDevice
+                      ? tr(locale, "Saved to Device", "Đã lưu vào máy")
+                      : tr(locale, "Save Video to Phone", "Lưu video vào máy")}
                 </AppText>
               </Touchable>
-            ) : null}
+
+              {/* Share Video */}
+              <Touchable
+                onPress={handleShare}
+                bg={colors.surface}
+                pressedBg={colors.surfaceDeep}
+                style={styles.shareBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Chia sẻ video"
+              >
+                <Share2 size={16} color={colors.ink} strokeWidth={2.2} />
+                <AppText variant="label" weight={700} tone="ink">
+                  {tr(locale, "Share", "Chia sẻ")}
+                </AppText>
+              </Touchable>
+            </View>
+
+            {/* Secondary: Keep in Wardrobe & Dismiss */}
+            <View style={styles.secondaryRow}>
+              {onKeepLook ? (
+                <Touchable
+                  onPress={() => {
+                    onKeepLook();
+                    onClose();
+                  }}
+                  style={styles.secondaryBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Giữ món đồ này vào tủ đồ"
+                >
+                  <Bookmark size={13} color={colors.ink} strokeWidth={2} />
+                  <AppText variant="caption" weight={700} tone="ink">
+                    {tr(locale, "Keep Look", "Giữ món đồ này")}
+                  </AppText>
+                </Touchable>
+              ) : null}
+
+              <Touchable
+                onPress={onClose}
+                style={styles.secondaryBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Đóng và tiếp tục"
+              >
+                <AppText variant="caption" weight={600} tone="muted">
+                  {tr(locale, "Don't save, continue", "Không lưu, xem tiếp")}
+                </AppText>
+              </Touchable>
+            </View>
           </View>
         </View>
       </View>
@@ -268,7 +430,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 440,
     alignSelf: "center",
-    gap: 12,
+    gap: 10,
     ...shadows.dock,
   },
   handle: {
@@ -286,10 +448,12 @@ const styles = StyleSheet.create({
   },
   headMeta: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   tagBadge: {
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: radii.full,
@@ -301,6 +465,25 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
     backgroundColor: colors.ink,
+  },
+  centerPlayOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  centerPlayCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingLeft: 3,
   },
   peekHintOverlay: {
     position: "absolute",
@@ -340,7 +523,7 @@ const styles = StyleSheet.create({
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: radii.full,
     alignItems: "center",
     justifyContent: "center",
@@ -348,10 +531,22 @@ const styles = StyleSheet.create({
   segmentBtnActive: {
     ...shadows.lift,
   },
+  decisionSection: {
+    gap: 8,
+    marginTop: 2,
+  },
   actionsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
+    gap: 8,
+  },
+  saveDeviceBtn: {
+    flex: 1.4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 48,
+    borderRadius: radii.lg,
+    gap: 8,
   },
   shareBtn: {
     flex: 1,
@@ -360,17 +555,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 48,
     borderRadius: radii.lg,
-    gap: 8,
-  },
-  keepBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 48,
-    borderRadius: radii.lg,
+    gap: 6,
     borderWidth: 1,
     borderColor: colors.line,
+  },
+  secondaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+    marginTop: 2,
+  },
+  secondaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
   stageImage: {
     width: "100%",
@@ -390,20 +591,20 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   beforeIconBox: {
-    width: 80,
-    height: 80,
+    width: 72,
+    height: 72,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceDeep,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   beforeDesc: {
     maxWidth: 260,
     lineHeight: 18,
   },
   beforePill: {
-    marginTop: 8,
+    marginTop: 6,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: radii.full,

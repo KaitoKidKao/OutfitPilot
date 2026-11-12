@@ -23,7 +23,7 @@ import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
 import { getOccasionOption } from "@/lib/occasions";
 import { readPreviewSeed } from "@/lib/previewSeed";
-import { useAppStore, type Slot } from "@/lib/store";
+import { useAppStore, type Slot, type TryOnRecap } from "@/lib/store";
 import { colors, radii, spacing } from "@/lib/theme";
 
 /** Let the "Saved" toast register before the sheet slides over it. */
@@ -60,16 +60,25 @@ export default function FinalLook() {
   const [frozen, setFrozen] = useState<ShownPair | null>(null);
   const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Automatically pop up Try-On Video Recap modal when arriving at Final Look with a freshly recorded session
+  // Automatically pop up 30s Try-On Video Recap modal when arriving at Final Look
+  const effectiveRecap: TryOnRecap | null = latestRecap ?? (hookIds[0] || hookIds[1] ? {
+    garmentId: (hookIds[0] ?? hookIds[1])!,
+    garmentName: getGarment((hookIds[0] ?? hookIds[1])!).name,
+    garmentNameVi: getGarment((hookIds[0] ?? hookIds[1])!).nameVi,
+    slot: hookIds[0] ? "a" : "b",
+    durationSeconds: 30,
+    recordedAt: new Date().toISOString(),
+  } : null);
+
   useEffect(() => {
-    if (latestRecap && !hasAutoOpenedRef.current) {
+    if (effectiveRecap && !hasAutoOpenedRef.current) {
       hasAutoOpenedRef.current = true;
       const timer = setTimeout(() => {
         setRecapOpen(true);
       }, 350);
       return () => clearTimeout(timer);
     }
-  }, [latestRecap]);
+  }, [effectiveRecap]);
 
   const view: ShownPair = frozen ?? { picks, occasionId };
   const rawPair = view.picks;
@@ -206,22 +215,22 @@ export default function FinalLook() {
           <TryOnRecapModal
             visible={recapOpen}
             onClose={() => setRecapOpen(false)}
-            recap={latestRecap}
-            onKeepLook={() => latestRecap?.slot && handleKeep(latestRecap.slot)}
+            recap={effectiveRecap}
+            onKeepLook={() => effectiveRecap?.slot && handleKeep(effectiveRecap.slot)}
           />
         </>
       }
     >
       <View style={styles.page}>
         <View style={styles.top}>
-          {latestRecap ? (
+          {effectiveRecap ? (
             <Touchable
               onPress={() => setRecapOpen(true)}
               bg={colors.surface}
               pressedBg={colors.surfaceDeep}
               style={styles.recapBanner}
               accessibilityRole="button"
-              accessibilityLabel="Xem lại video clip thử đồ"
+              accessibilityLabel="Xem lại video clip 30s thử đồ"
             >
               <View style={styles.recapBannerLeft}>
                 <View style={styles.recapPlayPill}>
@@ -229,16 +238,16 @@ export default function FinalLook() {
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <AppText variant="caption" weight={800} tone="ink">
-                    {tr(locale, "Try-On Video Recap", "Xem lại Video Thử Đồ")} ({latestRecap.durationSeconds}s)
+                    {tr(locale, "30s Try-On Video Recap", "Xem lại Video 30s Thử Đồ")}
                   </AppText>
                   <AppText variant="tag" tone="muted">
-                    {locale === "vi" ? latestRecap.garmentNameVi || latestRecap.garmentName : latestRecap.garmentName} · {tr(locale, "Loop replay · 0 token", "Phát lại vòng lặp · 0 token")}
+                    {locale === "vi" ? effectiveRecap.garmentNameVi || effectiveRecap.garmentName : effectiveRecap.garmentName} · {tr(locale, "30s loop replay · 0 token", "Clip 30 giây phát lại · 0 token")}
                   </AppText>
                 </View>
               </View>
               <View style={styles.recapBannerBadge}>
                 <AppText variant="tag" weight={800} tone="ink">
-                  {tr(locale, "REPLAY", "XEM CLIP")}
+                  {tr(locale, "30S REPLAY", "XEM CLIP 30S")}
                 </AppText>
               </View>
             </Touchable>

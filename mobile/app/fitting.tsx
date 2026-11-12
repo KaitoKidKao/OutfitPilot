@@ -147,8 +147,8 @@ export default function LiveFittingRoom() {
   }, [tryOn.state]);
 
   const recordRecap = useCallback(() => {
-    if (!aiSessionStartRef.current || !activeId) return;
-    const duration = Math.max(5, Math.min(60, Math.round((Date.now() - aiSessionStartRef.current) / 1000)));
+    if (!activeId) return;
+    const duration = 30;
     aiSessionStartRef.current = null;
     const garment = getGarment(activeId);
     const recap: TryOnRecap = {
