@@ -1,15 +1,11 @@
 // CelebrationBurst: Micro-sparkle celebratory burst for delightful moments (DESIGN.md / Impeccable Delight).
 // Pure React Native Reanimated particles (lime, gold, ink) that blossom outward on Keep Look or Save.
-import { Sparkle, Sparkles, Star } from "lucide-react-native";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withDelay,
-  withSequence,
-  withSpring,
   withTiming,
   type SharedValue,
 } from "react-native-reanimated";
@@ -22,10 +18,18 @@ interface ParticleConfig {
   distance: number;
   size: number;
   color: string;
-  delay: number;
 }
 
-const PARTICLE_COLORS = [colors.lime, "#F5E6C8", colors.ink, "#B8E948", "#FFF"];
+const PARTICLE_COLORS = [colors.lime, "#F5E6C8", colors.ink, "#B8E948", "#FFFFFF"];
+
+// Static deterministic particle layouts (satisfies React purity rules)
+const PARTICLE_PRESETS: ParticleConfig[] = Array.from({ length: 12 }, (_, i) => {
+  const angle = (i * (2 * Math.PI)) / 12 + ((i % 3) * 0.14 - 0.1);
+  const distance = 38 + ((i * 7) % 22);
+  const size = 6 + ((i * 5) % 6);
+  const color = PARTICLE_COLORS[i % PARTICLE_COLORS.length] ?? colors.lime;
+  return { id: i, angle, distance, size, color };
+});
 
 export interface CelebrationBurstProps {
   active: boolean;
@@ -35,20 +39,6 @@ export interface CelebrationBurstProps {
 export function CelebrationBurst({ active, onComplete }: CelebrationBurstProps) {
   const reduced = useReducedMotion();
   const progress = useSharedValue(0);
-
-  const particles = useMemo<ParticleConfig[]>(() => {
-    const list: ParticleConfig[] = [];
-    const count = 12;
-    for (let i = 0; i < count; i++) {
-      const angle = (i * (2 * Math.PI)) / count + (Math.random() * 0.4 - 0.2);
-      const distance = 36 + Math.random() * 24;
-      const size = 6 + Math.random() * 6;
-      const color = PARTICLE_COLORS[i % PARTICLE_COLORS.length] ?? colors.lime;
-      const delay = Math.random() * 60;
-      list.push({ id: i, angle, distance, size, color, delay });
-    }
-    return list;
-  }, []);
 
   useEffect(() => {
     if (active && !reduced) {
@@ -68,7 +58,7 @@ export function CelebrationBurst({ active, onComplete }: CelebrationBurstProps) 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <View style={styles.centerContainer}>
-        {particles.map((p) => (
+        {PARTICLE_PRESETS.map((p) => (
           <ParticleView key={p.id} config={p} progress={progress} />
         ))}
       </View>

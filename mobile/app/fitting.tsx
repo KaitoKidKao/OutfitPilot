@@ -14,9 +14,11 @@
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { ArrowRight, Camera, Repeat, RotateCcw, Sparkles, Square, X } from "lucide-react-native";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import { AccessibilityInfo, Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
+import RecordScreen, { RecordingResult } from "react-native-record-screen";
 
 import { FittingTopBar } from "@/components/fitting/FittingTopBar";
 import { isCapNotice } from "@/components/fitting/status";
@@ -130,20 +132,116 @@ export default function LiveFittingRoom() {
   // auto compare, the paid session and the camera. The wrapper does the same; this
   // keeps the screen's own state honest when it comes back into focus.
   const { stopCamera } = tryOn;
+  const isRecordingRef = useRef(false);
+  const baselinePhotoRef = useRef<string | null>(null);
+  const aiPhotoRef = useRef<string | null>(null);
+  const aiVideoRef = useRef<string | null>(null);
+
+  const stopScreenRecording = useCallback(async (): Promise<string | null> => {
+    if (!isRecordingRef.current || Platform.OS === "web") {
+      return aiVideoRef.current;
+    }
+    try {
+      isRecordingRef.current = false;
+      const res = await RecordScreen.stopRecording();
+      if (res && res.status === "success" && res.result && "outputURL" in res.result) {
+        let uri = (res.result as { outputURL: string }).outputURL;
+        if (!uri.startsWith("file://") && !uri.startsWith("content://") && !uri.startsWith("http")) {
+          uri = `file://${uri}`;
+        }
+        aiVideoRef.current = uri;
+        return uri;
+      }
+    } catch (err) {
+      console.warn("RecordScreen.stopRecording error", err);
+    }
+    return aiVideoRef.current;
+  }, []);
+
   useFocusEffect(
     useCallback(
       () => () => {
         stopAuto();
         stopCamera();
+        void stopScreenRecording();
         setCapEnded(false);
       },
-      [stopAuto, stopCamera],
+      [stopAuto, stopCamera, stopScreenRecording],
     ),
   );
+
+  // Automatically start recording when live AI stream starts
+  useEffect(() => {
+    let active = true;
+    if (tryOn.state === "live" && !isRecordingRef.current && Platform.OS !== "web") {
+      isRecordingRef.current = true;
+      (async () => {
+        try {
+          const res = await RecordScreen.startRecording({
+            mic: false,
+            fps: 30,
+            bitrate: 2500000,
+          });
+          if (!active) return;
+          if (res === RecordingResult.PermissionError) {
+            console.warn("Screen recording permission denied by user");
+            isRecordingRef.current = false;
+          }
+        } catch (err) {
+          if (!active) return;
+          console.warn("RecordScreen.startRecording error", err);
+          isRecordingRef.current = false;
+        }
+      })();
+    }
+    return () => {
+      active = false;
+    };
+  }, [tryOn.state]);
 
   // Detect the 60 s cap: an active session ended without the user stopping it.
   const wasActiveRef = useRef(false);
   const lastSecondsRef = useRef(tryOn.maxSeconds);
+
+  const handleSnapBaseline = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets && result.assets[0]) {
+        baselinePhotoRef.current = result.assets[0].uri;
+        toast.show(
+          tr(
+            locale,
+            "Captured baseline photo for Before comparison!",
+            "Đã chụp ảnh dáng chuẩn Before!"
+          )
+        );
+      }
+    } catch (err) {
+      console.warn("Snap baseline failed", err);
+    }
+  }, [locale, toast]);
+
+  const handleSnapAiLook = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets && result.assets[0]) {
+        aiPhotoRef.current = result.assets[0].uri;
+        toast.show(
+          tr(locale, "Saved AI look snapshot!", "Đã lưu khoảnh khắc đồ AI!")
+        );
+      }
+    } catch (err) {
+      console.warn("Snap AI look failed", err);
+    }
+  }, [locale, toast]);
 
   useEffect(() => {
     if (tryOn.state === "live" && !aiSessionStartRef.current) {
@@ -151,21 +249,28 @@ export default function LiveFittingRoom() {
     }
   }, [tryOn.state]);
 
-  const recordRecap = useCallback(() => {
-    if (!activeId) return;
-    const duration = 30;
-    aiSessionStartRef.current = null;
-    const garment = getGarment(activeId);
-    const recap: TryOnRecap = {
-      garmentId: activeId,
-      garmentName: garment.name,
-      garmentNameVi: garment.nameVi,
-      slot: activeLookRef.current,
-      durationSeconds: duration,
-      recordedAt: new Date().toISOString(),
-    };
-    setLatestRecap(recap);
-  }, [activeId, setLatestRecap]);
+  const recordRecap = useCallback(
+    (overrideVideoUri?: string | null) => {
+      if (!activeId) return;
+      const duration = 30;
+      aiSessionStartRef.current = null;
+      const garment = getGarment(activeId);
+      const videoUri = overrideVideoUri ?? aiVideoRef.current;
+      const recap: TryOnRecap = {
+        garmentId: activeId,
+        garmentName: garment.name,
+        garmentNameVi: garment.nameVi,
+        slot: activeLookRef.current,
+        durationSeconds: duration,
+        recordedAt: new Date().toISOString(),
+        originalPhotoUri: baselinePhotoRef.current,
+        aiPhotoUri: aiPhotoRef.current,
+        aiVideoUri: videoUri,
+      };
+      setLatestRecap(recap);
+    },
+    [activeId, setLatestRecap],
+  );
 
   useEffect(() => {
     const wasActive = wasActiveRef.current;
@@ -175,12 +280,15 @@ export default function LiveFittingRoom() {
       return;
     }
     if (wasActive && tryOn.state === "preview" && !userStoppedRef.current && (isCapNotice(tryOn.notice) || lastSecondsRef.current <= 1)) {
-      recordRecap();
-      setCapEnded(true);
-      announce("Time's up. The AI session stopped at the 60-second limit.");
-      setRecapModalOpen(true);
+      void (async () => {
+        const videoUri = await stopScreenRecording();
+        recordRecap(videoUri);
+        setCapEnded(true);
+        announce("Time's up. The AI session stopped at the 60-second limit.");
+        setRecapModalOpen(true);
+      })();
     }
-  }, [tryOn.sessionActive, tryOn.secondsLeft, tryOn.state, tryOn.notice, recordRecap]);
+  }, [tryOn.sessionActive, tryOn.secondsLeft, tryOn.state, tryOn.notice, recordRecap, stopScreenRecording]);
 
   // Announce the moments a shopper standing 2 m away needs to hear.
   const prevStateRef = useRef(tryOn.state);
@@ -263,10 +371,11 @@ export default function LiveFittingRoom() {
     void tryOn.start(activeId);
   };
 
-  const handleEndSession = () => {
-    recordRecap();
+  const handleEndSession = async () => {
     userStoppedRef.current = true;
     stopAuto();
+    const videoUri = await stopScreenRecording();
+    recordRecap(videoUri);
     tryOn.stop("AI session ended. The camera preview stays on.");
     setRecapModalOpen(true);
   };
@@ -276,8 +385,11 @@ export default function LiveFittingRoom() {
     tryOn.stop("Connection cancelled before the AI started.");
   };
 
-  const handleFlip = () => {
-    if (tryOn.sessionActive) userStoppedRef.current = true;
+  const handleFlip = async () => {
+    if (tryOn.sessionActive) {
+      userStoppedRef.current = true;
+      await stopScreenRecording();
+    }
     stopAuto();
     void tryOn.flip();
   };
@@ -285,13 +397,15 @@ export default function LiveFittingRoom() {
   const handleExit = () => {
     stopAuto();
     tryOn.stopCamera();
+    void stopScreenRecording();
     if (router.canGoBack()) router.back();
     else router.replace("/setup");
   };
 
-  const handleFinish = () => {
-    recordRecap();
+  const handleFinish = async () => {
     stopAuto();
+    const videoUri = await stopScreenRecording();
+    recordRecap(videoUri);
     tryOn.stopCamera();
     router.push("/final");
   };
@@ -520,6 +634,12 @@ export default function LiveFittingRoom() {
                 canPeekOriginal={tryOn.showingAi}
                 peekingOriginal={peekingOriginal}
                 onToggleOriginal={() => setPeekingOriginal((v) => !v)}
+                onSnapPhoto={tryOn.aiLive ? handleSnapAiLook : handleSnapBaseline}
+                snapLabel={
+                  tryOn.aiLive
+                    ? tr(locale, "Capture AI Look", "Chụp khoảnh khắc AI")
+                    : tr(locale, "Capture Baseline", "Chụp dáng chuẩn Before")
+                }
                 onFinish={handleFinish}
               />
               <View pointerEvents="box-none" style={[styles.middle, { paddingBottom: bottomReserve }]}>
