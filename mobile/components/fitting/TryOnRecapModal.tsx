@@ -35,8 +35,18 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
-import * as MediaLibrary from "expo-media-library";
 import { useVideoPlayer, VideoView } from "expo-video";
+
+// Safe native module loader: avoids fatal redbox crash if running in Expo Go or an older binary lacking ExpoMediaLibraryNext
+function getMediaLibrary(): typeof import("expo-media-library") | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("expo-media-library");
+  } catch {
+    // Native module ExpoMediaLibraryNext is not compiled in the running binary (e.g. Expo Go)
+    return null;
+  }
+}
 
 import { AppText, IconButton, Touchable, useToast } from "@/components/ui";
 import { GarmentImage } from "@/components/ui/GarmentImage";
@@ -318,14 +328,19 @@ export function TryOnRecapModal({
       }
 
       if (targetUri && Platform.OS !== "web") {
-        try {
-          const { status } = await MediaLibrary.requestPermissionsAsync();
-          if (status === "granted") {
-            await MediaLibrary.createAssetAsync(targetUri);
-            savedToGallery = true;
+        const MediaLibrary = getMediaLibrary();
+        if (MediaLibrary) {
+          try {
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status === "granted") {
+              await MediaLibrary.createAssetAsync(targetUri);
+              savedToGallery = true;
+            }
+          } catch (mediaErr) {
+            console.warn("Save to MediaLibrary failed", mediaErr);
           }
-        } catch (mediaErr) {
-          console.warn("Save to MediaLibrary failed", mediaErr);
+        } else {
+          console.warn("MediaLibrary native module not available in this build binary");
         }
       }
 
