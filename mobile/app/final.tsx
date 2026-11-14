@@ -5,7 +5,7 @@
 // Keeping saves to the device (store.keepLook -> AsyncStorage), toasts, then opens the
 // Saved looks sheet. Secondary: "Saved N" (top bar, same as Choose Occasion) and "Start over" (end of page).
 import { useFocusEffect, useRouter } from "expo-router";
-import { ChevronLeft, Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
+import { Bookmark, Check, ChevronLeft, Layers, Play, Repeat, RotateCcw, Shirt } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -14,10 +14,10 @@ import { FinalEmpty, FinalError, FinalLoading } from "@/components/final/FinalSt
 import { FitNote } from "@/components/final/FitNote";
 import { LookColumn } from "@/components/final/LookColumn";
 import { TryOnRecapModal } from "@/components/fitting/TryOnRecapModal";
-import { SavedButton } from "@/components/index/SavedButton";
-import { FittingDock, type DockCenter } from "@/components/FittingDock";
+import { type DockCenter } from "@/components/FittingDock";
+import { NavBar } from "@/components/NavBar";
 import { SavedSheet } from "@/components/SavedSheet";
-import { AppText, CelebrationBurst, IconButton, Screen, TopBar, Touchable, useToast } from "@/components/ui";
+import { AppText, Button, CelebrationBurst, IconButton, Screen, TopBar, Touchable, useToast } from "@/components/ui";
 import type { Recommendation, StyleSource } from "@/lib/api";
 import { getGarment, type GarmentId, type OccasionId } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
@@ -47,7 +47,7 @@ export default function FinalLook() {
   const toast = useToast();
   const locale = useLocale();
   const { width, fontScale } = useWindowDimensions();
-  const { picks, picksStatus, picksError, occasionId, saved, savedLoaded, consentGiven, keepLook, fetchPicks, clear, hookIds, pickFor, latestRecap } = useAppStore();
+  const { picks, picksStatus, picksError, occasionId, saved, consentGiven, keepLook, fetchPicks, clear, hookIds, pickFor, latestRecap } = useAppStore();
 
   // Web preview only (/final?seed=final&sheet=saved); readPreviewSeed() is null elsewhere.
   const [sheetOpen, setSheetOpen] = useState(() => readPreviewSeed()?.openSavedSheet ?? false);
@@ -169,7 +169,6 @@ export default function FinalLook() {
     clear();
   };
 
-  const savedCount = saved.length;
 
   // ----- dock centre per state (the screen's one non-hook action) -----
   let center: DockCenter;
@@ -239,23 +238,39 @@ export default function FinalLook() {
                   {tr(locale, "Closet", "Tủ đồ")}
                 </AppText>
               </Touchable>
-              <SavedButton count={savedLoaded ? savedCount : null} onPress={() => setSheetOpen(true)} />
             </View>
           }
         />
       }
       overlay={
         <>
-          <FittingDock
-            mode="keep"
-            hooks={hooks}
-            onKeep={handleKeep}
-            hooksDisabled={!!keeping}
+          <NavBar
             center={center}
-            savedSlots={{
-              a: hookIds[0] ? isSaved(hookIds[0]) : false,
-              b: hookIds[1] ? isSaved(hookIds[1]) : false,
-            }}
+            above={
+              pair ? (
+                <View style={styles.keepRow}>
+                  {(["a", "b"] as const).map((slot, i) => {
+                    const id = hooks[i];
+                    if (!id) return null;
+                    const isKept = isSaved(id);
+                    return (
+                      <Button
+                        key={slot}
+                        label={isKept ? `Kept ${slot.toUpperCase()}` : `Keep ${slot.toUpperCase()}`}
+                        labelVi={isKept ? `Đã giữ ${slot.toUpperCase()}` : `Giữ ${slot.toUpperCase()}`}
+                        accessibilityLabel={isKept ? `Đã giữ Look ${slot.toUpperCase()}` : `Giữ Look ${slot.toUpperCase()} vào máy`}
+                        icon={isKept ? Check : Bookmark}
+                        variant={isKept ? "quiet" : "next"}
+                        disabled={!!keeping || isKept}
+                        loading={keeping === slot}
+                        onPress={() => handleKeep(slot)}
+                        style={styles.keepBtn}
+                      />
+                    );
+                  })}
+                </View>
+              ) : null
+            }
           />
           <SavedSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onRemoved={() => toast.show(tr(locale, "Removed", "Đã xoá"))} />
           <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
@@ -369,6 +384,8 @@ export default function FinalLook() {
 }
 
 const styles = StyleSheet.create({
+  keepRow: { flexDirection: "row", gap: 10 },
+  keepBtn: { flex: 1, alignSelf: "stretch" },
   screenContent: {
     paddingBottom: 98,
   },

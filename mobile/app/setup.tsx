@@ -13,15 +13,17 @@
 //                                      picks exist; giveConsent() then /fitting
 // Nothing leaves the phone on this screen: no Decart session is ever started here.
 import { useFocusEffect, useRouter } from "expo-router";
-import { Camera, Play, RotateCcw, Settings } from "lucide-react-native";
+import { Camera, Play, RotateCcw, Settings, ShieldCheck } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Linking, StyleSheet, View } from "react-native";
 
-import { FittingDock, type DockCenter } from "@/components/FittingDock";
+import { type DockCenter } from "@/components/FittingDock";
+import { NavBar } from "@/components/NavBar";
+import { BodyRow, SizeRow } from "@/components/SizePicker";
+import { ConsentSheet } from "@/components/setup/ConsentSheet";
 import { CameraFrame, type FrameState } from "@/components/setup/CameraFrame";
-import { ConsentPanel } from "@/components/setup/ConsentPanel";
 import { SetupTips } from "@/components/setup/SetupTips";
-import { AppText, Button, Screen, TopBar } from "@/components/ui";
+import { AppText, Button, Screen, TopBar, Touchable } from "@/components/ui";
 import { useAppStore } from "@/lib/store";
 import { colors, radii, spacing } from "@/lib/theme";
 import { useTryOnSession } from "@/lib/tryOnSession";
@@ -49,9 +51,13 @@ const CAPTION: Record<FrameState, { text: string; vi: string }> = {
 export default function CameraSetup() {
   useSafeKeepAwake();
   const router = useRouter();
-  const { hookIds, activeLook, setActiveLook, consentGiven, giveConsent, revokeConsent, occasionId } = useAppStore();
+  const { hookIds, activeLook, setActiveLook, consentGiven, giveConsent, occasionId, gender } = useAppStore();
   const tryOn = useTryOnSession({ consentGiven });
   const [agreed, setAgreed] = useState(consentGiven);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [consentAsk, setConsentAsk] = useState(false);
+  /** What to do once the user agrees in the popup (turn the camera on, or enter the fitting room). */
+  const afterAgreeRef = useRef<(() => void) | null>(null);
 
   const { startCamera, stopCamera, resumeCamera, cameraStatus, needsResumeConsent, isSupported } = tryOn;
 
@@ -75,13 +81,6 @@ export default function CameraSetup() {
     await resumeCamera();
   }, [resumeCamera]);
 
-  const onAgreeChange = useCallback(
-    (next: boolean) => {
-      setAgreed(next);
-      if (!next && consentGiven) revokeConsent();
-    },
-    [consentGiven, revokeConsent],
-  );
 
   const hasPicks = hookIds[0] !== null || hookIds[1] !== null;
   const isSingleLook = (hookIds[0] !== null && hookIds[1] === null) || (hookIds[0] === null && hookIds[1] !== null);
@@ -115,11 +114,32 @@ export default function CameraSetup() {
     router.push("/fitting");
   }, [giveConsent, stopCamera, router]);
 
+  /** Run `action` now if the user already agreed; otherwise show the consent popup first. */
+  const withConsent = useCallback(
+    (action: () => void) => {
+      if (agreed) {
+        action();
+        return;
+      }
+      afterAgreeRef.current = action;
+      setConsentAsk(true);
+      setConsentOpen(true);
+    },
+    [agreed],
+  );
+  const onAgree = useCallback(() => {
+    setAgreed(true);
+    giveConsent();
+    setConsentOpen(false);
+    setConsentAsk(false);
+    const next = afterAgreeRef.current;
+    afterAgreeRef.current = null;
+    next?.();
+  }, [giveConsent]);
+
   const startHint = !hasPicks
     ? "Pick a garment first"
-    : !agreed
-      ? "Turn on the agreement switch above first"
-      : isSingleLook
+    : isSingleLook
         ? "Opens the fitting room to try on your selected piece."
         : "Opens the fitting room. The AI session starts only when you press start there.";
 
@@ -134,8 +154,8 @@ export default function CameraSetup() {
           accessibilityHint: startHint,
           icon: Play,
           tone: "lime",
-          disabled: !agreed || !hasPicks,
-          onPress: startFitting,
+          disabled: !hasPicks,
+          onPress: () => withConsent(startFitting),
         };
       case "starting":
         return { label: "Opening", labelVi: "Đang mở", accessibilityLabel: "Opening the camera", icon: Camera, tone: "lime", loading: true, onPress: () => undefined };
@@ -170,24 +190,25 @@ export default function CameraSetup() {
           accessibilityHint: "Asks for camera access and shows a preview. Nothing is sent yet.",
           icon: Camera,
           tone: "lime",
-          onPress: () => void allowCamera(),
+          onPress: () => withConsent(() => void allowCamera()),
         };
     }
   })();
 
-  // When Start fitting is waiting only on the agreement, say where it is (it sits below the fold).
-  const needsAgreement = (frameState === "on" || frameState === "web") && hasPicks && !agreed;
-  const caption = needsAgreement
-    ? {
-        text: `${CAPTION[frameState].text} Then turn on the agreement below to start fitting.`,
-        vi: `${CAPTION[frameState].vi} Sau đó bật ô đồng ý bên dưới để bắt đầu thử.`,
-      }
-    : CAPTION[frameState];
+  const caption = CAPTION[frameState];
 
   return (
     <Screen
       header={<TopBar title="Camera setup" titleVi="Chuẩn bị camera" />}
-      overlay={<FittingDock hooks={hookIds} lit={hasPicks ? activeLook : null} onHookPress={hasPicks ? setActiveLook : undefined} center={center} />}
+      overlay={
+        <>
+          <NavBar
+            center={center}
+            above={<SetupCta center={center} />}
+          />
+          <ConsentSheet visible={consentOpen} agreed={agreed && !consentAsk} onAgree={onAgree} onClose={() => setConsentOpen(false)} />
+        </>
+      }
     >
       <View style={styles.content}>
         <View style={styles.preview}>
@@ -224,14 +245,66 @@ export default function CameraSetup() {
 
         <SetupTips />
 
-        <ConsentPanel agreed={agreed} onChange={onAgreeChange} />
+        {hasPicks ? (
+          <View style={styles.sizeCard}>
+            <BodyRow />
+            {hookIds.map((id, i) =>
+              id ? <SizeRow key={`${i}-${id}`} garmentId={id} gender={gender} slot={hookIds[0] && hookIds[1] ? (i === 0 ? "A" : "B") : undefined} /> : null,
+            )}
+            <AppText variant="tag" tone="muted">
+              Bảng size mẫu, không phải size thật của hãng.
+            </AppText>
+          </View>
+        ) : null}
+
+        <Touchable
+          accessibilityRole="button"
+          accessibilityLabel="Quyền riêng tư khi thử đồ"
+          onPress={() => {
+            afterAgreeRef.current = null;
+            setConsentAsk(!agreed);
+            setConsentOpen(true);
+          }}
+          style={styles.privacy}
+        >
+          <ShieldCheck size={14} color={colors.muted} strokeWidth={2} />
+          <AppText variant="caption" tone="muted">
+            Quyền riêng tư
+          </AppText>
+        </Touchable>
       </View>
     </Screen>
   );
 }
 
+/** The one labelled main button above the tab bar ("Bật camera" / "Vào thử đồ"). */
+function SetupCta({ center }: { center: DockCenter }) {
+  return (
+    <Touchable
+      accessibilityRole="button"
+      accessibilityLabel={center.labelVi ?? center.accessibilityLabel}
+      accessibilityHint={center.accessibilityHint}
+      accessibilityState={{ disabled: !!center.disabled, busy: !!center.loading }}
+      disabled={center.disabled || center.loading}
+      onPress={center.onPress}
+      bg={colors.lime}
+      pressedBg={colors.limePress}
+      style={[styles.cta, center.disabled && styles.ctaDim]}
+      testID="setup-cta"
+    >
+      <AppText variant="label" weight={800}>
+        {center.loading ? "Đang mở camera…" : (center.labelVi ?? center.label)}
+      </AppText>
+    </Touchable>
+  );
+}
+
 const styles = StyleSheet.create({
-  content: { gap: spacing.section - 4, paddingTop: 4 },
+  content: { gap: spacing.gap + 4, paddingTop: 4 },
+  sizeCard: { gap: 12, padding: 14, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.line },
+  privacy: { flexDirection: "row", alignItems: "center", alignSelf: "center", gap: 6, minHeight: 44, paddingHorizontal: 12 },
+  cta: { minHeight: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  ctaDim: { opacity: 0.5 },
   preview: { gap: 12 },
   noPicks: {
     gap: 8,

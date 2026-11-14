@@ -63,7 +63,7 @@ export function StageMessage({ tryOn }: StageMessageProps) {
           helper="Quyền camera đang tắt"
           body="Allow camera for OutfitPilot in Settings, then come back here."
           bodyVi="Hãy cấp quyền camera cho OutfitPilot trong Cài đặt rồi quay lại."
-          action={{ label: "Open Settings", labelVi: "Mở Cài đặt", icon: Settings, onPress: () => void Linking.openSettings().catch(() => undefined) }}
+          action={{ label: "Settings", labelVi: "Cài đặt", icon: Settings, onPress: () => void Linking.openSettings().catch(() => undefined) }}
         />
       );
     case "error":
@@ -74,7 +74,7 @@ export function StageMessage({ tryOn }: StageMessageProps) {
           helper="Camera chưa bật được"
           body={tryOn.error ?? "Another app may be using it. Close it and try again."}
           bodyVi={tryOn.error ?? "Có thể một ứng dụng khác đang dùng camera. Hãy đóng ứng dụng đó rồi thử lại."}
-          action={{ label: "Try camera again", labelVi: "Thử lại camera", icon: RotateCcw, onPress: () => void tryOn.startCamera() }}
+          action={{ label: "Retry", labelVi: "Thử lại", icon: RotateCcw, onPress: () => void tryOn.startCamera() }}
         />
       );
     case "off":

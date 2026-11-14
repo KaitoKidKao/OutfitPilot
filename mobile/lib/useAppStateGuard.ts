@@ -50,10 +50,10 @@ export function useAppStateGuard(onBackground: () => void) {
     try {
       return await fn();
     } finally {
-      // Let the "active" event from closing the picker arrive before re-arming.
+      // Let the "active" event from closing the picker/dialog arrive before re-arming.
       setTimeout(() => {
         suppressRef.current = Math.max(0, suppressRef.current - 1);
-      }, 500);
+      }, 1000);
     }
   }, []);
 

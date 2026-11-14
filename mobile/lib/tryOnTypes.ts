@@ -91,4 +91,6 @@ export interface TryOnController {
   dismissResumePrompt: () => void;
   /** Dismisses the prompt and turns the camera back on (does NOT restart the paid session). */
   resumeCamera: () => Promise<boolean>;
+  /** Runs an async operation (e.g. system permission dialogs or pickers) without triggering background pause. */
+  runWithoutGuard: <T>(fn: () => Promise<T>) => Promise<T>;
 }

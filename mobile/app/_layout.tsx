@@ -40,9 +40,10 @@ export default function RootLayout() {
       <AppStoreProvider>
         <ToastProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+          <Stack screenOptions={{ headerShown: false, fullScreenGestureEnabled: false, contentStyle: { backgroundColor: colors.paper } }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="picks" />
+            <Stack.Screen name="trends" options={{ animation: "none" }} />
             <Stack.Screen name="setup" />
             <Stack.Screen name="fitting" options={{ contentStyle: { backgroundColor: colors.studio } }} />
             <Stack.Screen name="final" />
