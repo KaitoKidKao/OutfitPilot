@@ -189,10 +189,12 @@ export default function LiveFittingRoom() {
         isRecordingRef.current = true;
         (async () => {
           try {
-            const res = await RecordScreen.startRecording({
-              mic: false,
-              fps: 30,
-              bitrate: 2500000,
+            const res = await tryOn.runWithoutGuard(async () => {
+              return await RecordScreen.startRecording({
+                mic: false,
+                fps: 30,
+                bitrate: 2500000,
+              });
             });
             if (!active) return;
             if (res === RecordingResult.PermissionError) {
@@ -216,7 +218,7 @@ export default function LiveFittingRoom() {
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [tryOn.showingAi]);
+  }, [tryOn.showingAi, tryOn.runWithoutGuard]);
 
   // Detect the 60 s cap: an active session ended without the user stopping it.
   const wasActiveRef = useRef(false);

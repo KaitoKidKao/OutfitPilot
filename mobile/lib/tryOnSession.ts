@@ -267,5 +267,6 @@ export function useTryOnSession(options: UseTryOnOptions = {}): TryOnController 
     needsResumeConsent: guard.needsResumeConsent,
     dismissResumePrompt: guard.dismissResumePrompt,
     resumeCamera,
+    runWithoutGuard: guard.runWithoutGuard,
   };
 }

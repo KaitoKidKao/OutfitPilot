@@ -20,6 +20,7 @@ export function useTryOnSession(_options: UseTryOnOptions = {}): TryOnController
   const noop = useCallback(() => undefined, []);
   const noLook = useCallback(async (_look: TryOnLookInput) => undefined, []);
   const noPreload = useCallback((_ids: readonly GarmentId[]) => undefined, []);
+  const identityAsync = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => fn(), []);
 
   return {
     isSupported: false,
@@ -52,5 +53,6 @@ export function useTryOnSession(_options: UseTryOnOptions = {}): TryOnController
     needsResumeConsent: false,
     dismissResumePrompt: noop,
     resumeCamera: falseAsync,
+    runWithoutGuard: identityAsync,
   };
 }
