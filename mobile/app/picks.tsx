@@ -12,13 +12,16 @@ import { AccessibilityInfo, StyleSheet, View, type LayoutChangeEvent, type Scrol
 import { useReducedMotion } from "react-native-reanimated";
 
 import { ClosetSheet } from "@/components/closet/ClosetSheet";
-import { FittingDock, type DockCenter } from "@/components/FittingDock";
+import { type DockCenter } from "@/components/FittingDock";
+import { NavBar } from "@/components/NavBar";
 import { PICKS_HEADLINE, slotName } from "@/components/picks/copy";
 import { HonestFootnote } from "@/components/picks/HonestFootnote";
 import { LookCard } from "@/components/picks/LookCard";
 import { PicksLoading } from "@/components/picks/PicksLoading";
 import { PicksEmpty, PicksError } from "@/components/picks/PicksStates";
 import { SourceNote } from "@/components/picks/SourceNote";
+import { UpcomingEvents } from "@/components/picks/UpcomingEvents";
+import { WeatherWear } from "@/components/picks/WeatherWear";
 import { AppText, Screen, TopBar, Touchable, useToast } from "@/components/ui";
 import { getGarment } from "@/lib/catalog";
 import { tr, useLocale } from "@/lib/locale";
@@ -35,7 +38,9 @@ export default function AiPicks() {
   const toast = useToast();
   const locale = useLocale();
   const reduced = useReducedMotion();
-  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds, assignHook } = useAppStore();
+  const { occasionId, customOccasion, style, picks, picksStatus, picksError, fetchPicks, activeLook, setActiveLook, hookIds, assignHook, gender, setOccasion, setCustomOccasion } = useAppStore();
+  const eventPendingRef = useRef<string | null>(null);
+  const [eventAsking, setEventAsking] = useState<string | null>(null);
 
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const cardY = useRef<Record<Slot, number | null>>({ a: null, b: null });
@@ -129,6 +134,44 @@ export default function AiPicks() {
     [setActiveLook, reduced, hookIds],
   );
 
+  // "Sắp tới nên mặc gì": ask the Stylist for an upcoming holiday (occasion "other").
+  const onPickEvent = useCallback(
+    (ask: string, id: string) => {
+      if (occasionId === "other" && customOccasion === ask) {
+        setEventAsking(id);
+        void fetchPicks({ force: true }).finally(() => {
+          if (mounted.current) setEventAsking(null);
+        });
+        return;
+      }
+      if (occasionId !== "other") setOccasion("other");
+      setCustomOccasion(ask);
+      eventPendingRef.current = id;
+      setEventAsking(id);
+    },
+    [occasionId, customOccasion, fetchPicks, setOccasion, setCustomOccasion],
+  );
+  // Fetch once the store has committed the new custom occasion.
+  useEffect(() => {
+    if (!eventPendingRef.current || occasionId !== "other") return;
+    eventPendingRef.current = null;
+    void fetchPicks({ force: true }).finally(() => {
+      if (mounted.current) setEventAsking(null);
+    });
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [occasionId, customOccasion, fetchPicks]);
+
+  /** Weather pick: try that single garment right away. */
+  const tryGarment = useCallback(
+    (id: string) => {
+      assignHook("a", id);
+      assignHook("b", null);
+      setActiveLook("a");
+      router.push("/setup");
+    },
+    [assignHook, setActiveLook, router],
+  );
+
   const handleTrySingle = useCallback(
     (slot: Slot) => {
       if (!picks) return;
@@ -201,11 +244,14 @@ export default function AiPicks() {
       }
       overlay={
         <>
-          <FittingDock hooks={hookIds} lit={picks ? activeLook : null} onHookPress={picks ? showCard : undefined} center={center} />
+          <NavBar active="picks" center={center} />
           <ClosetSheet visible={closetOpen} onClose={() => setClosetOpen(false)} />
         </>
       }
     >
+      <WeatherWear gender={gender} onTry={tryGarment} />
+      <UpcomingEvents activeId={eventAsking} onPick={(e) => onPickEvent(e.ask, e.id)} />
+
       {!occasionId || !headline ? (
         <PicksEmpty onChooseOccasion={goToOccasions} />
       ) : (

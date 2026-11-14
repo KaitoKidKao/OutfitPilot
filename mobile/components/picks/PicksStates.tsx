@@ -58,7 +58,7 @@ export function PicksError({ message, retrying, onRetry, onChangeOccasion }: Pic
       </View>
       <View style={styles.actions}>
         <Button label="Try again" labelVi="Thử lại" loadingLabel="Trying again…" loadingLabelVi="Đang thử lại…" variant="next" icon={RotateCcw} loading={retrying} onPress={onRetry} />
-        <Button label="Change occasion" labelVi="Đổi dịp" variant="ghost" onPress={onChangeOccasion} />
+        <Button label="Change occasion" labelVi="Đổi dịp" icon={ArrowLeft} variant="ghost" onPress={onChangeOccasion} />
       </View>
     </View>
   );

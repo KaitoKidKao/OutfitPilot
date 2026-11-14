@@ -127,7 +127,7 @@ export function LookCard({ slot, pick, active, onPress, onTrySingle, onLayout, t
             >
               <Camera size={14} color={colors.ink} strokeWidth={2.4} />
               <AppText variant="caption" weight={800} tone="ink">
-                {tr(locale, `Try Look ${slot.toUpperCase()} only (no compare)`, `Thử riêng Look ${slot.toUpperCase()} (không so sánh)`)}
+                {tr(locale, `Try Look ${slot.toUpperCase()}`, `Thử Look ${slot.toUpperCase()}`)}
               </AppText>
             </Touchable>
           ) : null}
