@@ -6,6 +6,7 @@ import type { ComponentRef, ReactNode, Ref } from "react";
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { navScrollHandlers } from "@/lib/navScroll";
 import { colors, sizes, spacing } from "@/lib/theme";
 
 export interface ScreenProps {
@@ -68,7 +69,10 @@ export function Screen({
           style={styles.flex}
           contentContainerStyle={[column, { paddingBottom: bottom }, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
+          {...navScrollHandlers}
         >
           {children}
         </ScrollView>

@@ -79,3 +79,16 @@ index 6e8c32b..aa29d9c 100644
 -//    super.onStop()
 -//  }
  }
+diff --git a/node_modules/react-native-record-screen/ios/RecordScreen.mm b/node_modules/react-native-record-screen/ios/RecordScreen.mm
+index 67ac51f..18bde5f 100644
+--- a/node_modules/react-native-record-screen/ios/RecordScreen.mm
++++ b/node_modules/react-native-record-screen/ios/RecordScreen.mm
+@@ -290,7 +290,7 @@ RCT_REMAP_METHOD(clean,
+ }
+ 
+ // Don't compile this code when we build for the old architecture.
+-#ifdef RCT_NEW_ARCH_ENABLED
++#if 0 // local fix: no codegen spec for this module; use interop layer
+ - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+     (const facebook::react::ObjCTurboModule::InitParams &)params
+ {

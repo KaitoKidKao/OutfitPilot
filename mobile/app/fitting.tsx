@@ -17,7 +17,6 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
 import RecordScreen, { RecordingResult } from "react-native-record-screen";
 
 import { FittingTopBar } from "@/components/fitting/FittingTopBar";
@@ -135,9 +134,10 @@ export default function LiveFittingRoom() {
   const isRecordingRef = useRef(false);
   const recordingStartTimeRef = useRef<number | null>(null);
   const actualDurationRef = useRef<number>(30);
-  const baselinePhotoRef = useRef<string | null>(null);
-  const aiPhotoRef = useRef<string | null>(null);
   const aiVideoRef = useRef<string | null>(null);
+  /** Why there is no clip, shown on the recap instead of a silent fallback. */
+  const recordIssueRef = useRef<string | null>(null);
+  const aiWasLiveRef = useRef(false);
 
   const stopScreenRecording = useCallback(async (): Promise<string | null> => {
     if (recordingStartTimeRef.current) {
@@ -182,23 +182,34 @@ export default function LiveFittingRoom() {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
+    if (tryOn.showingAi) aiWasLiveRef.current = true;
     if (tryOn.showingAi && !isRecordingRef.current && Platform.OS !== "web") {
       // Small 400ms grace period so connecting overlay finishes fading away cleanly
       timer = setTimeout(() => {
         if (!active || !tryOn.showingAi || isRecordingRef.current) return;
         isRecordingRef.current = true;
+        recordIssueRef.current = null;
+        // A new recording replaces the previous session's clip (never show a stale video).
+        aiVideoRef.current = null;
         (async () => {
           try {
             const res = await tryOn.runWithoutGuard(async () => {
-              return await RecordScreen.startRecording({
-                mic: false,
-                fps: 30,
-                bitrate: 2500000,
-              });
+              // Encoder size = window points (the size that recorded fine on the iPhone;
+              // 2x points produced no file). fps only sets the key-frame interval;
+              // ReplayKit delivers frames as the screen changes.
+              const start = RecordScreen.startRecording({ mic: false, fps: 60, bitrate: 6_000_000 });
+              // The native module never answers if ReplayKit is already busy: give up after 8 s.
+              const timeout = new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), 8000));
+              return await Promise.race([start, timeout]);
             });
             if (!active) return;
-            if (res === RecordingResult.PermissionError) {
+            if (res === "timeout") {
+              recordIssueRef.current = "Quay màn hình không khởi động được (iOS không phản hồi).";
+              isRecordingRef.current = false;
+              recordingStartTimeRef.current = null;
+            } else if (res === RecordingResult.PermissionError) {
               console.warn("Screen recording permission denied by user");
+              recordIssueRef.current = "Bạn chưa cho phép quay màn hình (bấm Cho phép khi iOS hỏi).";
               isRecordingRef.current = false;
               recordingStartTimeRef.current = null;
             } else {
@@ -207,6 +218,7 @@ export default function LiveFittingRoom() {
           } catch (err) {
             if (!active) return;
             console.warn("RecordScreen.startRecording error", err);
+            recordIssueRef.current = `Lỗi quay màn hình: ${err instanceof Error ? err.message : String(err)}`;
             isRecordingRef.current = false;
             recordingStartTimeRef.current = null;
           }
@@ -224,45 +236,6 @@ export default function LiveFittingRoom() {
   const wasActiveRef = useRef(false);
   const lastSecondsRef = useRef(tryOn.maxSeconds);
 
-  const handleSnapBaseline = useCallback(async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        allowsEditing: false,
-        quality: 0.85,
-      });
-      if (!result.canceled && result.assets && result.assets[0]) {
-        baselinePhotoRef.current = result.assets[0].uri;
-        toast.show(
-          tr(
-            locale,
-            "Captured baseline photo for Before comparison!",
-            "Đã chụp ảnh dáng chuẩn Before!"
-          )
-        );
-      }
-    } catch (err) {
-      console.warn("Snap baseline failed", err);
-    }
-  }, [locale, toast]);
-
-  const handleSnapAiLook = useCallback(async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        allowsEditing: false,
-        quality: 0.85,
-      });
-      if (!result.canceled && result.assets && result.assets[0]) {
-        aiPhotoRef.current = result.assets[0].uri;
-        toast.show(
-          tr(locale, "Saved AI look snapshot!", "Đã lưu khoảnh khắc đồ AI!")
-        );
-      }
-    } catch (err) {
-      console.warn("Snap AI look failed", err);
-    }
-  }, [locale, toast]);
 
   useEffect(() => {
     if (tryOn.state === "live" && !aiSessionStartRef.current) {
@@ -284,9 +257,13 @@ export default function LiveFittingRoom() {
         slot: activeLookRef.current,
         durationSeconds: duration,
         recordedAt: new Date().toISOString(),
-        originalPhotoUri: baselinePhotoRef.current,
-        aiPhotoUri: aiPhotoRef.current,
+        originalPhotoUri: null,
+        aiPhotoUri: null,
         aiVideoUri: videoUri,
+        recordIssue: videoUri
+          ? null
+          : (recordIssueRef.current ??
+            (aiWasLiveRef.current ? "Quay màn hình chưa bắt đầu kịp trong phiên này." : "AI chưa hiện hình nên chưa có gì để quay.")),
       };
       setLatestRecap(recap);
     },
@@ -387,6 +364,8 @@ export default function LiveFittingRoom() {
     if (!activeId) return;
     aiSessionStartRef.current = Date.now();
     userStoppedRef.current = false;
+    aiWasLiveRef.current = false;
+    recordIssueRef.current = null;
     setCapEnded(false);
     stopAuto();
     void tryOn.start(activeId);
@@ -540,7 +519,7 @@ export default function LiveFittingRoom() {
             helper="Đã tạm dừng khi bạn rời ứng dụng"
             body="The camera and the AI turned off when OutfitPilot went to the background. Nothing runs until you choose."
             bodyVi="Camera và AI đã tự tắt khi ứng dụng chạy nền. Không có gì chạy cho tới khi bạn chọn."
-            primary={{ label: "Turn camera on", labelVi: "Bật lại camera", icon: Camera, onPress: () => void tryOn.resumeCamera() }}
+            primary={{ label: "Camera on", labelVi: "Bật camera", icon: Camera, onPress: () => void tryOn.resumeCamera() }}
             secondary={{ label: "Not now", labelVi: "Để sau", onPress: tryOn.dismissResumePrompt }}
           />
         );
@@ -630,7 +609,7 @@ export default function LiveFittingRoom() {
             <View pointerEvents="none" style={[styles.cleanScreenHint, { top: insets.top + 16 }]}>
               <View style={styles.hintPill}>
                 <AppText variant="tag" weight={700} tone="paper">
-                  {tr(locale, "Tap screen to show controls", "Chạm màn hình để hiện bảng điều khiển")}
+                  {tr(locale, "Tap to show controls", "Chạm để hiện nút")}
                 </AppText>
               </View>
             </View>
@@ -655,12 +634,6 @@ export default function LiveFittingRoom() {
                 canPeekOriginal={tryOn.showingAi}
                 peekingOriginal={peekingOriginal}
                 onToggleOriginal={() => setPeekingOriginal((v) => !v)}
-                onSnapPhoto={tryOn.aiLive ? handleSnapAiLook : handleSnapBaseline}
-                snapLabel={
-                  tryOn.aiLive
-                    ? tr(locale, "Capture AI Look", "Chụp khoảnh khắc AI")
-                    : tr(locale, "Capture Baseline", "Chụp dáng chuẩn Before")
-                }
                 onFinish={handleFinish}
               />
               <View pointerEvents="box-none" style={[styles.middle, { paddingBottom: bottomReserve }]}>

@@ -59,7 +59,7 @@
       [
         "@config-plugins/react-native-webrtc",
         {
-          "cameraPermission": "OutfitPilot uses your camera only for the live virtual try-on. While a session runs, video goes straight to the AI try-on service (Decart). OutfitPilot does not record or save your video.",
+          "cameraPermission": "OutfitPilot uses your camera only for the live virtual try-on. While a session runs, video goes straight to the AI try-on service (Decart). The app records the try-on screen on this phone for a recap video, kept only if you tap Save.",
           "microphonePermission": "OutfitPilot does not use your microphone. The live try-on sends video only and no audio is recorded."
         }
       ],
@@ -67,7 +67,7 @@
         "expo-image-picker",
         {
           "photosPermission": "OutfitPilot lets you pick one garment photo to try on. Only the photo you choose is used.",
-          "cameraPermission": "OutfitPilot uses your camera only for the live virtual try-on. While a session runs, video goes straight to the AI try-on service (Decart). OutfitPilot does not record or save your video.",
+          "cameraPermission": "OutfitPilot uses your camera only for the live virtual try-on. While a session runs, video goes straight to the AI try-on service (Decart). The app records the try-on screen on this phone for a recap video, kept only if you tap Save.",
           "microphonePermission": false
         }
       ],

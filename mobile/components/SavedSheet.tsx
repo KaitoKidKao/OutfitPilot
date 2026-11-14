@@ -10,6 +10,7 @@ import { AppText } from "@/components/ui/AppText";
 import { GarmentImage } from "@/components/ui/GarmentImage";
 import { IconButton } from "@/components/ui/IconButton";
 import { getGarment } from "@/lib/catalog";
+import { useSizing } from "@/lib/sizing";
 import { tr, useLocale } from "@/lib/locale";
 import { OCCASION_OPTIONS, SOURCE_LABEL } from "@/lib/occasions";
 import { reasonWithoutName } from "@/lib/reasonText";
@@ -107,6 +108,8 @@ function SavedRow({ look, onRemove }: { look: SavedLook; onRemove: () => void })
   const reason = reasonWithoutName(look.reason, garment.name);
   const occasionName = occasion ? tr(locale, occasion.label, occasion.labelVi) : tr(locale, "Personal Closet", "Tự chọn từ tủ đồ");
   const samplePrefix = garment.sample ? tr(locale, "Sample photo · ", "Ảnh mẫu · ") : "";
+  const { sizes } = useSizing();
+  const size = sizes[look.garmentId];
 
   return (
     <View style={styles.row}>
@@ -125,6 +128,7 @@ function SavedRow({ look, onRemove }: { look: SavedLook; onRemove: () => void })
             {samplePrefix}
             {occasionName}
             {date ? ` · ${date}` : ""}
+            {size ? ` · Size ${size}` : ""}
           </AppText>
           {reason ? (
             <AppText variant="caption" numberOfLines={2}>

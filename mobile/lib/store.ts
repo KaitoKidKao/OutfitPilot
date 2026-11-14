@@ -39,6 +39,8 @@ export interface TryOnRecap {
   durationSeconds: number;
   recordedAt: string;
   aiVideoUri?: string | null;
+  /** Why no clip was recorded (shown on the recap). */
+  recordIssue?: string | null;
   aiPhotoUri?: string | null;
   originalPhotoUri?: string | null;
 }

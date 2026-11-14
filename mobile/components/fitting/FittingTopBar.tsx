@@ -2,7 +2,7 @@
 // Tinh gọn trong một hàng duy nhất với frosted glass, tích hợp trạng thái Live & đếm ngược,
 // cùng chip tên trang phục nhỏ gọn không che khuất người thử.
 
-import { Camera, Eye, EyeOff, SwitchCamera, X } from "lucide-react-native";
+import { Check, Eye, EyeOff, SwitchCamera, X } from "lucide-react-native";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { AppText, Button, IconButton } from "@/components/ui";
@@ -24,8 +24,6 @@ export interface FittingTopBarProps {
   canPeekOriginal?: boolean;
   peekingOriginal?: boolean;
   onToggleOriginal?: () => void;
-  onSnapPhoto?: () => void;
-  snapLabel?: string;
   onFinish: () => void;
 }
 
@@ -43,8 +41,6 @@ export function FittingTopBar({
   canPeekOriginal = false,
   peekingOriginal = false,
   onToggleOriginal,
-  onSnapPhoto,
-  snapLabel,
   onFinish,
 }: FittingTopBarProps) {
   const locale = useLocale();
@@ -113,17 +109,6 @@ export function FittingTopBar({
             </View>
           ) : null}
 
-          {onSnapPhoto ? (
-            <View style={styles.glassBtnWrap}>
-              <IconButton
-                icon={Camera}
-                variant="onDark"
-                iconSize={18}
-                accessibilityLabel={snapLabel ?? tr(locale, "Take snapshot", "Chụp ảnh")}
-                onPress={onSnapPhoto}
-              />
-            </View>
-          ) : null}
 
           <View style={styles.glassBtnWrap}>
             <IconButton
@@ -140,6 +125,7 @@ export function FittingTopBar({
           <Button
             label="Done"
             labelVi="Xong"
+            icon={Check}
             variant="onDark"
             onPress={onFinish}
             accessibilityHint="Ends fitting and opens Final Look"

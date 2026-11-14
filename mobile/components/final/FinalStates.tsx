@@ -1,7 +1,7 @@
 // Final Look states without a pair to compare: loading, error and empty.
 // The single lime action for each state lives in the dock centre (see app/final.tsx);
 // these bodies explain what happened and offer a quiet way out.
-import { AlertCircle } from "lucide-react-native";
+import { AlertCircle, ArrowLeft } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/ui/AppText";
@@ -44,7 +44,7 @@ export function FinalError({ message, onChooseOccasion }: { message: string | nu
           ) : null}
         </View>
       </View>
-      <Button label="Choose another occasion" labelVi="Chọn dịp khác" onPress={onChooseOccasion} accessibilityHint="Goes back to the first step" />
+      <Button label="Change occasion" labelVi="Đổi dịp" icon={ArrowLeft} accessibilityLabel="Chọn dịp khác" onPress={onChooseOccasion} accessibilityHint="Goes back to the first step" />
     </View>
   );
 }
